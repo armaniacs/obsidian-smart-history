@@ -9,8 +9,13 @@
 ### 概要
 ブラウザの閲覧履歴を、AIによる要約付きでObsidianのデイリーノートに自動保存するChrome拡張機能です。
 
+### オリジナルの紹介
+オリジナルは https://note.com/izuru_tcnkc/n/nd0a758483901 で紹介されている記事です。
+
+オリジナルからの変更点として、OpenAI互換APIをサポートするようになりました。つまり、GroqやOllamaなども使えるようになりました。
+
 ### 特徴
-- 🤖 **AIによる要約**: Google Gemini APIを使用して、ウェブページの内容を簡潔に要約します。
+- 🤖 **AIによる要約**: Gemini API または Open AI Compatible APIを使用して、ウェブページの内容を簡潔に要約します。
 - 📝 **Obsidian連携**: 閲覧履歴を直接Obsidianのデイリーノートに保存します。
 - 🎯 **スマート検出**: 実際に読んだページのみを保存します（滞在時間とスクロール深度に基づきます）。
 - 📂 **整理された保存**: デイリーノート内に専用の「ブラウザ閲覧履歴」セクションを自動作成し、管理します。
@@ -18,7 +23,12 @@
 
 ### 必要なもの
 - [Obsidian](https://obsidian.md/) と [Local REST API プラグイン](https://github.com/coddingtonbear/obsidian-local-rest-api)
-- [Google Gemini API キー](https://aistudio.google.com/app/apikey)（無料枠あり）
+- 好きなAIプロバイダー（お好きのものをどうぞ）
+   - [Google Gemini API キー](https://aistudio.google.com/app/apikey)（無料枠あり）
+   - [Groq](https://console.groq.com/keys)（無料枠あり）
+   - [OpenAI](https://platform.openai.com/api-keys)（無料枠あり）
+   - ollamaも多分動きます。
+
 
 ### インストール方法
 1. このリポジトリをダウンロードまたはクローンします。
