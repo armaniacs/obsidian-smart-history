@@ -33,7 +33,7 @@ Obsidian Smart History（以下「本拡張機能」）は、ユーザーのプ�
 - **いかなるデータも開発者のサーバーには保存されません。** 開発者はサーバーを運営していません。
 
 ### データの使用方法
-1. **ページ内容**: 要約を作成するために Google Gemini API に送信されます。
+1. **ページ内容**: 要約を作成するために Google Gemini API、またはユーザーが指定した OpenAI 互換 API (Groq, OpenAI, Local LLM等) に送信されます。
 2. **閲覧履歴**: Local REST API を通じて Obsidian Vault に保存されます。
 3. **設定**: Obsidian および Gemini API への接続に使用されます。
 
@@ -41,6 +41,7 @@ Obsidian Smart History（以下「本拡張機能」）は、ユーザーのプ�
 本拡張機能は、以下の第三者サービスと通信します：
 
 1. **Google Gemini API**: ページ内容の要約を生成するため。データはGoogleのプライバシーポリシーに従って処理されます。
+2. **ユーザー指定のAIプロバイダー (OpenAI互換API)**: ユーザーが設定した場合、要約生成のために使用されます（Groq, OpenAI, Ollama等）。データの処理は各プロバイダーのポリシー、またはローカル環境の仕様に従います。
 2. **ユーザーのローカル Obsidian**: デイリーノートに履歴を保存するため。これはユーザー自身のローカルサーバーです。
 
 ---
@@ -62,6 +63,7 @@ The Extension collects the following data **locally on your device**:
 
 ### Third-Party Services
 1. **Google Gemini API**: Used to generate summaries. Data is sent according to Google's privacy policy.
+2. **User-Specified AI Provider (OpenAI Compatible API)**: If configured (e.g., Groq, OpenAI, Ollama), content is sent to generate summaries. Data handling is subject to the respective provider's policy or your local environment.
 2. **Your Local Obsidian Instance**: Used to save history. This is your own local server.
 
 ---
