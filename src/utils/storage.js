@@ -11,7 +11,14 @@ export const StorageKeys = {
     MIN_VISIT_DURATION: 'min_visit_duration',
     MIN_SCROLL_DEPTH: 'min_scroll_depth',
     GEMINI_MODEL: 'gemini_model',
-    OBSIDIAN_DAILY_PATH: 'obsidian_daily_path'
+    OBSIDIAN_DAILY_PATH: 'obsidian_daily_path',
+    AI_PROVIDER: 'ai_provider',
+    OPENAI_BASE_URL: 'openai_base_url',
+    OPENAI_API_KEY: 'openai_api_key',
+    OPENAI_MODEL: 'openai_model',
+    OPENAI_2_BASE_URL: 'openai_2_base_url',
+    OPENAI_2_API_KEY: 'openai_2_api_key',
+    OPENAI_2_MODEL: 'openai_2_model'
 };
 
 const DEFAULT_SETTINGS = {
@@ -21,6 +28,11 @@ const DEFAULT_SETTINGS = {
     [StorageKeys.MIN_SCROLL_DEPTH]: 50, // percentage
     [StorageKeys.GEMINI_MODEL]: 'gemini-1.5-flash',
     [StorageKeys.OBSIDIAN_DAILY_PATH]: '092.Daily', // Default folder path
+    [StorageKeys.AI_PROVIDER]: 'openai',
+    [StorageKeys.OPENAI_BASE_URL]: 'https://api.groq.com/openai/v1',
+    [StorageKeys.OPENAI_MODEL]: 'openai/gpt-oss-20b',
+    [StorageKeys.OPENAI_2_BASE_URL]: 'http://127.0.0.1:11434/v1',
+    [StorageKeys.OPENAI_2_MODEL]: 'llama3'
 };
 
 export async function getSettings() {

@@ -1,9 +1,9 @@
 import { ObsidianClient } from './obsidianClient.js';
-import { GeminiClient } from './gemini.js';
+import { AIClient } from './aiClient.js';
 import { getSettings, StorageKeys } from '../utils/storage.js';
 
 const obsidian = new ObsidianClient();
-const gemini = new GeminiClient();
+const aiClient = new AIClient();
 
 // Cache to store tab data including content and validation status
 // Key: TabID, Value: { title, url, content, isValidVisit, timestamp }
@@ -74,12 +74,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const modelName = settings[StorageKeys.GEMINI_MODEL] || 'gemini-1.5-flash';
 
         let summary = "Summary not available.";
-        if (apiKey && message.payload.content) {
-          console.log(`Generating AI Summary using ${modelName}...`);
-          summary = await gemini.generateSummary(message.payload.content, apiKey, modelName);
-        } else if (!apiKey) {
-          console.warn("Gemini API Key is missing in settings.");
-          summary = "No Gemini API Key configured.";
+        if (message.payload.content) {
+          console.log(`Generating AI Summary...`);
+          summary = await aiClient.generateSummary(message.payload.content);
         }
 
         // Format the entry

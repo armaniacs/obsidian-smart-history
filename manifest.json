@@ -16,7 +16,9 @@
     "http://localhost:27123/*",
     "http://127.0.0.1:27124/*",
     "http://localhost:27124/*",
-    "https://generativelanguage.googleapis.com/*"
+    "https://generativelanguage.googleapis.com/*",
+    "https://*/*",
+    "http://*/*"
   ],
   "background": {
     "service_worker": "src/background/service-worker.js",

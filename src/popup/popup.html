@@ -85,16 +85,69 @@
     <input type="text" id="port" value="27123">
   </div>
 
+  <div class="form-group">
+    <label>Daily Note Path</label>
+    <input type="text" id="dailyPath" placeholder="e.g. 092.Daily">
+  </div>
+
   <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
 
   <div class="form-group">
-    <label>Gemini API Key</label>
-    <input type="password" id="geminiApiKey" placeholder="Paste your Gemini key here...">
+    <label>AI Provider</label>
+    <select id="aiProvider">
+      <option value="gemini">Google Gemini</option>
+      <option value="openai">OpenAI Compatible (Groq, etc.)</option>
+      <option value="openai2">OpenAI Compatible 2 (Local, etc.)</option>
+    </select>
   </div>
 
-  <div class="form-group">
-    <label>Model Name (e.g. gemini-1.5-flash)</label>
-    <input type="text" id="geminiModel" value="gemini-1.5-flash">
+  <!-- Gemini Settings -->
+  <div id="geminiSettings">
+    <div class="form-group">
+      <label>Gemini API Key</label>
+      <input type="password" id="geminiApiKey" placeholder="Paste your Gemini key here...">
+    </div>
+
+    <div class="form-group">
+      <label>Model Name (e.g. gemini-1.5-flash)</label>
+      <input type="text" id="geminiModel" value="gemini-1.5-flash">
+    </div>
+  </div>
+
+  <!-- OpenAI Settings -->
+  <div id="openaiSettings" style="display: none;">
+    <div class="form-group">
+      <label>Base URL</label>
+      <input type="text" id="openaiBaseUrl" placeholder="https://api.openai.com/v1">
+    </div>
+
+    <div class="form-group">
+      <label>API Key</label>
+      <input type="password" id="openaiApiKey" placeholder="sk-...">
+    </div>
+
+    <div class="form-group">
+      <label>Model Name</label>
+      <input type="text" id="openaiModel" placeholder="gpt-3.5-turbo">
+    </div>
+  </div>
+
+  <!-- OpenAI 2 Settings -->
+  <div id="openai2Settings" style="display: none;">
+    <div class="form-group">
+      <label>Base URL</label>
+      <input type="text" id="openai2BaseUrl" placeholder="http://127.0.0.1:11434/v1">
+    </div>
+
+    <div class="form-group">
+      <label>API Key</label>
+      <input type="password" id="openai2ApiKey" placeholder="Optional for some local LLMs">
+    </div>
+
+    <div class="form-group">
+      <label>Model Name</label>
+      <input type="text" id="openai2Model" placeholder="llama3">
+    </div>
   </div>
 
   <div class="form-group">

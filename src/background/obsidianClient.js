@@ -69,7 +69,7 @@ export class ObsidianClient {
             }
 
             // 2. Find or create the browser history section
-            const sectionHeader = '## 🌐 ブラウザ閲覧履歴';
+            const sectionHeader = '# 🌐 ブラウザ閲覧履歴';
             let newContent;
 
             if (existingContent.includes(sectionHeader)) {
@@ -80,7 +80,7 @@ export class ObsidianClient {
                 // Find the next section (next ## header) or end of file
                 let insertIndex = sectionIndex + 1;
                 for (let i = sectionIndex + 1; i < lines.length; i++) {
-                    if (lines[i].startsWith('## ')) {
+                    if (lines[i].startsWith('# ')) {
                         insertIndex = i;
                         break;
                     }
