@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Obsidian Smart History",
+  "version": "1.0.0",
+  "description": "Smartly backup closed tabs to Obsidian with AI summaries and context linking.",
+  "permissions": [
+    "tabs",
+    "storage",
+    "scripting",
+    "scripting",
+    "identity",
+    "notifications"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:27123/*",
+    "http://localhost:27123/*",
+    "http://127.0.0.1:27124/*",
+    "http://localhost:27124/*",
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/content/extractor.js"
+      ]
+    }
+  ]
+}
