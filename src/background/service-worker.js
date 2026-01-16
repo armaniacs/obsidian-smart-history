@@ -94,7 +94,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // Success Notification
         chrome.notifications.create({
           type: 'basic',
-          iconUrl: '../icons/icon128.png',
+          iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
           title: 'Saved to Obsidian',
           message: `Saved: ${sender.tab.title}`
         });
@@ -108,7 +108,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // Error Notification
         chrome.notifications.create({
           type: 'basic',
-          iconUrl: '../icons/icon128.png',
+          iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
           title: 'Obsidian Sync Failed',
           message: `Error: ${e.message}`
         });
@@ -119,6 +119,59 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })();
 
     return true; // Keep the message channel open for async response
+  }
+  
+  // 手動記録処理（重複チェックなし）
+  if (message.type === 'MANUAL_RECORD') {
+    (async () => {
+      try {
+        const { title, url, content } = message.payload;
+
+        console.log(`Manual record requested: ${url}`);
+
+        // AI要約生成（既存のaiClientを使用）
+        let summary = "Summary not available.";
+        if (content) {
+          console.log('Generating AI Summary for manual record...');
+          summary = await aiClient.generateSummary(content);
+        }
+
+        // Markdown作成（既存パターンと同じ）
+        const timestamp = new Date().toLocaleTimeString('ja-JP', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        const markdown = `- ${timestamp} [${title}](${url})\n    - AI要約: ${summary}`;
+
+        // Obsidian保存（既存のobsidianClientを使用）
+        await obsidian.appendToDailyNote(markdown);
+        console.log('Manual record saved to Obsidian successfully.');
+
+        // 成功通知
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          title: 'Saved to Obsidian',
+          message: `手動記録: ${title}`
+        });
+
+        sendResponse({ success: true });
+      } catch (e) {
+        console.error('Failed to save manual record', e);
+
+        // エラー通知
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          title: 'Obsidian Sync Failed',
+          message: `Error: ${e.message}`
+        });
+
+        sendResponse({ success: false, error: e.message });
+      }
+    })();
+
+    return true; // 非同期レスポンス
   }
 });
 

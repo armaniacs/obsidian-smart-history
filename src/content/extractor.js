@@ -82,4 +82,16 @@ window.addEventListener('scroll', updateMaxScroll);
 // Check duration periodically
 setInterval(checkConditions, 1000);
 
+// Popupからの手動コンテンツ取得要求に応答
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'GET_CONTENT') {
+    const content = document.body.innerText
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 10000);
+
+    sendResponse({ content: content });
+  }
+  return true;
+});
 

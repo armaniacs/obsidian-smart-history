@@ -4,8 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+- **Manual Recording Feature**: Added "Record Now" button to manually record any page instantly without duplicate URL restrictions.
+- **Improved UI**: Separated main screen and settings screen with hamburger menu navigation.
+- **Main Screen Display**: Shows current page information (title, URL, favicon) in the main popup.
+- **Navigation System**: Implemented screen switching between main and settings views.
 - **LICENSE**: Added MIT License file (`LICENSE.md`).
 - **Privacy Policy**: Updated `PRIVACY.md` to explicitly mention data usage with OpenAI-compatible APIs (user-specified endpoints).
+
+### Changed
+- **Popup Layout**: Redesigned popup to show main screen by default instead of direct settings access.
+- **User Experience**: Enhanced workflow with manual recording option alongside automatic detection.
 
 ## [Commit 98a3686] - 2026-01-15
 ### Documentation

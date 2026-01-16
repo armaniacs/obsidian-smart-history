@@ -41,7 +41,20 @@
 3. 「パッケージ化されていない拡張機能を読み込む」からフォルダを選択します。
 
 ### ステップ4: 拡張機能の設定
-拡張機能のアイコンをクリックして設定画面を開きます。
+拡張機能のアイコンをクリックしてメイン画面を開きます。
+
+#### メイン画面
+- 現在開いているページのタイトルとURLが表示されます
+- 「📝 今すぐ記録」ボタンで手動記録ができます
+- 右上の「☰」メニューボタンから設定画面にアクセスします
+
+#### 手動記録機能
+- 自動記録の条件を満たさなくても、任意のタイミングでページを記録できます
+- 重複チェックがないため、同じページを何度でも記録可能です
+- 記録されるとChrome通知とステータスメッセージで確認できます
+
+#### 設定画面
+右上の「☰」メニューボタンをクリックして設定画面を開きます。
 
 #### 1. Obsidian設定
 *   **Obsidian API Key**: ステップ1でコピーしたキーを入力。
@@ -105,7 +118,20 @@
 3. Click "Load unpacked" and select the extension folder.
 
 ### Step 4: Configure Settings
-Click the extension icon to open settings.
+Click the extension icon to open the main screen.
+
+#### Main Screen
+- Current page title and URL are displayed
+- "📝 Record Now" button allows manual recording
+- Click the "☰" menu button in the top right to access settings
+
+#### Manual Recording Feature
+- Record any page at any time, regardless of automatic recording conditions
+- No duplicate URL restrictions - record the same page multiple times
+- Chrome notifications and status messages confirm successful recording
+
+#### Settings Screen
+Click the "☰" menu button in the top right to open settings.
 
 #### 1. Obsidian Settings
 *   **Obsidian API Key**: Paste the key from Step 1.

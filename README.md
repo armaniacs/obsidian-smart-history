@@ -20,6 +20,8 @@
 - 🎯 **スマート検出**: 実際に読んだページのみを保存します（滞在時間とスクロール深度に基づきます）。
 - 📂 **整理された保存**: デイリーノート内に専用の「ブラウザ閲覧履歴」セクションを自動作成し、管理します。
 - ⚙️ **カスタマイズ可能**: 最小滞在時間、スクロール深度、API設定などを自由に構成できます。
+- 🖱️ **手動記録機能**: 「今すぐ記録」ボタンで現在のページを即座に記録できます。重複チェックなしで同じページを複数回記録可能です。
+- 📱 **改良されたUI**: メイン画面と設定画面を分離し、ハンバーガーメニューから簡単にアクセスできます。
 
 ### 必要なもの
 - [Obsidian](https://obsidian.md/) と [Local REST API プラグイン](https://github.com/coddingtonbear/obsidian-local-rest-api)
@@ -36,13 +38,28 @@
 3. 右上の「デベロッパーモード」を有効にします。
 4. 「パッケージ化されていない拡張機能を読み込む」をクリックし、解凍したフォルダを選択します。
 
+### 使い方
+
+#### 自動記録
+- ウェブページを5秒以上閲覧し、50%以上スクロールすると自動的に記録されます
+- 重複URLは記録されません（同じページは1日1回のみ）
+
+#### 手動記録
+1. ツールバーの拡張機能アイコンをクリックしてメイン画面を開きます
+2. 現在のページ情報が表示されます
+3. 「📝 今すぐ記録」ボタンをクリックすると、即座に現在のページが記録されます
+4. 手動記録では重複チェックがないため、同じページを何度でも記録できます
+
 ### 設定
 1. ツールバーの拡張機能アイコンをクリックします。
-2. 以下の設定を入力してください：
+2. メイン画面の右上にある「☰」メニューボタンをクリックして設定画面を開きます。
+3. 以下の設定を入力してください：
    - **Obsidian API Key**: ObsidianのLocal REST API設定で取得したキー
-   - **Daily Notes Path**: デイリーノートの保存先フォルダ。`YYYY`, `MM`, `DD` プレースホルダーを使用して動的にフォルダを指定できます（例: `daily/YYYY/MM`）。
-   - **Gemini API Key**: Google AI Studioで取得したAPIキー
-3. 「Save Settings」をクリックし、「Test Connection」で接続を確認してください。
+   - **Protocol/Port**: Obsidian Local REST APIのプロトコルとポート（通常はhttps/27123）
+   - **Daily Notes Path**: デイリーノートの保存先フォルダ（例: `092.Daily`）
+   - **AI Provider**: 使用するAIサービスを選択（Gemini、OpenAI互換など）
+   - **各AIプロバイダーのAPIキーとモデル設定**
+4. 「Save & Test Connection」をクリックし、「Test Connection」で接続を確認してください。
 
 
 ### Obsidianへの追加の仕組みは以下のようになっています（src/background/obsidianClient.js）。
@@ -73,11 +90,13 @@ Obsidian Local REST APIを使用して、そのファイルの現在の内容を
 A Chrome extension that automatically saves your browsing history to Obsidian with AI-generated summaries.
 
 ### Features
-- 🤖 **AI-Powered Summaries**: Automatically generates concise summaries of web pages using Google's Gemini API
+- 🤖 **AI-Powered Summaries**: Automatically generates concise summaries of web pages using Google's Gemini API or OpenAI-compatible APIs
 - 📝 **Obsidian Integration**: Saves browsing history directly to your Obsidian daily notes
 - 🎯 **Smart Detection**: Only saves pages you actually read (based on scroll depth and time spent)
 - 📂 **Organized Storage**: Automatically creates and maintains a dedicated "Browser History" section in your daily notes
 - ⚙️ **Customizable**: Configure minimum visit duration, scroll depth, and API settings
+- 🖱️ **Manual Recording**: Record any page instantly with the "Record Now" button. No duplicate URL restrictions - record the same page multiple times.
+- 📱 **Improved UI**: Separated main screen and settings with easy hamburger menu access.
 
 ### Requirements
 - [Obsidian](https://obsidian.md/) with [Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api)
@@ -89,10 +108,28 @@ A Chrome extension that automatically saves your browsing history to Obsidian wi
 3. Enable "Developer mode" in the top right
 4. Click "Load unpacked" and select the extension directory
 
+### Usage
+
+#### Automatic Recording
+- Pages are automatically recorded when you browse for 5+ seconds and scroll 50%+ of the page
+- Duplicate URLs are not recorded (same page only once per day)
+
+#### Manual Recording
+1. Click the extension icon to open the main screen
+2. Current page information will be displayed
+3. Click the "📝 Record Now" button to instantly record the current page
+4. Manual recording has no duplicate restrictions - record the same page multiple times
+
 ### Setup
 1. Click the extension icon in your toolbar
-2. Configure settings (Obsidian API Key, Daily Notes Path, Gemini API Key)
-3. Click "Save Settings" and "Test Connection" to verify connectivity.
+2. Click the "☰" menu button in the top right to open settings
+3. Configure settings:
+   - **Obsidian API Key**: Key from Obsidian's Local REST API settings
+   - **Protocol/Port**: Obsidian Local REST API protocol and port (usually https/27123)
+   - **Daily Notes Path**: Folder path for daily notes (e.g., `092.Daily`)
+   - **AI Provider**: Select your preferred AI service (Gemini, OpenAI Compatible, etc.)
+   - **API keys and model settings for each AI provider**
+4. Click "Save & Test Connection" to verify connectivity.
 
 ---
 

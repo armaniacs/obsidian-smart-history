@@ -1,5 +1,6 @@
 import { StorageKeys, saveSettings, getSettings } from '../utils/storage.js';
 import { ObsidianClient } from '../background/obsidianClient.js';
+import { init as initNavigation } from './navigation.js';
 
 // Elements
 const apiKeyInput = document.getElementById('apiKey');
@@ -134,5 +135,8 @@ saveBtn.addEventListener('click', async () => {
         }
     }
 });
+
+// Initialize navigation
+initNavigation();
 
 load();
