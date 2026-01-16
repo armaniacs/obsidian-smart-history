@@ -82,6 +82,23 @@
 
 設定を入力したら、**「Save & Test Connection」**をクリックして接続を確認してください。
 
+#### 3. ドメインフィルター設定
+「ドメインフィルター」タブで、記録するドメインを制御できます。
+
+**フィルターモードの選択**:
+- **無効**: すべてのドメインを記録します
+- **ホワイトリスト**: 指定したドメインのみ記録します
+- **ブラックリスト**: 指定したドメインを除外して記録します
+
+**ドメインリストの管理**:
+- 1行に1ドメインを入力します
+- ワイルドカードも使用できます（例: `*.example.com`）
+- 「現在のページドメインを追加」ボタンで、現在開いているページのドメインを簡単に追加できます
+- wwwなどのサブドメインは自動的に除去されます（www.example.com → example.com）
+
+**初期設定**:
+- デフォルトはブラックリストモードで、一般的なサイト（Amazon、Google、Facebookなど）があらかじめ設定されています
+
 ---
 
 ## English
@@ -148,3 +165,20 @@ Select your preferred provider from the dropdown.
 *   **OpenAI Compatible 2**: Use this for a secondary provider like a local LLM (`http://localhost:11434/v1`).
 
 Click **"Save & Test Connection"** to verify.
+
+#### 3. Domain Filter Settings
+In the "Domain Filter" tab, you can control which domains to record.
+
+**Filter Mode Selection**:
+- **Disabled**: Record all domains
+- **Whitelist**: Only record specified domains
+- **Blacklist**: Record all domains except those specified
+
+**Domain List Management**:
+- Enter one domain per line
+- Wildcards are supported (e.g., `*.example.com`)
+- Use the "Add Current Domain" button to easily add the domain of the currently open page
+- Subdomains like www are automatically removed (www.example.com → example.com)
+
+**Initial Settings**:
+- Default is blacklist mode with common sites (Amazon, Google, Facebook, etc.) pre-configured

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+- **Domain Filter Feature**: Added whitelist/blacklist functionality to control which domains are recorded.
+  - Three filter modes: Disabled (record all), Whitelist (record only specified domains), Blacklist (exclude specified domains)
+  - Wildcard pattern support (e.g., `*.example.com`)
+  - "Add Current Domain" button to easily add the domain of the currently open page
+  - Automatic subdomain removal (www.example.com → example.com)
+  - Default blacklist mode with common sites pre-configured
 - **Manual Recording Feature**: Added "Record Now" button to manually record any page instantly without duplicate URL restrictions.
 - **Improved UI**: Separated main screen and settings screen with hamburger menu navigation.
 - **Main Screen Display**: Shows current page information (title, URL, favicon) in the main popup.

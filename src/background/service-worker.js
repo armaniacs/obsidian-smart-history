@@ -1,6 +1,7 @@
 import { ObsidianClient } from './obsidianClient.js';
 import { AIClient } from './aiClient.js';
 import { getSettings, StorageKeys } from '../utils/storage.js';
+import { isDomainAllowed } from '../utils/domainUtils.js';
 
 const obsidian = new ObsidianClient();
 const aiClient = new AIClient();
@@ -57,8 +58,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       console.log(`Tab ${tabId} marked as VALID visit. Processing immediately...`);
 
-      // Check if this URL has already been saved
+      // Check domain filter
       const url = sender.tab.url;
+      const isAllowed = await isDomainAllowed(url);
+      
+      if (!isAllowed) {
+        console.log(`URL blocked by domain filter: ${url}`);
+        return;
+      }
+
+      // Check if this URL has already been saved
       const savedUrls = await chrome.storage.local.get('savedUrls');
       const urlSet = new Set(savedUrls.savedUrls || []);
 
@@ -128,6 +137,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const { title, url, content } = message.payload;
 
         console.log(`Manual record requested: ${url}`);
+
+        // Check domain filter
+        const isAllowed = await isDomainAllowed(url);
+        
+        if (!isAllowed) {
+          console.log(`Manual record blocked by domain filter: ${url}`);
+          sendResponse({ success: false, error: 'このドメインは記録が許可されていません' });
+          return;
+        }
 
         // AI要約生成（既存のaiClientを使用）
         let summary = "Summary not available.";

@@ -18,7 +18,11 @@ export const StorageKeys = {
     OPENAI_MODEL: 'openai_model',
     OPENAI_2_BASE_URL: 'openai_2_base_url',
     OPENAI_2_API_KEY: 'openai_2_api_key',
-    OPENAI_2_MODEL: 'openai_2_model'
+    OPENAI_2_MODEL: 'openai_2_model',
+    // Domain filter settings
+    DOMAIN_WHITELIST: 'domain_whitelist',
+    DOMAIN_BLACKLIST: 'domain_blacklist',
+    DOMAIN_FILTER_MODE: 'domain_filter_mode'
 };
 
 const DEFAULT_SETTINGS = {
@@ -32,7 +36,23 @@ const DEFAULT_SETTINGS = {
     [StorageKeys.OPENAI_BASE_URL]: 'https://api.groq.com/openai/v1',
     [StorageKeys.OPENAI_MODEL]: 'openai/gpt-oss-20b',
     [StorageKeys.OPENAI_2_BASE_URL]: 'http://127.0.0.1:11434/v1',
-    [StorageKeys.OPENAI_2_MODEL]: 'llama3'
+    [StorageKeys.OPENAI_2_MODEL]: 'llama3',
+    // Domain filter defaults
+    [StorageKeys.DOMAIN_WHITELIST]: [],
+    [StorageKeys.DOMAIN_BLACKLIST]: [
+        'amazon.co.jp',
+        'amazon.com',
+        'yahoo.co.jp',
+        'yahoo.com',
+        'facebook.com',
+        'twitter.com',
+        'x.com',
+        'instagram.com',
+        'youtube.com',
+        'google.com',
+        'google.co.jp'
+    ],
+    [StorageKeys.DOMAIN_FILTER_MODE]: 'blacklist' // 'whitelist', 'blacklist', 'disabled'
 };
 
 export async function getSettings() {

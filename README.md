@@ -22,6 +22,7 @@
 - ⚙️ **カスタマイズ可能**: 最小滞在時間、スクロール深度、API設定などを自由に構成できます。
 - 🖱️ **手動記録機能**: 「今すぐ記録」ボタンで現在のページを即座に記録できます。重複チェックなしで同じページを複数回記録可能です。
 - 📱 **改良されたUI**: メイン画面と設定画面を分離し、ハンバーガーメニューから簡単にアクセスできます。
+- 🌐 **ドメインフィルター**: ホワイトリスト/ブラックリストで記録するドメインを制御できます。ワイルドカードパターンに対応。
 
 ### 必要なもの
 - [Obsidian](https://obsidian.md/) と [Local REST API プラグイン](https://github.com/coddingtonbear/obsidian-local-rest-api)
@@ -61,6 +62,15 @@
    - **各AIプロバイダーのAPIキーとモデル設定**
 4. 「Save & Test Connection」をクリックし、「Test Connection」で接続を確認してください。
 
+#### ドメインフィルター設定
+設定画面の「ドメインフィルター」タブで、記録するドメインを制御できます：
+
+- **無効**: すべてのドメインを記録します
+- **ホワイトリスト**: 指定したドメインのみ記録します
+- **ブラックリスト**: 指定したドメインを除外して記録します
+
+ドメインリストではワイルドカードも使用できます（例: `*.example.com`）。「現在のページドメインを追加」ボタンで簡単にドメインを追加できます。
+
 
 ### Obsidianへの追加の仕組みは以下のようになっています（src/background/obsidianClient.js）。
 
@@ -97,6 +107,7 @@ A Chrome extension that automatically saves your browsing history to Obsidian wi
 - ⚙️ **Customizable**: Configure minimum visit duration, scroll depth, and API settings
 - 🖱️ **Manual Recording**: Record any page instantly with the "Record Now" button. No duplicate URL restrictions - record the same page multiple times.
 - 📱 **Improved UI**: Separated main screen and settings with easy hamburger menu access.
+- 🌐 **Domain Filtering**: Control which domains to record with whitelist/blacklist support. Wildcard patterns supported.
 
 ### Requirements
 - [Obsidian](https://obsidian.md/) with [Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api)
@@ -130,6 +141,15 @@ A Chrome extension that automatically saves your browsing history to Obsidian wi
    - **AI Provider**: Select your preferred AI service (Gemini, OpenAI Compatible, etc.)
    - **API keys and model settings for each AI provider**
 4. Click "Save & Test Connection" to verify connectivity.
+
+#### Domain Filter Settings
+In the "Domain Filter" tab of the settings screen, you can control which domains to record:
+
+- **Disabled**: Record all domains
+- **Whitelist**: Only record specified domains
+- **Blacklist**: Record all domains except those specified
+
+You can use wildcards in the domain list (e.g., `*.example.com`). Use the "Add Current Domain" button to easily add domains.
 
 ---
 
