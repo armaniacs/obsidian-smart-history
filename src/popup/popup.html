@@ -2,6 +2,7 @@
 <html>
 
 <head>
+  <meta charset="UTF-8">
   <title>Obsidian Smart History Settings</title>
   <style>
     body {
@@ -105,12 +106,16 @@
     }
 
     input[type="text"],
-    input[type="password"] {
+    input[type="password"],
+    textarea {
       width: 100%;
       padding: 8px;
       box-sizing: border-box;
       border: 1px solid #ccc;
       border-radius: 4px;
+      font-family: inherit;
+      font-size: 13px;
+      resize: vertical;
     }
 
     button:not(.icon-btn):not(.primary-btn) {
@@ -142,6 +147,83 @@
     .error {
       color: red;
     }
+
+    /* Tab Navigation */
+    .tab-nav {
+      display: flex;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .tab-btn.active {
+      border-bottom-color: #7b3cad;
+      color: #7b3cad;
+    }
+
+    .tab-btn:hover {
+      background: #f5f5f5;
+    }
+
+    .tab-panel {
+      display: block;
+    }
+
+    .tab-panel:not(.active) {
+      display: none;
+    }
+
+    /* Radio Group */
+    .radio-group {
+      margin-bottom: 10px;
+    }
+
+    .radio-group div {
+      margin-bottom: 8px;
+    }
+
+    .radio-group input[type="radio"] {
+      margin-right: 8px;
+    }
+
+    .radio-group label {
+      display: inline;
+      font-size: 13px;
+    }
+
+    /* Secondary Button */
+    .secondary-btn {
+      width: 100%;
+      padding: 10px;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .secondary-btn:hover {
+      background: #5a6268;
+    }
+
+    /* Help Text */
+    .help-text {
+      font-size: 11px;
+      color: #666;
+      margin-top: 5px;
+    }
   </style>
 </head>
 
@@ -171,6 +253,15 @@
       <button id="backBtn" class="icon-btn">←</button>
       <h2>Settings</h2>
     </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button id="generalTab" class="tab-btn active">一般</button>
+      <button id="domainTab" class="tab-btn">ドメインフィルター</button>
+    </div>
+
+    <!-- General Settings Panel -->
+    <div id="generalPanel" class="tab-panel active">
 
     <div class="form-group">
     <label>Obsidian API Key</label>
@@ -262,13 +353,53 @@
     <input type="number" id="minScrollDepth" min="0" max="100" value="50">
   </div>
 
-    <button id="save">Save & Test Connection</button>
-    <div id="status"></div>
+      <button id="save">Save & Test Connection</button>
+      <div id="status"></div>
+    </div>
+
+    <!-- Domain Filter Panel -->
+    <div id="domainPanel" class="tab-panel" style="display: none;">
+      <div class="form-group">
+        <label>ドメインフィルターモード</label>
+        <div class="radio-group">
+          <div>
+            <input type="radio" id="filterDisabled" name="domainFilter" value="disabled">
+            <label for="filterDisabled">無効 (すべて記録)</label>
+          </div>
+          <div>
+            <input type="radio" id="filterWhitelist" name="domainFilter" value="whitelist">
+            <label for="filterWhitelist">ホワイトリスト (指定ドメインのみ記録)</label>
+          </div>
+          <div>
+            <input type="radio" id="filterBlacklist" name="domainFilter" value="blacklist">
+            <label for="filterBlacklist">ブラックリスト (指定ドメインを除外)</label>
+          </div>
+        </div>
+      </div>
+
+      <div id="domainListSection">
+        <div class="form-group">
+          <label id="domainListLabel">ドメインリスト (1行に1ドメイン)</label>
+          <textarea id="domainList" rows="8" placeholder="example.com&#10;*.example.org&#10;company.net"></textarea>
+          <div class="help-text">
+            ワイルドカードも使用できます (例: *.example.com)
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <button id="addCurrentDomain" class="secondary-btn">現在のページドメインを追加</button>
+        </div>
+      </div>
+
+      <button id="saveDomainSettings">保存</button>
+      <div id="domainStatus"></div>
+    </div>
   </div>
 
   <script type="module" src="navigation.js"></script>
   <script type="module" src="main.js"></script>
   <script type="module" src="popup.js"></script>
+  <script type="module" src="domainFilter.js"></script>
 </body>
 
 </html>
