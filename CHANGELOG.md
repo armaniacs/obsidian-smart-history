@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [2.0.0] - 2026-01-16
 ### Added
 - **Domain Filter Feature**: Added whitelist/blacklist functionality to control which domains are recorded.
   - Three filter modes: Disabled (record all), Whitelist (record only specified domains), Blacklist (exclude specified domains)
