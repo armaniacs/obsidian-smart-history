@@ -63,10 +63,16 @@ function reportValidVisit() {
             }
         }, (response) => {
             if (chrome.runtime.lastError) {
-                console.error("SendMessage Error:", chrome.runtime.lastError.message);
+                // Silently ignore "Receiving end does not exist" errors
+                // This happens when the service worker is not ready yet
+                if (chrome.runtime.lastError.message.includes("Receiving end does not exist")) {
+                    console.log("Service worker not ready yet, skipping this visit.");
+                } else {
+                    console.error("SendMessage Error:", chrome.runtime.lastError.message);
+                }
             } else if (response && !response.success) {
+                // Only log errors to console, no popup
                 console.error("Background Worker Error:", response.error);
-                alert(`Obsidian Smart History Error:\n${response.error}`); // Optional: alert the user directly
             } else {
                 console.log("Message sent successfully. Response:", response);
             }
@@ -84,14 +90,14 @@ setInterval(checkConditions, 1000);
 
 // Popupからの手動コンテンツ取得要求に応答
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'GET_CONTENT') {
-    const content = document.body.innerText
-      .replace(/\s+/g, ' ')
-      .trim()
-      .substring(0, 10000);
+    if (message.type === 'GET_CONTENT') {
+        const content = document.body.innerText
+            .replace(/\s+/g, ' ')
+            .trim()
+            .substring(0, 10000);
 
-    sendResponse({ content: content });
-  }
-  return true;
+        sendResponse({ content: content });
+    }
+    return true;
 });
 

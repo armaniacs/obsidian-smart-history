@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-01-17
+### Fixed
+- **Error Popup Removal**: Removed unnecessary error popup when a domain is not allowed to be recorded. Errors are now only logged to the console.
+- **Improved Error Handling**: Enhanced error messages in the popup for connection issues, providing clearer guidance to users (e.g., "Please reload the page and try again").
+- **Service Worker Connection**: Improved handling of "Receiving end does not exist" errors that occur when the service worker is not ready yet.
+
 ## [2.0.1] - 2026-01-17
 ### Added
 - **Force Record**: Added a feature to allow users to force record pages even if they are on the blacklist.

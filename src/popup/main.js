@@ -62,8 +62,12 @@ async function recordCurrentPage(force = false) {
   } catch (error) {
     statusDiv.className = 'error';
 
+    // Handle connection errors more gracefully
+    if (error.message && error.message.includes("Receiving end does not exist")) {
+      statusDiv.textContent = '✗ エラー: ページを再読み込みしてから再度お試しください';
+    }
     // Check for the specific domain blocked error
-    if (error.message === 'このドメインは記録が許可されていません') {
+    else if (error.message === 'このドメインは記録が許可されていません') {
       statusDiv.textContent = 'このドメインは記録が許可されていませんが特別に記録しますか？';
 
       const forceBtn = document.createElement('button');

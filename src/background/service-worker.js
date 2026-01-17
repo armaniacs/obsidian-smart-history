@@ -40,8 +40,83 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
+// Core recording logic
+async function processUrlRecording(data) {
+  const { title, url, content, force = false, skipDuplicateCheck = false } = data;
+
+  try {
+    // 1. Check domain filter
+    const isAllowed = await isDomainAllowed(url);
+
+    if (!isAllowed && !force) {
+      console.log(`Blocked by domain filter: ${url}`);
+      return { success: false, error: 'このドメインは記録が許可されていません' };
+    }
+
+    if (!isAllowed && force) {
+      console.log(`Force recording for blocked domain: ${url}`);
+    }
+
+    // 2. Check for details
+    const savedUrls = await chrome.storage.local.get('savedUrls');
+    const urlSet = new Set(savedUrls.savedUrls || []);
+
+    if (!skipDuplicateCheck && urlSet.has(url)) {
+      console.log(`URL already saved, skipping: ${url}`);
+      return { success: true, skipped: true };
+    }
+
+    // 3. Generate AI Summary
+    let summary = "Summary not available.";
+    if (content) {
+      console.log(`Generating AI Summary...`);
+      // Re-use aiClient instance
+      summary = await aiClient.generateSummary(content);
+    }
+
+    // 4. Format Markdown
+    const timestamp = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+    const markdown = `- ${timestamp} [${title}](${url})\n    - AI要約: ${summary}`;
+
+    // 5. Save to Obsidian
+    await obsidian.appendToDailyNote(markdown);
+    console.log("Saved to Obsidian successfully.");
+
+    // 6. Update saved list
+    if (!urlSet.has(url)) {
+      urlSet.add(url);
+      await chrome.storage.local.set({ savedUrls: Array.from(urlSet) });
+      console.log(`URL added to saved list: ${url}`);
+    }
+
+    // 7. Notification
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      title: 'Saved to Obsidian',
+      message: `Saved: ${title}`
+    });
+
+    return { success: true };
+
+  } catch (e) {
+    console.error("Failed to process recording", e);
+
+    // Error Notification
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      title: 'Obsidian Sync Failed',
+      message: `Error: ${e.message}`
+    });
+
+    return { success: false, error: e.message };
+  }
+}
+
 // Listen for messages from Content Script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Automatic Visit Processing
   if (message.type === 'VALID_VISIT' && sender.tab) {
     (async () => {
       const tabId = sender.tab.id;
@@ -56,145 +131,39 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         isValidVisit: true
       });
 
-      console.log(`Tab ${tabId} marked as VALID visit. Processing immediately...`);
+      console.log(`Tab ${tabId} marked as VALID visit. Processing...`);
 
-      // Check domain filter
-      const url = sender.tab.url;
-      const isAllowed = await isDomainAllowed(url);
-      
-      if (!isAllowed) {
-        console.log(`URL blocked by domain filter: ${url}`);
-        return;
-      }
+      // Call shared logic
+      const result = await processUrlRecording({
+        title: sender.tab.title,
+        url: sender.tab.url,
+        content: message.payload.content,
+        skipDuplicateCheck: false // Auto record checks duplicates
+      });
 
-      // Check if this URL has already been saved
-      const savedUrls = await chrome.storage.local.get('savedUrls');
-      const urlSet = new Set(savedUrls.savedUrls || []);
-
-      if (urlSet.has(url)) {
-        console.log(`URL already saved, skipping: ${url}`);
-        return;
-      }
-
-      // Trigger AI Summary immediately
-      try {
-        const settings = await getSettings();
-        const apiKey = settings[StorageKeys.GEMINI_API_KEY];
-        const modelName = settings[StorageKeys.GEMINI_MODEL] || 'gemini-1.5-flash';
-
-        let summary = "Summary not available.";
-        if (message.payload.content) {
-          console.log(`Generating AI Summary...`);
-          summary = await aiClient.generateSummary(message.payload.content);
-        }
-
-        // Format the entry
-        const timestamp = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
-        const markdown = `- ${timestamp} [${sender.tab.title}](${sender.tab.url})\n    - AI要約: ${summary}`;
-
-        await obsidian.appendToDailyNote(markdown);
-        console.log("Saved to Obsidian successfully.");
-
-        // Add URL to saved list
-        urlSet.add(url);
-        await chrome.storage.local.set({ savedUrls: Array.from(urlSet) });
-        console.log(`URL added to saved list: ${url}`);
-
-        // Success Notification
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-          title: 'Saved to Obsidian',
-          message: `Saved: ${sender.tab.title}`
-        });
-
-        // Send success response
-        sendResponse({ success: true });
-
-      } catch (e) {
-        console.error("Failed to sync to Obsidian", e);
-
-        // Error Notification
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-          title: 'Obsidian Sync Failed',
-          message: `Error: ${e.message}`
-        });
-
-        // Send error response
-        sendResponse({ success: false, error: e.message });
-      }
+      sendResponse(result);
     })();
 
-    return true; // Keep the message channel open for async response
+    return true; // Keep channel open
   }
-  
-  // 手動記録処理（重複チェックなし）
+
+  // Manual Record Processing
   if (message.type === 'MANUAL_RECORD') {
     (async () => {
-      try {
-        const { title, url, content } = message.payload;
+      console.log(`Manual record requested: ${message.payload.url}`);
 
-        console.log(`Manual record requested: ${url}`);
+      const result = await processUrlRecording({
+        title: message.payload.title,
+        url: message.payload.url,
+        content: message.payload.content,
+        force: message.payload.force,
+        skipDuplicateCheck: true // Manual record generally skips duplicate check
+      });
 
-        // Check domain filter
-        const isAllowed = await isDomainAllowed(url);
-        const isForce = message.payload.force === true;
-        
-        if (!isAllowed && !isForce) {
-          console.log(`Manual record blocked by domain filter: ${url}`);
-          sendResponse({ success: false, error: 'このドメインは記録が許可されていません' });
-          return;
-        }
-
-        if (isForce) {
-             console.log(`Manual record forced for blocked domain: ${url}`);
-        }
-
-        // AI要約生成（既存のaiClientを使用）
-        let summary = "Summary not available.";
-        if (content) {
-          console.log('Generating AI Summary for manual record...');
-          summary = await aiClient.generateSummary(content);
-        }
-
-        // Markdown作成（既存パターンと同じ）
-        const timestamp = new Date().toLocaleTimeString('ja-JP', {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        const markdown = `- ${timestamp} [${title}](${url})\n    - AI要約: ${summary}`;
-
-        // Obsidian保存（既存のobsidianClientを使用）
-        await obsidian.appendToDailyNote(markdown);
-        console.log('Manual record saved to Obsidian successfully.');
-
-        // 成功通知
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-          title: 'Saved to Obsidian',
-          message: `手動記録: ${title}`
-        });
-
-        sendResponse({ success: true });
-      } catch (e) {
-        console.error('Failed to save manual record', e);
-
-        // エラー通知
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-          title: 'Obsidian Sync Failed',
-          message: `Error: ${e.message}`
-        });
-
-        sendResponse({ success: false, error: e.message });
-      }
+      sendResponse(result);
     })();
 
-    return true; // 非同期レスポンス
+    return true; // Keep channel open
   }
 });
 
