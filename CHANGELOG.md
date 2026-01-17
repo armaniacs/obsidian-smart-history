@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-01-17
+### Added
+- **Force Record**: Added a feature to allow users to force record pages even if they are on the blacklist.
+
+
 ## [2.0.0] - 2026-01-16
 ### Added
 - **Domain Filter Feature**: Added whitelist/blacklist functionality to control which domains are recorded.

@@ -140,11 +140,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         // Check domain filter
         const isAllowed = await isDomainAllowed(url);
+        const isForce = message.payload.force === true;
         
-        if (!isAllowed) {
+        if (!isAllowed && !isForce) {
           console.log(`Manual record blocked by domain filter: ${url}`);
           sendResponse({ success: false, error: 'このドメインは記録が許可されていません' });
           return;
+        }
+
+        if (isForce) {
+             console.log(`Manual record forced for blocked domain: ${url}`);
         }
 
         // AI要約生成（既存のaiClientを使用）

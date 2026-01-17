@@ -27,7 +27,7 @@ async function loadCurrentTab() {
 }
 
 // 手動記録処理
-async function recordCurrentPage() {
+async function recordCurrentPage(force = false) {
   const statusDiv = document.getElementById('mainStatus');
   statusDiv.textContent = '記録中...';
   statusDiv.className = '';
@@ -48,7 +48,8 @@ async function recordCurrentPage() {
       payload: {
         title: tab.title,
         url: tab.url,
-        content: contentResponse.content
+        content: contentResponse.content,
+        force: force
       }
     });
 
@@ -59,13 +60,34 @@ async function recordCurrentPage() {
       throw new Error(response.error || '保存に失敗しました');
     }
   } catch (error) {
-    statusDiv.textContent = `✗ エラー: ${error.message}`;
     statusDiv.className = 'error';
+
+    // Check for the specific domain blocked error
+    if (error.message === 'このドメインは記録が許可されていません') {
+      statusDiv.textContent = 'このドメインは記録が許可されていませんが特別に記録しますか？';
+
+      const forceBtn = document.createElement('button');
+      forceBtn.textContent = '強制記録';
+      forceBtn.className = 'secondary-btn'; // Use existing style
+      forceBtn.style.marginTop = '10px';
+      forceBtn.style.backgroundColor = '#d9534f'; // Reddish color for emphasis
+
+      forceBtn.onclick = () => {
+        // Remove the button to prevent multiple clicks
+        forceBtn.disabled = true;
+        forceBtn.textContent = '記録中...';
+        recordCurrentPage(true); // Call with force=true
+      };
+
+      statusDiv.appendChild(forceBtn);
+    } else {
+      statusDiv.textContent = `✗ エラー: ${error.message}`;
+    }
   }
 }
 
 // イベントリスナー設定
-document.getElementById('recordBtn').addEventListener('click', recordCurrentPage);
+document.getElementById('recordBtn').addEventListener('click', () => recordCurrentPage(false));
 
 // 初期化
 loadCurrentTab();
