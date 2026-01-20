@@ -1,4 +1,6 @@
 // Main screen functionality
+import { getSettings, StorageKeys } from '../utils/storage.js';
+import { showPreview } from './sanitizePreview.js';
 
 // 現在のタブ情報を取得して表示
 async function loadCurrentTab() {
@@ -29,7 +31,7 @@ async function loadCurrentTab() {
 // 手動記録処理
 async function recordCurrentPage(force = false) {
   const statusDiv = document.getElementById('mainStatus');
-  statusDiv.textContent = '記録中...';
+  statusDiv.textContent = '処理中...';
   statusDiv.className = '';
 
   try {
@@ -39,25 +41,84 @@ async function recordCurrentPage(force = false) {
       throw new Error('記録できないページです');
     }
 
+    // 設定確認
+    const settings = await getSettings();
+    const usePreview = settings[StorageKeys.PII_CONFIRMATION_UI] !== false; // Default true
+
     // Content Scriptにコンテンツ取得を要求
+    statusDiv.textContent = 'コンテンツ取得中...';
     const contentResponse = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CONTENT' });
 
     // Background Workerに記録を要求
-    const response = await chrome.runtime.sendMessage({
-      type: 'MANUAL_RECORD',
-      payload: {
-        title: tab.title,
-        url: tab.url,
-        content: contentResponse.content,
-        force: force
-      }
-    });
+    let result;
 
-    if (response.success) {
+    if (usePreview) {
+      statusDiv.textContent = 'ローカルAI処理中...';
+      // 1. プレビュー用データ取得 (L1/L2 processing)
+      const previewResponse = await chrome.runtime.sendMessage({
+        type: 'PREVIEW_RECORD',
+        payload: {
+          title: tab.title,
+          url: tab.url,
+          content: contentResponse.content,
+          force: force
+        }
+      });
+
+      if (!previewResponse.success) {
+        throw new Error(previewResponse.error || '処理に失敗しました');
+      }
+
+      // Mode C (masked_cloud) の場合は、マスクが行われた場合のみ確認画面を表示する
+      // Mode B などは基本表示する（要約内容の確認のため）
+      let shouldShowPreview = true;
+      if (previewResponse.mode === 'masked_cloud') {
+        shouldShowPreview = (previewResponse.maskedCount || 0) > 0;
+      }
+
+      let finalContent = previewResponse.processedContent;
+
+      if (shouldShowPreview) {
+        // 2. ユーザー確認
+        const confirmation = await showPreview(previewResponse.processedContent);
+
+        if (!confirmation.confirmed) {
+          statusDiv.textContent = 'キャンセルしました';
+          return;
+        }
+        finalContent = confirmation.content;
+      }
+
+      // 3. 確定データ送信 (L3 processing & Save)
+      statusDiv.textContent = '保存中...';
+      result = await chrome.runtime.sendMessage({
+        type: 'SAVE_RECORD',
+        payload: {
+          title: tab.title,
+          url: tab.url,
+          content: finalContent, // Edited or processed content
+          force: force
+        }
+      });
+
+    } else {
+      // 確認なしの既存フロー
+      result = await chrome.runtime.sendMessage({
+        type: 'MANUAL_RECORD',
+        payload: {
+          title: tab.title,
+          url: tab.url,
+          content: contentResponse.content,
+          force: force
+        }
+      });
+    }
+
+    if (result.success) {
       statusDiv.textContent = '✓ Obsidianに保存しました';
       statusDiv.className = 'success';
     } else {
-      throw new Error(response.error || '保存に失敗しました');
+      throw new Error(result.error || '保存に失敗しました');
     }
   } catch (error) {
     statusDiv.className = 'error';

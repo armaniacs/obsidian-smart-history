@@ -224,6 +224,94 @@
       color: #666;
       margin-top: 5px;
     }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      width: 90%;
+      max-height: 90%;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+      padding: 12px 15px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .modal-body {
+      padding: 15px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .preview-textarea {
+      width: 100%;
+      height: 200px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.5;
+      resize: vertical;
+    }
+
+    .modal-footer {
+      padding: 12px 15px;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .btn-cancel {
+      padding: 8px 16px;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-confirm {
+      padding: 8px 16px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .masked-highlight {
+      background-color: #fff3cd;
+      color: #856404;
+      padding: 0 2px;
+      border-radius: 2px;
+    }
   </style>
 </head>
 
@@ -258,100 +346,101 @@
     <div class="tab-nav">
       <button id="generalTab" class="tab-btn">一般</button>
       <button id="domainTab" class="tab-btn active">ドメインフィルター</button>
+      <button id="privacyTab" class="tab-btn">プライバシー</button>
     </div>
 
     <!-- General Settings Panel -->
     <div id="generalPanel" class="tab-panel" style="display: none;">
 
-    <div class="form-group">
-    <label>Obsidian API Key</label>
-    <input type="password" id="apiKey" placeholder="Paste your key here...">
-  </div>
+      <div class="form-group">
+        <label>Obsidian API Key</label>
+        <input type="password" id="apiKey" placeholder="Paste your key here...">
+      </div>
 
-  <div class="form-group">
-    <label>Protocol (http/https)</label>
-    <input type="text" id="protocol" value="https">
-  </div>
+      <div class="form-group">
+        <label>Protocol (http/https)</label>
+        <input type="text" id="protocol" value="https">
+      </div>
 
-  <div class="form-group">
-    <label>Port</label>
-    <input type="text" id="port" value="27123">
-  </div>
+      <div class="form-group">
+        <label>Port</label>
+        <input type="text" id="port" value="27123">
+      </div>
 
-  <div class="form-group">
-    <label>Daily Note Path</label>
-    <input type="text" id="dailyPath" placeholder="e.g. 092.Daily">
-  </div>
+      <div class="form-group">
+        <label>Daily Note Path</label>
+        <input type="text" id="dailyPath" placeholder="e.g. 092.Daily">
+      </div>
 
-  <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
+      <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
 
-  <div class="form-group">
-    <label>AI Provider</label>
-    <select id="aiProvider">
-      <option value="gemini">Google Gemini</option>
-      <option value="openai">OpenAI Compatible (Groq, etc.)</option>
-      <option value="openai2">OpenAI Compatible 2 (Local, etc.)</option>
-    </select>
-  </div>
+      <div class="form-group">
+        <label>AI Provider</label>
+        <select id="aiProvider">
+          <option value="gemini">Google Gemini</option>
+          <option value="openai">OpenAI Compatible (Groq, etc.)</option>
+          <option value="openai2">OpenAI Compatible 2 (Local, etc.)</option>
+        </select>
+      </div>
 
-  <!-- Gemini Settings -->
-  <div id="geminiSettings">
-    <div class="form-group">
-      <label>Gemini API Key</label>
-      <input type="password" id="geminiApiKey" placeholder="Paste your Gemini key here...">
-    </div>
+      <!-- Gemini Settings -->
+      <div id="geminiSettings">
+        <div class="form-group">
+          <label>Gemini API Key</label>
+          <input type="password" id="geminiApiKey" placeholder="Paste your Gemini key here...">
+        </div>
 
-    <div class="form-group">
-      <label>Model Name (e.g. gemini-1.5-flash)</label>
-      <input type="text" id="geminiModel" value="gemini-1.5-flash">
-    </div>
-  </div>
+        <div class="form-group">
+          <label>Model Name (e.g. gemini-1.5-flash)</label>
+          <input type="text" id="geminiModel" value="gemini-1.5-flash">
+        </div>
+      </div>
 
-  <!-- OpenAI Settings -->
-  <div id="openaiSettings" style="display: none;">
-    <div class="form-group">
-      <label>Base URL</label>
-      <input type="text" id="openaiBaseUrl" placeholder="https://api.openai.com/v1">
-    </div>
+      <!-- OpenAI Settings -->
+      <div id="openaiSettings" style="display: none;">
+        <div class="form-group">
+          <label>Base URL</label>
+          <input type="text" id="openaiBaseUrl" placeholder="https://api.openai.com/v1">
+        </div>
 
-    <div class="form-group">
-      <label>API Key</label>
-      <input type="password" id="openaiApiKey" placeholder="sk-...">
-    </div>
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="password" id="openaiApiKey" placeholder="sk-...">
+        </div>
 
-    <div class="form-group">
-      <label>Model Name</label>
-      <input type="text" id="openaiModel" placeholder="gpt-3.5-turbo">
-    </div>
-  </div>
+        <div class="form-group">
+          <label>Model Name</label>
+          <input type="text" id="openaiModel" placeholder="gpt-3.5-turbo">
+        </div>
+      </div>
 
-  <!-- OpenAI 2 Settings -->
-  <div id="openai2Settings" style="display: none;">
-    <div class="form-group">
-      <label>Base URL</label>
-      <input type="text" id="openai2BaseUrl" placeholder="http://127.0.0.1:11434/v1">
-    </div>
+      <!-- OpenAI 2 Settings -->
+      <div id="openai2Settings" style="display: none;">
+        <div class="form-group">
+          <label>Base URL</label>
+          <input type="text" id="openai2BaseUrl" placeholder="http://127.0.0.1:11434/v1">
+        </div>
 
-    <div class="form-group">
-      <label>API Key</label>
-      <input type="password" id="openai2ApiKey" placeholder="Optional for some local LLMs">
-    </div>
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="password" id="openai2ApiKey" placeholder="Optional for some local LLMs">
+        </div>
 
-    <div class="form-group">
-      <label>Model Name</label>
-      <input type="text" id="openai2Model" placeholder="llama3">
-    </div>
-  </div>
+        <div class="form-group">
+          <label>Model Name</label>
+          <input type="text" id="openai2Model" placeholder="llama3">
+        </div>
+      </div>
 
-  <div class="form-group">
-    <label>Min Visit Duration (seconds)</label>
-    <input type="number" id="minVisitDuration" min="1" value="5">
-  </div>
+      <div class="form-group">
+        <label>Min Visit Duration (seconds)</label>
+        <input type="number" id="minVisitDuration" min="1" value="5">
+      </div>
 
-  <div class="form-group">
-    <label>Min Scroll Depth (%)</label>
-    <input type="number" id="minScrollDepth" min="0" max="100" value="50">
-  </div>
+      <div class="form-group">
+        <label>Min Scroll Depth (%)</label>
+        <input type="number" id="minScrollDepth" min="0" max="100" value="50">
+      </div>
 
       <button id="save">Save & Test Connection</button>
       <div id="status"></div>
@@ -385,7 +474,7 @@
             ワイルドカードも使用できます (例: *.example.com)
           </div>
         </div>
-        
+
         <div class="form-group">
           <button id="addCurrentDomain" class="secondary-btn">現在のページドメインを追加</button>
         </div>
@@ -393,6 +482,88 @@
 
       <button id="saveDomainSettings">保存</button>
       <div id="domainStatus"></div>
+    </div>
+
+    <!-- Privacy Settings Panel -->
+    <div id="privacyPanel" class="tab-panel">
+
+      <div class="form-group">
+        <label>動作モード</label>
+        <div class="radio-group" id="privacyModeGroup">
+
+          <div>
+            <input type="radio" id="modeA" name="privacyMode" value="local_only">
+            <label for="modeA"><strong>Mode A: Local Only</strong> (開発中)</label>
+            <div class="help-text" style="margin-left: 24px;">
+              ページ内容を外部送信せず、ローカルAIのみで要約します。<br>
+              ※現在、多くのブラウザで動作しません。
+            </div>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <input type="radio" id="modeB" name="privacyMode" value="full_pipeline">
+            <label for="modeB"><strong>Mode B: Full Pipeline</strong> (開発中)</label>
+            <div class="help-text" style="margin-left: 24px;">
+              ローカルAIで要約→PIIマスキング→クラウドAIで仕上げ。<br>
+              ※現在、多くのブラウザで動作しません。
+            </div>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <input type="radio" id="modeC" name="privacyMode" value="masked_cloud">
+            <label for="modeC"><strong>Mode C: Masked Cloud</strong> (推奨)</label>
+            <div class="help-text" style="margin-left: 24px;">
+              PIIのみマスクしてクラウドAIへ送信。<br>
+              ローカルAIが使えない環境向け。
+            </div>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <input type="radio" id="modeD" name="privacyMode" value="cloud_only">
+            <label for="modeD"><strong>Mode D: Cloud Only</strong></label>
+            <div class="help-text" style="margin-left: 24px;">
+              生のテキストをそのままクラウドAIへ送信。<br>
+              速度優先。
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
+
+      <div class="form-group">
+        <label>確認設定</label>
+        <div style="margin-bottom: 8px;">
+          <input type="checkbox" id="piiConfirm">
+          <label for="piiConfirm">送信前にマスキング結果を確認する</label>
+        </div>
+      </div>
+
+      <button id="savePrivacySettings">保存</button>
+      <div id="privacyStatus"></div>
+
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>内容の確認</h3>
+        <button id="closeModalBtn" class="icon-btn" style="width:24px;height:24px;">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-top:0;font-size:12px;color:#666;">
+          Obsidianに保存する内容を確認・編集できます。<br>
+          <span style="color:#d9534f;">※ マスキングされた箇所を確認してください。</span>
+        </p>
+        <textarea id="previewContent" class="preview-textarea"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelPreviewBtn" class="btn-cancel">キャンセル</button>
+        <button id="confirmPreviewBtn" class="btn-confirm">送信する</button>
+      </div>
     </div>
   </div>
 

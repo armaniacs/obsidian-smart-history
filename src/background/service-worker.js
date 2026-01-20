@@ -1,10 +1,14 @@
 import { ObsidianClient } from './obsidianClient.js';
 import { AIClient } from './aiClient.js';
+import { LocalAIClient } from './localAiClient.js';
+import { sanitizeRegex } from '../utils/piiSanitizer.js';
 import { getSettings, StorageKeys } from '../utils/storage.js';
 import { isDomainAllowed } from '../utils/domainUtils.js';
+import { addLog, LogType } from '../utils/logger.js';
 
 const obsidian = new ObsidianClient();
 const aiClient = new AIClient();
+const localAiClient = new LocalAIClient();
 
 // Cache to store tab data including content and validation status
 // Key: TabID, Value: { title, url, content, isValidVisit, timestamp }
@@ -42,7 +46,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 // Core recording logic
 async function processUrlRecording(data) {
-  const { title, url, content, force = false, skipDuplicateCheck = false } = data;
+  /* original line 48 */ const { title, url, content, force = false, skipDuplicateCheck = false, alreadyProcessed = false } = data; // alreadyProcessed added
 
   try {
     // 1. Check domain filter
@@ -55,9 +59,11 @@ async function processUrlRecording(data) {
 
     if (!isAllowed && force) {
       console.log(`Force recording for blocked domain: ${url}`);
+      addLog(LogType.WARN, 'Force recording blocked domain', { url });
     }
 
     // 2. Check for details
+    const settings = await getSettings(); // Load settings
     const savedUrls = await chrome.storage.local.get('savedUrls');
     const urlSet = new Set(savedUrls.savedUrls || []);
 
@@ -66,12 +72,79 @@ async function processUrlRecording(data) {
       return { success: true, skipped: true };
     }
 
-    // 3. Generate AI Summary
+    // 3. Privacy Pipeline Processing
     let summary = "Summary not available.";
     if (content) {
-      console.log(`Generating AI Summary...`);
-      // Re-use aiClient instance
-      summary = await aiClient.generateSummary(content);
+      console.log(`Processing content with mode: ${settings[StorageKeys.PRIVACY_MODE]}...`);
+
+      const mode = settings[StorageKeys.PRIVACY_MODE] || 'full_pipeline';
+      const previewOnly = data.previewOnly || false;
+      const sanitizedSettings = {
+        mode,
+        useLocalAi: (mode === 'local_only' || mode === 'full_pipeline') && !alreadyProcessed,
+        useMasking: (mode === 'full_pipeline' || mode === 'masked_cloud') && !alreadyProcessed,
+        useCloudAi: mode !== 'local_only'
+      };
+
+      let processingText = content;
+      let maskedCount = 0;
+
+      // L1: Local Summarization (縮約)
+      if (sanitizedSettings.useLocalAi) {
+        // LocalAIが利用可能な場合、それで要約（あるいは前処理）
+        const localStatus = await localAiClient.getAvailability();
+        if (localStatus === 'readily' || mode === 'local_only') {
+          const localSummary = await localAiClient.summarize(content);
+          if (localSummary) {
+            processingText = localSummary;
+            // Local Onlyならここで完了
+            if (mode === 'local_only') {
+              summary = localSummary;
+            }
+          }
+        }
+      }
+
+      // L2: PII Masking
+      if (sanitizedSettings.useMasking) {
+        const sanitizeResult = sanitizeRegex(processingText);
+        processingText = sanitizeResult.text;
+        maskedCount = sanitizeResult.maskedItems.length;
+
+        // Logging
+        if (settings[StorageKeys.PII_SANITIZE_LOGS] !== false) {
+          const count = sanitizeResult.maskedItems.length;
+          if (count > 0) {
+            addLog(LogType.SANITIZE, `Masked ${count} PII items`, {
+              url: url,
+              mode: mode,
+              items: sanitizeResult.maskedItems.map(i => i.type) // Log types only
+            });
+          }
+        }
+      }
+
+      // Preview Mode Branch
+      if (previewOnly) {
+        return {
+          success: true,
+          preview: true,
+          title,
+          url,
+          processedContent: processingText,
+          mode,
+          maskedCount
+        };
+      }
+
+      // L3: Cloud Summarization
+      // Local Only以外で、Cloud AIを使用する場合
+      if (sanitizedSettings.useCloudAi) {
+        // Cloud AIには「要約してください」と投げる
+        // すでにLocal AIで要約済みの場合は「さらに洗練させて」等のプロンプト調整が必要だが
+        // 現状は単純に投げる
+        summary = await aiClient.generateSummary(processingText);
+      }
     }
 
     // 4. Format Markdown
@@ -80,6 +153,7 @@ async function processUrlRecording(data) {
 
     // 5. Save to Obsidian
     await obsidian.appendToDailyNote(markdown);
+    addLog(LogType.INFO, 'Saved to Obsidian', { title, url });
     console.log("Saved to Obsidian successfully.");
 
     // 6. Update saved list
@@ -101,6 +175,7 @@ async function processUrlRecording(data) {
 
   } catch (e) {
     console.error("Failed to process recording", e);
+    addLog(LogType.ERROR, 'Failed to process recording', { error: e.message, url });
 
     // Error Notification
     chrome.notifications.create({
@@ -147,23 +222,51 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // Keep channel open
   }
 
-  // Manual Record Processing
-  if (message.type === 'MANUAL_RECORD') {
+  // Manual Record Processing & Preview
+  if (message.type === 'MANUAL_RECORD' || message.type === 'PREVIEW_RECORD') {
     (async () => {
-      console.log(`Manual record requested: ${message.payload.url}`);
+      console.log(`${message.type} requested: ${message.payload.url}`);
 
       const result = await processUrlRecording({
         title: message.payload.title,
         url: message.payload.url,
         content: message.payload.content,
         force: message.payload.force,
-        skipDuplicateCheck: true // Manual record generally skips duplicate check
+        skipDuplicateCheck: true, // Manual record generally skips duplicate check
+        previewOnly: message.type === 'PREVIEW_RECORD'
       });
 
       sendResponse(result);
     })();
 
     return true; // Keep channel open
+  }
+
+  // Save Confirmed Record (Post-Preview)
+  if (message.type === 'SAVE_RECORD') {
+    (async () => {
+      console.log(`SAVE_RECORD requested: ${message.payload.url}`);
+      // 既に加工済みのテキストが来る前提
+      // ただし、processUrlRecordingを再利用するため、少し工夫が必要
+      // ここではシンプルに、"Local Only" modeとして擬似的に振る舞い、
+      // L3 (Cloud) 呼び出しは processUrlRecording の中で制御させるか、
+      // あるいは processUrlRecording に 'bypassPreprocessing' フラグを渡すのが良い
+
+      // 今回の修正で、processUrlRecording内では content があれば AI処理が走るようになっている。
+      // ユーザーが編集した後のテキストを "content" として渡し、
+      // さらに "alreadyProcessed: true" のようなフラグを渡して、L1/L2をスキップさせるのがスマート。
+
+      const result = await processUrlRecording({
+        title: message.payload.title,
+        url: message.payload.url,
+        content: message.payload.content, // This is the edited/processed content
+        skipDuplicateCheck: true,
+        alreadyProcessed: true,
+        force: message.payload.force
+      });
+      sendResponse(result);
+    })();
+    return true;
   }
 });
 

@@ -22,7 +22,13 @@ export const StorageKeys = {
     // Domain filter settings
     DOMAIN_WHITELIST: 'domain_whitelist',
     DOMAIN_BLACKLIST: 'domain_blacklist',
-    DOMAIN_FILTER_MODE: 'domain_filter_mode'
+    DOMAIN_WHITELIST: 'domain_whitelist',
+    DOMAIN_BLACKLIST: 'domain_blacklist',
+    DOMAIN_FILTER_MODE: 'domain_filter_mode',
+    // Privacy settings（Phase 3）
+    PRIVACY_MODE: 'privacy_mode',           // 'local_only' | 'full_pipeline' | 'masked_cloud' | 'cloud_only'
+    PII_CONFIRMATION_UI: 'pii_confirmation_ui', // true | false
+    PII_SANITIZE_LOGS: 'pii_sanitize_logs'  // true | false
 };
 
 const DEFAULT_SETTINGS = {
@@ -52,7 +58,11 @@ const DEFAULT_SETTINGS = {
         'google.com',
         'google.co.jp'
     ],
-    [StorageKeys.DOMAIN_FILTER_MODE]: 'blacklist' // 'whitelist', 'blacklist', 'disabled'
+    [StorageKeys.DOMAIN_FILTER_MODE]: 'blacklist', // 'whitelist', 'blacklist', 'disabled'
+    // Privacy defaults
+    [StorageKeys.PRIVACY_MODE]: 'masked_cloud',
+    [StorageKeys.PII_CONFIRMATION_UI]: true,
+    [StorageKeys.PII_SANITIZE_LOGS]: true
 };
 
 export async function getSettings() {

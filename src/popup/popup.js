@@ -2,6 +2,7 @@ import { StorageKeys, saveSettings, getSettings } from '../utils/storage.js';
 import { ObsidianClient } from '../background/obsidianClient.js';
 import { init as initNavigation } from './navigation.js';
 import { init as initDomainFilter } from './domainFilter.js';
+import { init as initPrivacySettings } from './privacySettings.js';
 
 // Elements
 const apiKeyInput = document.getElementById('apiKey');
@@ -140,4 +141,5 @@ saveBtn.addEventListener('click', async () => {
 // Initialize (ES6 modules are deferred, so DOM is already ready)
 initNavigation();
 initDomainFilter();
+initPrivacySettings();
 load();

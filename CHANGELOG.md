@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+## [2.1.0] - 2026-01-21
+### Added
+- **Privacy Protection Suite**: Introduced comprehensive privacy controls with 4 operation modes.
+    - **Mode A: Local Only**: Process entirely locally (Experimental, requires browser support).
+    - **Mode B: Full Pipeline**: Local summary + Cloud refinement (Experimental).
+    - **Mode C: Masked Cloud**: Masks PII (Credit Cards, Phone Numbers, etc.) before sending to Cloud AI (Recommended).
+    - **Mode D: Cloud Only**: Legacy behavior.
+- **Confirmation UI**: New modal to preview, edit, and confirm content before saving to Obsidian.
+    - Conditional display in Mode C (shows only when PII is detected/masked).
+- **PII Sanitization**: Regex-based masking for sensitive information.
+- **Sanitization Logs**: Local logging system to track masking events (7-day retention).
+- **Settings UI**: Reorganized settings into tabs (General, Domain Filter, Privacy).
+
+### Fixed
+- **Force Recording**: Fixed a bug where force-recording a blocked domain would fail or loop.
+
 
 ## [2.0.2] - 2026-01-17
 ### Fixed
@@ -47,7 +63,7 @@ All notable changes to this project will be documented in this file.
 - **Unified AI Client**: Refactored `aiClient.js` to dynamically switch between Google Gemini and OpenAI-compatible providers based on user settings.
 - **Settings UI**: Updated the popup UI to support provider selection and multiple API configurations.
 
-## [Commit c016a91] - Initial Import
+## [1.0.0] - Initial Release
 Original idea and codebase was introduced in this article: https://note.com/izuru_tcnkc/n/nd0a758483901
 ### Released
 - Initial version of Obsidian Smart History.
