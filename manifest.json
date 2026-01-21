@@ -13,7 +13,8 @@
     "storage",
     "scripting",
     "identity",
-    "notifications"
+    "notifications",
+    "offscreen"
   ],
   "host_permissions": [
     "http://127.0.0.1:27123/*",

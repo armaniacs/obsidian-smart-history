@@ -94,12 +94,17 @@ async function processUrlRecording(data) {
         // LocalAIが利用可能な場合、それで要約（あるいは前処理）
         const localStatus = await localAiClient.getAvailability();
         if (localStatus === 'readily' || mode === 'local_only') {
-          const localSummary = await localAiClient.summarize(content);
-          if (localSummary) {
-            processingText = localSummary;
+          const localResult = await localAiClient.summarize(content);
+          if (localResult.success) {
+            processingText = localResult.summary;
             // Local Onlyならここで完了
             if (mode === 'local_only') {
-              summary = localSummary;
+              summary = localResult.summary;
+            }
+          } else {
+            console.warn(`Local AI failed: ${localResult.error}`);
+            if (mode === 'local_only') {
+              summary = `Summary not available. (Error: ${localResult.error})`;
             }
           }
         }
