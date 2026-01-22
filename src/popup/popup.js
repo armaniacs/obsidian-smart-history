@@ -95,6 +95,35 @@ saveBtn.addEventListener('click', async () => {
     statusDiv.textContent = 'Testing connection...';
     statusDiv.className = '';
 
+    // Input validation
+    const protocol = protocolInput.value.trim().toLowerCase();
+    if (protocol !== 'http' && protocol !== 'https') {
+        statusDiv.textContent = 'Error: Protocol must be "http" or "https".';
+        statusDiv.className = 'error';
+        return;
+    }
+
+    const port = parseInt(portInput.value.trim(), 10);
+    if (isNaN(port) || port < 1 || port > 65535) {
+        statusDiv.textContent = 'Error: Port must be a number between 1 and 65535.';
+        statusDiv.className = 'error';
+        return;
+    }
+
+    const minVisitDuration = parseInt(minVisitDurationInput.value, 10);
+    if (isNaN(minVisitDuration) || minVisitDuration < 0) {
+        statusDiv.textContent = 'Error: Minimum visit duration must be a non-negative number.';
+        statusDiv.className = 'error';
+        return;
+    }
+
+    const minScrollDepth = parseInt(minScrollDepthInput.value, 10);
+    if (isNaN(minScrollDepth) || minScrollDepth < 0 || minScrollDepth > 100) {
+        statusDiv.textContent = 'Error: Minimum scroll depth must be a number between 0 and 100.';
+        statusDiv.className = 'error';
+        return;
+    }
+
     const newSettings = {
         [StorageKeys.OBSIDIAN_API_KEY]: apiKeyInput.value.trim(),
         [StorageKeys.OBSIDIAN_PROTOCOL]: protocolInput.value.trim(),

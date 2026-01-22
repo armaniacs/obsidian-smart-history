@@ -50,7 +50,6 @@ function loadSettings() {
     chrome.storage.local.get(['min_visit_duration', 'min_scroll_depth'], (result) => {
         if (result.min_visit_duration) minVisitDuration = parseInt(result.min_visit_duration, 10);
         if (result.min_scroll_depth) minScrollDepth = parseInt(result.min_scroll_depth, 10);
-        console.log(`Settings loaded: Min Dur=${minVisitDuration}s, Min Scroll=${minScrollDepth}%`);
     });
 }
 
@@ -120,7 +119,6 @@ function updateMaxScroll() {
  */
 function reportValidVisit() {
     isValidVisitReported = true;
-    console.log(">>> VALID VISIT DETECTED! Sending message to background... <<<");
 
     const content = extractPageContent();
 
@@ -135,19 +133,15 @@ function reportValidVisit() {
                 // 【Service Worker未対応エラー処理】: 無視して次回処理を試行
                 // Service Workerがまだ準備できていない場合に発生
                 if (chrome.runtime.lastError.message.includes("Receiving end does not exist")) {
-                    console.log("Service worker not ready yet, skipping this visit.");
-                } else {
-                    console.error("SendMessage Error:", chrome.runtime.lastError.message);
+                    // Service worker not ready yet, skipping this visit.
                 }
             } else if (response && !response.success) {
                 // 【バックグラウンドエラー処理】: エラーログのみ出力（ポップアップは表示しない）
                 console.error("Background Worker Error:", response.error);
-            } else {
-                console.log("Message sent successfully. Response:", response);
             }
         });
     } catch (e) {
-        console.error("Exception sending message:", e);
+        // Exception sending message
     }
 }
 

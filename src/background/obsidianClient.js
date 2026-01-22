@@ -48,8 +48,6 @@ export class ObsidianClient {
         const pathSegment = dailyPath ? `${dailyPath}/` : '';
         const targetUrl = `${this.baseUrl}/vault/${pathSegment}${today}.md`;
 
-        console.log(`Appending to Obsidian: ${targetUrl}`);
-
         try {
             // 1. Read existing file content
             let existingContent = '';
@@ -62,7 +60,6 @@ export class ObsidianClient {
                 existingContent = await getResponse.text();
             } else if (getResponse.status === 404) {
                 // File doesn't exist yet, will create it
-                console.log('Daily note does not exist yet, will create it.');
             } else {
                 const errorText = await getResponse.text();
                 throw new Error(`Failed to read daily note: ${getResponse.status} ${errorText}`);
@@ -110,10 +107,7 @@ export class ObsidianClient {
                 throw new Error(`Obsidian API Error: ${putResponse.status} ${errorText}`);
             }
 
-            console.log('Successfully appended to browser history section');
         } catch (error) {
-            console.error(`Failed to append to daily note (${targetUrl}):`, error);
-
             let errorMessage = error.message;
             if (errorMessage.includes('Failed to fetch') && targetUrl.startsWith('https')) {
                 errorMessage += ' (Self-signed certificate might not be trusted. Please visit the Obsidian URL in a new tab and accept the certificate.)';

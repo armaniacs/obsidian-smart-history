@@ -53,12 +53,10 @@ async function processUrlRecording(data) {
     const isAllowed = await isDomainAllowed(url);
 
     if (!isAllowed && !force) {
-      console.log(`Blocked by domain filter: ${url}`);
       return { success: false, error: 'このドメインは記録が許可されていません' };
     }
 
     if (!isAllowed && force) {
-      console.log(`Force recording for blocked domain: ${url}`);
       addLog(LogType.WARN, 'Force recording blocked domain', { url });
     }
 
@@ -68,15 +66,12 @@ async function processUrlRecording(data) {
     const urlSet = new Set(savedUrls.savedUrls || []);
 
     if (!skipDuplicateCheck && urlSet.has(url)) {
-      console.log(`URL already saved, skipping: ${url}`);
       return { success: true, skipped: true };
     }
 
     // 3. Privacy Pipeline Processing
     let summary = "Summary not available.";
     if (content) {
-      console.log(`Processing content with mode: ${settings[StorageKeys.PRIVACY_MODE]}...`);
-
       const mode = settings[StorageKeys.PRIVACY_MODE] || 'full_pipeline';
       const previewOnly = data.previewOnly || false;
       const sanitizedSettings = {
@@ -101,8 +96,7 @@ async function processUrlRecording(data) {
             if (mode === 'local_only') {
               summary = localResult.summary;
             }
-          } else {
-            console.warn(`Local AI failed: ${localResult.error}`);
+          }else {
             if (mode === 'local_only') {
               summary = `Summary not available. (Error: ${localResult.error})`;
             }
@@ -159,13 +153,11 @@ async function processUrlRecording(data) {
     // 5. Save to Obsidian
     await obsidian.appendToDailyNote(markdown);
     addLog(LogType.INFO, 'Saved to Obsidian', { title, url });
-    console.log("Saved to Obsidian successfully.");
 
     // 6. Update saved list
     if (!urlSet.has(url)) {
       urlSet.add(url);
       await chrome.storage.local.set({ savedUrls: Array.from(urlSet) });
-      console.log(`URL added to saved list: ${url}`);
     }
 
     // 7. Notification
@@ -179,7 +171,6 @@ async function processUrlRecording(data) {
     return { success: true };
 
   } catch (e) {
-    console.error("Failed to process recording", e);
     addLog(LogType.ERROR, 'Failed to process recording', { error: e.message, url });
 
     // Error Notification
@@ -211,8 +202,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         isValidVisit: true
       });
 
-      console.log(`Tab ${tabId} marked as VALID visit. Processing...`);
-
       // Call shared logic
       const result = await processUrlRecording({
         title: sender.tab.title,
@@ -230,8 +219,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Manual Record Processing & Preview
   if (message.type === 'MANUAL_RECORD' || message.type === 'PREVIEW_RECORD') {
     (async () => {
-      console.log(`${message.type} requested: ${message.payload.url}`);
-
       const result = await processUrlRecording({
         title: message.payload.title,
         url: message.payload.url,
@@ -250,7 +237,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Save Confirmed Record (Post-Preview)
   if (message.type === 'SAVE_RECORD') {
     (async () => {
-      console.log(`SAVE_RECORD requested: ${message.payload.url}`);
       // 既に加工済みのテキストが来る前提
       // ただし、processUrlRecordingを再利用するため、少し工夫が必要
       // ここではシンプルに、"Local Only" modeとして擬似的に振る舞い、

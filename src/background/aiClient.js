@@ -93,8 +93,7 @@ export class AIClient {
 
         // 【URL構築】: モデル名をサニタイズしてAPIエンドポイントを構築
         const cleanModelName = modelName.replace(/^models\//, '');
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModelName}:generateContent?key=${apiKey}`;
-        console.log("Gemini URL:", url);
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModelName}:generateContent`;
 
         // 【コンテンツ長制限】: API上限対策として30,000文字で切り詰め
         const truncatedContent = content.substring(0, 30000);
@@ -110,7 +109,10 @@ export class AIClient {
         try {
             const response = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': apiKey
+                },
                 body: JSON.stringify(payload)
             });
 
@@ -163,7 +165,6 @@ export class AIClient {
 
         // 【URL構築】: ベースURLの末尾スラッシュを削除してエンドポイントを構築
         const url = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
-        console.log("OpenAI URL:", url);
 
         // 【コンテンツ長制限】: API上限対策として30,000文字で切り詰め
         const truncatedContent = content.substring(0, 30000);
@@ -224,7 +225,9 @@ export class AIClient {
      */
     async listGeminiModels(apiKey) {
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models`, {
+                headers: { 'x-goog-api-key': apiKey }
+            });
             if (!response.ok) return "Unable to fetch models";
             const data = await response.json();
             return data.models ? data.models.map(m => m.name).join(', ') : "No models returned";
