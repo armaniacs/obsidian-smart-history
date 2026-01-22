@@ -1,5 +1,22 @@
 # PII Sanitizing
 
+## 実装ステータス
+
+| コンポーネント | ステータス | 実装ファイル |
+|--------------|-----------|-------------|
+| 🔧 ローカルAI要約 (L1) | ✅ 完了 | `src/background/localAiClient.js` |
+| 🔧 Offscreen Document | ✅ 完了 | `src/offscreen/offscreen.html`, `offscreen.js` |
+| 🔧 PIIマスキング (L2) | ✅ 完了 | `src/utils/piiSanitizer.js` |
+| 🔧 ユーザー確認UI | ✅ 完了 | `src/popup/sanitizePreview.js` |
+| 🔧 ログ機能 | ✅ 完了 | `src/utils/logger.js` |
+| 🔧 設定キー | ✅ 完了 | `src/utils/storage.js` |
+| 🔧 バックグラウンド処理 | ✅ 完了 | `src/background/service-worker.js` |
+| 🔧 プライバシーモードUI | ✅ 完了 | `src/popup/popup.html` |
+
+**全体進捗**: ✅ 完了
+
+---
+
 セキュリティの堅牢性とブラウザ間の互換性に深く踏み込んだ、より実戦的なレポート構成案を作成しました。
 
 ---

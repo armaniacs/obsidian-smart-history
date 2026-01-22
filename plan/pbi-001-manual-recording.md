@@ -1,5 +1,17 @@
 # Obsidian Smart History 機能拡張実装プラン
 
+## ステータス
+
+| Phase | ステータス | 完了日 |
+|-------|-----------|--------|
+| Phase 1: ナビゲーション基盤 | ✅ 完了 | 実装済み |
+| Phase 2: コンテンツ抽出機能 | ✅ 完了 | 実装済み |
+| Phase 3: メイン画面UI実装 | ✅ 完了 | 実装済み |
+| Phase 4: Background処理実装 | ✅ 完了 | 実装済み |
+| Phase 5: 統合テスト | ✅ 完了 | 検証済み |
+
+**全体進捗**: 100% (5/5フェーズ完了)
+
 ## 概要
 
 Obsidian Smart History Chrome拡張機能に以下の2機能を追加します：
@@ -76,18 +88,18 @@ Obsidian Smart History Chrome拡張機能に以下の2機能を追加します�
 **ゴール**: 画面切り替え機能の実装
 
 **タスク**:
-- [ ] `src/popup/navigation.js` を作成
+- [✅] `src/popup/navigation.js` を作成
   - `showMainScreen()` 関数: mainScreenを表示、settingsScreenを非表示
   - `showSettingsScreen()` 関数: 逆の動作
   - イベントリスナー設定用の `init()` 関数
 
-- [ ] `src/popup/popup.html` を修正
+- [✅] `src/popup/popup.html` を修正
   - 既存の設定フォーム全体を `<div id="settingsScreen" style="display: none;">` でラップ
   - 新規メイン画面用の `<div id="mainScreen">` を追加（仮の内容）
   - 設定画面に「← 戻る」ボタンを追加
   - navigation.js をインポート: `<script type="module" src="navigation.js"></script>`
 
-- [ ] `src/popup/popup.js` を修正
+- [✅] `src/popup/popup.js` を修正
   - `import { init as initNavigation } from './navigation.js';` を追加
   - `initNavigation();` を呼び出し
 
@@ -99,7 +111,7 @@ Obsidian Smart History Chrome拡張機能に以下の2機能を追加します�
 **ゴール**: Content Scriptからのコンテンツ取得
 
 **タスク**:
-- [ ] `src/content/extractor.js` を修正
+- [✅] `src/content/extractor.js` を修正
   - 既存コード（86行目以降）に以下を追加：
     ```javascript
     // Popupからの手動コンテンツ取得要求に応答
@@ -131,7 +143,7 @@ Obsidian Smart History Chrome拡張機能に以下の2機能を追加します�
 **ゴール**: メイン画面の完全な実装
 
 **タスク**:
-- [ ] `src/popup/popup.html` のメイン画面構造を実装
+- [✅] `src/popup/popup.html` のメイン画面構造を実装
   ```html
   <div id="mainScreen" style="display: block;">
     <div class="header">
@@ -152,7 +164,7 @@ Obsidian Smart History Chrome拡張機能に以下の2機能を追加します�
   </div>
   ```
 
-- [ ] インラインCSS追加（約60行）
+- [✅] インラインCSS追加（約60行）
   - `.header`: フレックスレイアウト、space-between
   - `.icon-btn`: 32x32px、背景#f5f5f5
   - `#currentPage`: フレックスレイアウト、ボーダー
@@ -160,7 +172,7 @@ Obsidian Smart History Chrome拡張機能に以下の2機能を追加します�
   - `.primary-btn`: 緑背景（#4CAF50）
   - `#mainStatus`: 既存の.success/.errorクラスを再利用
 
-- [ ] `src/popup/main.js` を作成
+- [✅] `src/popup/main.js` を作成
   ```javascript
   // 現在のタブ情報を取得して表示
   async function loadCurrentTab() {
@@ -230,7 +242,7 @@ Obsidian Smart History Chrome拡張機能に以下の2機能を追加します�
   loadCurrentTab();
   ```
 
-- [ ] `src/popup/popup.html` に main.js をインポート
+- [✅] `src/popup/popup.html` に main.js をインポート
   ```html
   <script type="module" src="main.js"></script>
   ```
@@ -244,7 +256,7 @@ Obsidian Smart History Chrome拡張機能に以下の2機能を追加します�
 **ゴール**: 手動記録のバックエンド処理
 
 **タスク**:
-- [ ] `src/background/service-worker.js` を修正
+- [✅] `src/background/service-worker.js` を修正
   - 既存の `chrome.runtime.onMessage.addListener` に以下を追加：
     ```javascript
     // 手動記録処理（重複チェックなし）
@@ -317,40 +329,40 @@ Obsidian Smart History Chrome拡張機能に以下の2機能を追加します�
 **テストシナリオ**:
 
 1. **画面遷移テスト**
-   - [ ] 拡張機能アイコンクリック → メイン画面が表示される
-   - [ ] ハンバーガーメニュー（☰）クリック → 設定画面に遷移
-   - [ ] 戻るボタン（←）クリック → メイン画面に戻る
-   - [ ] 設定画面で「Save & Test Connection」が正常動作
+   - [✅] 拡張機能アイコンクリック → メイン画面が表示される
+   - [✅] ハンバーガーメニュー（☰）クリック → 設定画面に遷移
+   - [✅] 戻るボタン（←）クリック → メイン画面に戻る
+   - [✅] 設定画面で「Save & Test Connection」が正常動作
 
 2. **手動記録テスト（HTTPSページ）**
-   - [ ] https://www.google.com を開く
-   - [ ] 拡張機能を開き、メイン画面にページ情報が表示される
-   - [ ] 「今すぐ記録」ボタンをクリック
-   - [ ] ステータスが「記録中...」→「✓ Obsidianに保存しました」に変化
-   - [ ] Chrome通知が表示される
-   - [ ] Obsidianのdaily noteを確認し、記録されていることを確認
+   - [✅] https://www.google.com を開く
+   - [✅] 拡張機能を開き、メイン画面にページ情報が表示される
+   - [✅] 「今すぐ記録」ボタンをクリック
+   - [✅] ステータスが「記録中...」→「✓ Obsidianに保存しました」に変化
+   - [✅] Chrome通知が表示される
+   - [✅] Obsidianのdaily noteを確認し、記録されていることを確認
 
 3. **重複URL記録テスト**
-   - [ ] 同じページで「今すぐ記録」を再度クリック
-   - [ ] エラーなく記録される（重複チェックがスキップされる）
-   - [ ] Obsidianに2回記録されることを確認
+   - [✅] 同じページで「今すぐ記録」を再度クリック
+   - [✅] エラーなく記録される（重複チェックがスキップされる）
+   - [✅] Obsidianに2回記録されることを確認
 
 4. **記録不可ページテスト**
-   - [ ] chrome://extensions/ を開く
-   - [ ] 拡張機能を開く
-   - [ ] 記録ボタンが無効化される、または適切なエラーメッセージ
+   - [✅] chrome://extensions/ を開く
+   - [✅] 拡張機能を開く
+   - [✅] 記録ボタンが無効化される、または適切なエラーメッセージ
 
 5. **エラーハンドリングテスト**
-   - [ ] Obsidian Local REST APIを停止
-   - [ ] 手動記録を試行
-   - [ ] 適切なエラーメッセージが表示される
-   - [ ] Chrome通知でエラーが表示される
+   - [✅] Obsidian Local REST APIを停止
+   - [✅] 手動記録を試行
+   - [✅] 適切なエラーメッセージが表示される
+   - [✅] Chrome通知でエラーが表示される
 
 6. **既存機能の後方互換性テスト**
-   - [ ] 適当なページを5秒以上閲覧、50%以上スクロール
-   - [ ] 自動記録（VALID_VISIT）が正常動作
-   - [ ] 重複URLチェックが機能する
-   - [ ] Obsidianに自動記録される
+   - [✅] 適当なページを5秒以上閲覧、50%以上スクロール
+   - [✅] 自動記録（VALID_VISIT）が正常動作
+   - [✅] 重複URLチェックが機能する
+   - [✅] Obsidianに自動記録される
 
 **問題発生時のデバッグ手順**:
 - Chrome DevTools → Extensions → Service Worker → Inspect
@@ -456,14 +468,14 @@ Obsidian Smart History Chrome拡張機能に以下の2機能を追加します�
 
 実装完了時に以下がすべて満たされること：
 
-- [x] メイン画面と設定画面の切り替えがスムーズに動作
-- [x] 現在のタブ情報（タイトル、URL、favicon）が正確に表示
-- [x] 手動記録ボタンをクリックすると、AI要約が生成されObsidianに保存される
-- [x] 同じURLを複数回手動記録できる（重複チェックなし）
-- [x] 適切なエラーメッセージとステータス表示
-- [x] Chrome通知による成功/失敗フィードバック
-- [x] 既存の自動記録機能が正常動作（後方互換性）
-- [x] 設定画面の全機能が正常動作
+- [✅] メイン画面と設定画面の切り替えがスムーズに動作
+- [✅] 現在のタブ情報（タイトル、URL、favicon）が正確に表示
+- [✅] 手動記録ボタンをクリックすると、AI要約が生成されObsidianに保存される
+- [✅] 同じURLを複数回手動記録できる（重複チェックなし）
+- [✅] 適切なエラーメッセージとステータス表示
+- [✅] Chrome通知による成功/失敗フィードバック
+- [✅] 既存の自動記録機能が正常動作（後方互換性）
+- [✅] 設定画面の全機能が正常動作
 
 ## 見積もり
 
