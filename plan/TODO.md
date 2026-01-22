@@ -304,55 +304,54 @@
   - 特定ドメインを自動記録から除外
   - ホワイトリスト/ブラックリスト機能
 
+
 ---
 
-# 次のステップ 2026-01-23 4:33
+# 次のステップ 2026-01-23 更新
 
-🚀 次のお勧めステップ
+## 🚀 これからやること
 
-今回の実装はリグレッションテストのため、Greenフェーズ（最小実装）はスキップされました。
+### 直近の優先タスク (UF-400シリーズ: PBI-001完了後の改善候補)
 
-次のステップとして、以下を推奨します:
+1. **UF-403 [TDD]**: ローディングスピナー追加
+   - ユーザー体験向上のための視覚的フィードバック
+   - 実装: SVGスピナー + CSSアニメーション
+   - 推定: 1時間
 
-1. テストカバレッジレポート取得:
-   npm run test:coverage
+2. **UF-404 [TDD]**: 記録成功後のポップアップ自動クローズ
+   - 記録ボタンを押した後、手動で閉じる手間を省く
+   - メイン画面でのみクローズ、設定画面では閉じない
+   - 推定: 1時間
 
-2. 追加テストケースの検討:
-   - エッジケースの追加
-   - 統合テストの検討
+3. **UF-405 [TDD]**: キーボードショートカット対応 (Ctrl+S / Cmd+S)
+   - キーボード操作のみで記録可能
+   - 実装: manifest.json commands + Service Worker
+   - 推定: 1時間
 
-3. 次回の新機能開発時:
-   - /tdd-testcases → /tdd-red → /tdd-green → /tdd-refactor の完全なTDDサイクルを実施
+### 中期タスク (UF-300シリーズ: uBlock Origin形式インポート)
 
-一つ前のcommitからの変更点をまとめます:                    
-                                                             
-  📋 変更点サマリー                                          
-                            W   w                            
-  🆕 新規追加ファイル                                        
-                                                             
-  1. テスト環境設定ファイル                                  
-                                                             
-  - package.json - プロジェクト依存関係定義（Jest            
-  29.7.0追加）                                               
-  - jest.config.js - Jestテスト設定（ES Modules対応）        
-  - jest.setup.js - Chrome Extensions APIモック設定          
-                                                             
-  2. テストファイル                                          
-                                                             
-  - src/utils/__tests__/domainUtils.test.js -                
-  domainUtilsの18テストケース                                
-  - src/utils/__tests__/piiSanitizer.test.js -               
-  piiSanitizerの13テストケース                               
-                                                             
-  3. ドキュメント                                            
-                                                             
-  - docs/implements/utils-testing/utils-testcases.md -       
-  テストケース定義書（28ケース詳細）                         
-  - docs/implements/utils-testing/utils-tdd-memo.md -        
-  TDD開発メモ                                                
-                                                             
-  4. その他                                                  
-                                                             
-  - package-lock.json - npm依存関係ロックファイル            
-  - node_modules/ - npmパッケージ（.gitignoreに追加推奨）
+4. **UF-001 [DIRECT]**: uBlock構成分析と要件定義
+   - https://github.com/gorhill/ublock/wiki/static-filter-syntax の詳細分析
+   - サポート範囲策定（ドメインブロックに限定）
+   - 推定: 30分
 
+5. **UF-101 [TDD]**: uBlockフィルターパーサーコア実装
+   - src/utils/ublockParser.js 新規作成
+   - 推定: 2時間
+
+### TDDタスクの実装手順
+
+1. /UF-{taskID}/tdd-requirements.md - 詳細要件定義
+2. /UF-{taskID}/tdd-testcases.md - テストケース作成
+3. /UF-{taskID}/tdd-red.md - テスト実装（失敗）
+4. /UF-{taskID}/tdd-green.md - 最小実装
+5. /UF-{taskID}/tdd-refactor.md - リファクタリング
+6. /UF-{taskID}/tdd-verify-complete.md - 品質確認
+
+### 既存実装のステータス
+✅ 完了済み:
+- PBI-001: 手動記録機能
+- PII Sanitizing機能（4つのプライバシーモード）
+- OpenAI Migration（3つのAIプロバイダー対応）
+- Domain Filter（ホワイトリスト/ブラックリスト）
+- ユーティリティのリグレッションテスト（31テスト/31合格）
