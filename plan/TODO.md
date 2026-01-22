@@ -47,3 +47,56 @@
 - [ ] **記録フィルター設定**
   - 特定ドメインを自動記録から除外
   - ホワイトリスト/ブラックリスト機能
+
+---
+
+# 次のステップ 2026-01-23 4:33
+
+🚀 次のお勧めステップ
+
+今回の実装はリグレッションテストのため、Greenフェーズ（最小実装）はスキップされました。
+
+次のステップとして、以下を推奨します:
+
+1. テストカバレッジレポート取得:
+   npm run test:coverage
+
+2. 追加テストケースの検討:
+   - エッジケースの追加
+   - 統合テストの検討
+
+3. 次回の新機能開発時:
+   - /tdd-testcases → /tdd-red → /tdd-green → /tdd-refactor の完全なTDDサイクルを実施
+
+一つ前のcommitからの変更点をまとめます:                    
+                                                             
+  📋 変更点サマリー                                          
+                            W   w                            
+  🆕 新規追加ファイル                                        
+                                                             
+  1. テスト環境設定ファイル                                  
+                                                             
+  - package.json - プロジェクト依存関係定義（Jest            
+  29.7.0追加）                                               
+  - jest.config.js - Jestテスト設定（ES Modules対応）        
+  - jest.setup.js - Chrome Extensions APIモック設定          
+                                                             
+  2. テストファイル                                          
+                                                             
+  - src/utils/__tests__/domainUtils.test.js -                
+  domainUtilsの18テストケース                                
+  - src/utils/__tests__/piiSanitizer.test.js -               
+  piiSanitizerの13テストケース                               
+                                                             
+  3. ドキュメント                                            
+                                                             
+  - docs/implements/utils-testing/utils-testcases.md -       
+  テストケース定義書（28ケース詳細）                         
+  - docs/implements/utils-testing/utils-tdd-memo.md -        
+  TDD開発メモ                                                
+                                                             
+  4. その他                                                  
+                                                             
+  - package-lock.json - npm依存関係ロックファイル            
+  - node_modules/ - npmパッケージ（.gitignoreに追加推奨）
+

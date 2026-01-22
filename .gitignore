@@ -1,3 +1,5 @@
 CLAUDE.md
 tmp/
 *.log
+
+node_modules/
