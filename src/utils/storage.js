@@ -22,8 +22,6 @@ export const StorageKeys = {
     // Domain filter settings
     DOMAIN_WHITELIST: 'domain_whitelist',
     DOMAIN_BLACKLIST: 'domain_blacklist',
-    DOMAIN_WHITELIST: 'domain_whitelist',
-    DOMAIN_BLACKLIST: 'domain_blacklist',
     DOMAIN_FILTER_MODE: 'domain_filter_mode',
     // Privacy settings（Phase 3）
     PRIVACY_MODE: 'privacy_mode',           // 'local_only' | 'full_pipeline' | 'masked_cloud' | 'cloud_only'

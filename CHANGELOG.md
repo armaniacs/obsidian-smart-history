@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [2.1.1] - 2026-01-22
+### Changed
+- **Refactoring**: Internal code refactoring for improved maintainability.
+
 ## [2.1.0] - 2026-01-21
 ### Added
 - **Privacy Protection Suite**: Introduced comprehensive privacy controls with 4 operation modes.

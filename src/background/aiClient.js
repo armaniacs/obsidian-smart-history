@@ -1,48 +1,102 @@
 import { getSettings, StorageKeys } from '../utils/storage.js';
 
+/**
+ * AI Client
+ * 【機能概要】: 複数のAIプロバイダー（Gemini、OpenAI互換）を使用して要約を生成するクライアント
+ * 【設計方針】: 各プロバイダーのAPI仕様を抽象化し、統一的なインターフェースを提供
+ * 【拡張性】: 新しいAIプロバイダーを追加する際はproviderConfigsに設定を追加するのみ
+ * 🟢
+ */
 export class AIClient {
     constructor() { }
 
+    /**
+     * 要約を生成する
+     * 【機能概要】: 設定されたAIプロバイダーを使用して、コンテンツの日本語要約を生成する
+     * 【プロバイダー順位】: gemini → openai → openai2
+     * 🟢
+     * @param {string} content - 要約対象のコンテンツ
+     * @returns {Promise<string>} - 生成された要約テキスト
+     */
     async generateSummary(content) {
         const settings = await getSettings();
         const provider = settings[StorageKeys.AI_PROVIDER] || 'gemini';
 
-        if (provider === 'gemini') {
-            return this.generateGeminiSummary(content, settings);
-        } else if (provider === 'openai') {
-            return this.generateOpenAISummary(
-                content,
-                settings[StorageKeys.OPENAI_BASE_URL],
-                settings[StorageKeys.OPENAI_API_KEY],
-                settings[StorageKeys.OPENAI_MODEL]
-            );
-        } else if (provider === 'openai2') {
-            return this.generateOpenAISummary(
-                content,
-                settings[StorageKeys.OPENAI_2_BASE_URL],
-                settings[StorageKeys.OPENAI_2_API_KEY],
-                settings[StorageKeys.OPENAI_2_MODEL]
-            );
-        } else {
+        // 【プロバイダー設定マップ】: 各プロバイダーの設定キーを管理
+        // 【保守性】: 新しいプロバイダーを追加する際はここに設定を追加するのみ
+        const providerConfig = this.getProviderConfig(provider, settings);
+
+        if (!providerConfig) {
             return `Unknown AI Provider: ${provider}`;
+        }
+
+        // 【プロバイダーごとの処理】: 設定を使用して各プロバイダーの要約メソッドを呼び出す
+        if (provider === 'gemini') {
+            return this.generateGeminiSummary(content, providerConfig.apiKey, providerConfig.model);
+        } else {
+            // OpenAI互換API（openai, openai2）は共通の処理を使用
+            return this.generateOpenAISummary(
+                content,
+                providerConfig.baseUrl,
+                providerConfig.apiKey,
+                providerConfig.model
+            );
         }
     }
 
-    async generateGeminiSummary(content, settings) {
-        const apiKey = settings[StorageKeys.GEMINI_API_KEY];
-        const modelName = settings[StorageKeys.GEMINI_MODEL] || 'gemini-1.5-flash';
+    /**
+     * プロバイダーの設定を取得する
+     * 【機能概要】: 指定されたプロバイダーのAPIキー、ベースURL、モデル名を設定から取得する
+     * 【単一責任】: プロバイダー設定の取得に特化
+     * 🟢
+     * @param {string} provider - プロバイダー名
+     * @param {object} settings - 全設定オブジェクト
+     * @returns {object|null} - { apiKey, baseUrl, model } または null
+     */
+    getProviderConfig(provider, settings) {
+        const configs = {
+            gemini: {
+                apiKey: settings[StorageKeys.GEMINI_API_KEY],
+                model: settings[StorageKeys.GEMINI_MODEL] || 'gemini-1.5-flash'
+            },
+            openai: {
+                baseUrl: settings[StorageKeys.OPENAI_BASE_URL],
+                apiKey: settings[StorageKeys.OPENAI_API_KEY],
+                model: settings[StorageKeys.OPENAI_MODEL] || 'gpt-3.5-turbo'
+            },
+            openai2: {
+                baseUrl: settings[StorageKeys.OPENAI_2_BASE_URL],
+                apiKey: settings[StorageKeys.OPENAI_2_API_KEY],
+                model: settings[StorageKeys.OPENAI_2_MODEL] || 'llama3'
+            }
+        };
 
+        return configs[provider] || null;
+    }
+
+    /**
+     * Gemini APIを使用して要約を生成する
+     * 【機能概要】: Google Gemini APIを呼び出して、日本語の簡潔な要約を生成する
+     * 【エラー処理】: 404エラーの場合は利用可能なモデル一覧を取得してエラーメッセージに含める
+     * 🟢
+     * @param {string} content - 要約対象のコンテンツ
+     * @param {string} apiKey - Gemini APIキー
+     * @param {string} modelName - モデル名
+     * @returns {Promise<string>} - 生成された要約
+     */
+    async generateGeminiSummary(content, apiKey, modelName) {
+        // 【設定検証】: APIキーの存在チェック
         if (!apiKey) {
             console.warn("Gemini API Key not found.");
             return "No Gemini API Key provided.";
         }
 
-        // Sanitize model name
+        // 【URL構築】: モデル名をサニタイズしてAPIエンドポイントを構築
         const cleanModelName = modelName.replace(/^models\//, '');
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModelName}:generateContent?key=${apiKey}`;
         console.log("Gemini URL:", url);
 
-        // Truncate content
+        // 【コンテンツ長制限】: API上限対策として30,000文字で切り詰め
         const truncatedContent = content.substring(0, 30000);
 
         const payload = {
@@ -62,7 +116,7 @@ export class AIClient {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                // If model not found, try to list available models
+                // 【404エラー処理】: モデルが見つからない場合は利用可能なモデル一覧を取得
                 if (response.status === 404) {
                     const availableModels = await this.listGeminiModels(apiKey);
                     throw new Error(`Gemini API Error: 404 Model not found. Available models: ${availableModels}`);
@@ -84,26 +138,34 @@ export class AIClient {
         }
     }
 
+    /**
+     * OpenAI互換APIを使用して要約を生成する
+     * 【機能概要】: OpenAI API仕様に準拠したAPIを使用して、日本語の簡潔な要約を生成する
+     * 【対応API】: OpenAI、Groq、OllamaなどのOpenAI互換API
+     * 【柔軟性】: APIキーが空文字の場合はローカルLLMなどを想定してリクエストを送信
+     * 🟢
+     * @param {string} content - 要約対象のコンテンツ
+     * @param {string} baseUrlRaw - ベースURL（末尾のスラッシュは自動で削除）
+     * @param {string|null|undefined} apiKey - APIキー（ローカルLLM等はnull/undefined可）
+     * @param {string} modelNameRaw - モデル名
+     * @returns {Promise<string>} - 生成された要約
+     */
     async generateOpenAISummary(content, baseUrlRaw, apiKey, modelNameRaw) {
+        // 【デフォルト値設定】: ベースURLとモデル名のデフォルト値
         const baseUrl = baseUrlRaw || 'https://api.openai.com/v1';
         const modelName = modelNameRaw || 'gpt-3.5-turbo';
 
+        // 【APIキーチェック】: null/undefinedの場合のみ警告（空文字はローカルLLM等を想定）
         if (apiKey === undefined || apiKey === null) {
-            // Note: some local LLMs don't need API key, so we allow empty string if specifically set to empty, but undefined means logic error or missing setting?
-            // Actually, for local LLMs, key might be empty string.
-            // But if it's explicitly null/undefined, it's an issue.
-            // Let's assume if it's empty string it's okay for local.
-            // BUT, if it is 'openai' provider, key is usually required.
-            // Let's log warning but proceed if empty.
+            // 【注意】: 一部のローカルLLMはAPIキーを必要としないため、空文字は許容する
             console.warn("OpenAI API Key is empty or missing.");
         }
 
-        // Ensure baseUrl doesn't end with slash if we append path, but typically user provides base like .../v1
-        // We will append /chat/completions
+        // 【URL構築】: ベースURLの末尾スラッシュを削除してエンドポイントを構築
         const url = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
         console.log("OpenAI URL:", url);
 
-        // Truncate content
+        // 【コンテンツ長制限】: API上限対策として30,000文字で切り詰め
         const truncatedContent = content.substring(0, 30000);
 
         const payload = {
@@ -120,6 +182,7 @@ export class AIClient {
             ]
         };
 
+        // 【ヘッダー構築】: APIキーがある場合のみAuthorizationヘッダーを追加
         const headers = { 'Content-Type': 'application/json' };
         if (apiKey) {
             headers['Authorization'] = `Bearer ${apiKey}`;
@@ -151,6 +214,14 @@ export class AIClient {
         }
     }
 
+    /**
+     * 利用可能なGeminiモデルの一覧を取得する
+     * 【機能概要】: APIキーに対応する利用可能なモデル名の一覧を取得する
+     * 【用途】: 404エラー発生時に利用可能なモデルをユーザーに提示するため
+     * 🟢
+     * @param {string} apiKey - Gemini APIキー
+     * @returns {Promise<string>} - モデル名をカンマ区切りで連結した文字列、またはエラーメッセージ
+     */
     async listGeminiModels(apiKey) {
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
