@@ -3,9 +3,6 @@
   "name": "Obsidian Smart History",
   "version": "2.1.1",
   "description": "Smartly backup closed tabs to Obsidian with AI summaries and context linking.",
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  },
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -24,7 +21,9 @@
     "http://localhost:27123/*",
     "http://127.0.0.1:27124/*",
     "http://localhost:27124/*",
-    "https://generativelanguage.googleapis.com/*"
+    "https://generativelanguage.googleapis.com/*",
+    "https://*/*",
+    "http://*/*"
   ],
   "background": {
     "service_worker": "src/background/service-worker.js",
