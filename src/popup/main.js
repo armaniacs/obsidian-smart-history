@@ -1,6 +1,8 @@
 // Main screen functionality
 import { getSettings, StorageKeys } from '../utils/storage.js';
 import { showPreview } from './sanitizePreview.js';
+import { showSpinner, hideSpinner } from './spinner.js';
+import { startAutoCloseTimer } from './autoClose.js';
 
 // 現在のタブ情報を取得して表示
 async function loadCurrentTab() {
@@ -31,7 +33,8 @@ async function loadCurrentTab() {
 // 手動記録処理
 async function recordCurrentPage(force = false) {
   const statusDiv = document.getElementById('mainStatus');
-  statusDiv.textContent = '処理中...';
+  hideSpinner(); // 前回のスピナー状態をクリア
+  statusDiv.textContent = '';
   statusDiv.className = '';
 
   try {
@@ -46,14 +49,14 @@ async function recordCurrentPage(force = false) {
     const usePreview = settings[StorageKeys.PII_CONFIRMATION_UI] !== false; // Default true
 
     // Content Scriptにコンテンツ取得を要求
-    statusDiv.textContent = 'コンテンツ取得中...';
+    showSpinner('コンテンツ取得中...');
     const contentResponse = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CONTENT' });
 
     // Background Workerに記録を要求
     let result;
 
     if (usePreview) {
-      statusDiv.textContent = 'ローカルAI処理中...';
+      showSpinner('ローカルAI処理中...');
       // 1. プレビュー用データ取得 (L1/L2 processing)
       const previewResponse = await chrome.runtime.sendMessage({
         type: 'PREVIEW_RECORD',
@@ -79,7 +82,8 @@ async function recordCurrentPage(force = false) {
       let finalContent = previewResponse.processedContent;
 
       if (shouldShowPreview) {
-        // 2. ユーザー確認
+        // 2. ユーザー確認（プレビュー表示前にスピナーを非表示）
+        hideSpinner();
         const confirmation = await showPreview(previewResponse.processedContent);
 
         if (!confirmation.confirmed) {
@@ -90,7 +94,7 @@ async function recordCurrentPage(force = false) {
       }
 
       // 3. 確定データ送信 (L3 processing & Save)
-      statusDiv.textContent = '保存中...';
+      showSpinner('保存中...');
       result = await chrome.runtime.sendMessage({
         type: 'SAVE_RECORD',
         payload: {
@@ -115,12 +119,19 @@ async function recordCurrentPage(force = false) {
     }
 
     if (result.success) {
+      hideSpinner();
       statusDiv.textContent = '✓ Obsidianに保存しました';
       statusDiv.className = 'success';
+
+      // 【自動クローズ起動】: 記録成功後に自動クローズタイマーを起動 🟢
+      // 【処理方針】: 画面状態が'main'なら2秒後にポップアップを閉じる
+      // 【テスト対応】: テストケース「startAutoCloseTimerでタイマーが起動し、2000ms後にwindow.closeが呼ばれる」
+      startAutoCloseTimer();
     } else {
       throw new Error(result.error || '保存に失敗しました');
     }
   } catch (error) {
+    hideSpinner();
     statusDiv.className = 'error';
 
     // Handle connection errors more gracefully

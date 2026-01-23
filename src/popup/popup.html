@@ -312,6 +312,31 @@
       padding: 0 2px;
       border-radius: 2px;
     }
+
+    /* 🟢 UF-403 ローディングスピナーCSSアニメーション */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+    }
+
+    .spinner-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .spinner-text {
+      font-size: 12px;
+      color: #666;
+    }
   </style>
 </head>
 
@@ -332,6 +357,19 @@
     </div>
 
     <button id="recordBtn" class="primary-btn">📝 今すぐ記録</button>
+    <div id="loadingSpinner" class="spinner-container" style="display: none;">
+      <svg class="spinner" viewBox="0 0 50 50">
+        <circle
+          class="spinner-path"
+          cx="25" cy="25" r="20"
+          fill="none"
+          stroke="#4CAF50"
+          stroke-width="4"
+          stroke-linecap="round"
+        />
+      </svg>
+      <span class="spinner-text">処理中...</span>
+    </div>
     <div id="mainStatus"></div>
   </div>
 
