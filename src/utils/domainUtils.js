@@ -2,8 +2,10 @@
  * domainUtils.js
  * Utility functions for domain filtering with wildcard support.
  */
-
+ 
 import { getSettings, StorageKeys } from './storage.js';
+import { isUrlBlocked } from './ublockMatcher.js';
+import { parseUblockFilterList } from './ublockParser.js';
 
 /**
  * Extract domain from URL, removing www subdomain
@@ -80,15 +82,56 @@ export function isValidDomain(domain) {
 
 /**
  * Check if a URL is allowed based on domain filter settings
+ * This function maintains backward compatibility with the original signature
+ * while supporting the new uBlock Origin style filtering.
+ * 
  * @param {string} url - The URL to check
+ * @param {Array<string>} [whitelist=[]] - Optional whitelist of domains
+ * @param {Array<string>} [blacklist=[]] - Optional blacklist of domains
+ * @param {string|null} [ublockRulesText=null] - Optional uBlock Origin style rules
+ * @param {Object} [context={}] - Optional context for rule evaluation
  * @returns {Promise<boolean>} - True if the URL is allowed
  */
-export async function isDomainAllowed(url) {
-    const settings = await getSettings();
-    const mode = settings[StorageKeys.DOMAIN_FILTER_MODE];
+export async function isDomainAllowed(url, whitelist = [], blacklist = [], ublockRulesText = null, context = {}) {
+    // Backward compatibility: if called with original signature (only url)
+    // we need to use the chrome storage settings
+    if (arguments.length === 1 && typeof url === 'string') {
+        // Use the original implementation for backward compatibility
+        const settings = await getSettings();
+        const mode = settings[StorageKeys.DOMAIN_FILTER_MODE];
+        
+        // If filtering is disabled, allow all URLs
+        if (mode === 'disabled') {
+            return true;
+        }
+        
+        const domain = extractDomain(url);
+        if (!domain) {
+            return false;
+        }
+        
+        const storedWhitelist = settings[StorageKeys.DOMAIN_WHITELIST] || [];
+        const storedBlacklist = settings[StorageKeys.DOMAIN_BLACKLIST] || [];
+        
+        // Simple domain filter result
+        let simpleResult;
+        if (mode === 'whitelist') {
+            simpleResult = isDomainInList(domain, storedWhitelist);
+        } else if (mode === 'blacklist') {
+            simpleResult = !isDomainInList(domain, storedBlacklist);
+        } else {
+            simpleResult = true;
+        }
+        
+        // No uBlock rules in the original implementation
+        return simpleResult;
+    }
     
-    // If filtering is disabled, allow all URLs
-    if (mode === 'disabled') {
+    // New implementation with explicit parameters
+    // If no filters at all, allow everything
+    if ((!whitelist || whitelist.length === 0) && 
+        (!blacklist || blacklist.length === 0) && 
+        (!ublockRulesText || ublockRulesText.trim() === '')) {
         return true;
     }
     
@@ -97,19 +140,30 @@ export async function isDomainAllowed(url) {
         return false;
     }
     
-    const whitelist = settings[StorageKeys.DOMAIN_WHITELIST] || [];
-    const blacklist = settings[StorageKeys.DOMAIN_BLACKLIST] || [];
+    // Default to whitelist mode if no explicit mode is provided
+    let simpleResult = true;
     
-    if (mode === 'whitelist') {
-        // Only allow domains in the whitelist
-        return isDomainInList(domain, whitelist);
-    } else if (mode === 'blacklist') {
-        // Allow domains not in the blacklist
-        return !isDomainInList(domain, blacklist);
+    // Apply whitelist if provided
+    if (whitelist && whitelist.length > 0) {
+        simpleResult = isDomainInList(domain, whitelist);
     }
     
-    // Default to allowing
-    return true;
+    // Apply blacklist if provided (only if whitelist didn't already reject)
+    if (simpleResult && blacklist && blacklist.length > 0) {
+        simpleResult = !isDomainInList(domain, blacklist);
+    }
+    
+    // If no uBlock rules provided, return simple result
+    if (!ublockRulesText || ublockRulesText.trim() === '') {
+        return simpleResult;
+    }
+    
+    // Parse uBlock rules
+    const ublockRules = parseUblockFilterList(ublockRulesText);
+    
+    // Evaluate uBlock rules; if URL is blocked, overall result is false
+    const blocked = await isUrlBlocked(url, ublockRules, context);
+    return simpleResult && !blocked;
 }
 
 /**

@@ -26,31 +26,49 @@
 
 #### フェーズ1: 基盤構築
 
-- [ ] **UF-001 [DIRECT]**: 構成分析と要件定義
-  - [ ] uBlock Origin 静的フィルター構文の詳細分析
-  - [ ] サポート範囲の策定（ドメインブロックに限定、オプションの一部対応など）
-  - [ ] 既存 `domainUtils.js` との整合性確認
-  - [ ] データ構造設計（ブロックルールと例外ルールの分離）
+- [x] **UF-001 [DIRECT]**: 構成分析と要件定義 ✅ **完了**
+  - [x] uBlock Origin 静的フィルター構文の詳細分析
+  - [x] サポート範囲の策定（ドメインブロックに限定、オプションの一部対応など）
+  - [x] 既存 `domainUtils.js` との整合性確認
+  - [x] データ構造設計（ブロックルールと例外ルールの分離）
 
-- [ ] **UF-002 [DIRECT]**: Storage拡張
-  - [ ] `StorageKeys` に uBlock形式用キー追加（`UBLOCK_RULES`）
-  - [ ] 既存ドメインリスト形式との互換性保持
+- [x] **UF-002 [DIRECT]**: Storage拡張 ✅ **完了**
+  - [x] `StorageKeys` に uBlock形式用キー追加（`UBLOCK_RULES`）
+  - [x] 既存ドメインリスト形式との互換性保持
 
 #### フェーズ2: フィルターパーサー実装
 
-- [ ] **UF-101 [TDD]**: uBlockフィルターパーサーコア実装
-  - [ ] `src/utils/ublockParser.js` 新規作成
-  - [ ] `parseUblockFilterLine(line)` - コメント行無視、`||`、`@@`、`*` のパース
-  - [ ] `parseUblockFilterList(text)` - 複数行の一括パース
-  - [ ] テストケース作成
+- [x] **UF-101 [TDD]**: uBlockフィルターパーサーコア実装 ✅ **完了** (TDD開発完了 - 29テストケース全通過、要件網羅率100%)
+  - [x] Requirementsフェーズ完了 - 高品質判定
+  - [x] Testcasesフェーズ完了 - 高品質判定 (18テストケース: 正常系7/異常系5/エッジ4/性能2)
+  - [x] Redフェーズ（失敗テスト作成）✓ - 29テスト期待通り失敗
+  - [x] Greenフェーズ（最小実装）✓ **完了** - 29/29テスト通過
+  - [x] Refactorフェーズ（品質改善）✓ **完了** - 定数化・関数分割・JSDoc充実
+    - 【セキュリティレビュー】: 重大な脆弱性なし
+    - 【パフォーマンスレビュー】: 要件達成（1,000行<1秒、10,000行<5秒）
+  - [x] Verifyフェーズ（完全性検証）✓ **完了** - 要件網羅率100%、品質判定: 合格
+  - [x] `src/utils/__tests__/ublockParser.test.js` 作成完了 (29テストケース)
+  - [x] `src/utils/ublockParser.js` 実装完了 (約380行、500行未満目標達成)
 
-- [ ] **UF-102 [TDD]**: オプション解析実装
-  - [ ] `parseOptions(optionsString)` - `domain=`、`3p`、`1p` のパース
-  - [ ] オプションに基づくフィルター適用ロジック
+- [x] **UF-102 [TDD]**: オプション解析実装 ✅ **完了** (TDD開発完了 - 11テストケース全通過、要件網羅率100%)
+  - [x] Requirementsフェーズ完了 - 高品質判定
+  - [x] Testcasesフェーズ完了 - 高品質判定 (11テストケース: 正常系6/異常系2/エッジ3)
+  - [x] Redフェーズ（失敗テスト作成）✓ **完了**
+  - [x] Greenフェーズ（最小実装）✓ **完了** - 39/39テスト通過
+  - [x] Refactorフェーズ（品質改善）✓ **完了**
+    - 【改善内容】OPTION_TYPES定数追加（8種類）
+    - 【改善内容】parseDomainListヘルパー関数追加
+    - 【セキュリティレビュー】: 重大な脆弱性なし 🟢
+    - 【パフォーマンスレビュー】: 要件達成（O(n)線形）🟢
+  - [x] Verifyフェーズ（完全性検証）✓ **完了**
+    - 【要件網羅率】: 100%（12/12項目）
+    - 【テスト成功率】: 100%（11/11テスト）
+    - 【品質判定】: 合格
 
-- [ ] **UF-103 [TDD]**: 既存 `domainUtils.js` との統合
-  - [ ] `isUrlBlocked(url, ublockRules)` 関数実装
-  - [ ] `isDomainAllowed()` 関数拡張
+- [ ] **UF-103 [TDD]**: 既存 domainUtils.jsとの統合 (Requirementsフェーズ完了 - 高品質判定)
+  - [x] Requirementsフェーズ完了 - 高品質判定
+  - [ ] `isUrlBlocked(url, ublockRules)` 関数実装（新規ublockMatcher.js）
+  - [ ] `isDomainAllowed()` 関数拡張（既存domainUtils.js）
 
 #### フェーズ3: UI実装
 

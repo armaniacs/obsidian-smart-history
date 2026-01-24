@@ -26,7 +26,10 @@ export const StorageKeys = {
     // Privacy settings（Phase 3）
     PRIVACY_MODE: 'privacy_mode',           // 'local_only' | 'full_pipeline' | 'masked_cloud' | 'cloud_only'
     PII_CONFIRMATION_UI: 'pii_confirmation_ui', // true | false
-    PII_SANITIZE_LOGS: 'pii_sanitize_logs'  // true | false
+    PII_SANITIZE_LOGS: 'pii_sanitize_logs',  // true | false
+    // uBlock Origin format settings
+    UBLOCK_RULES: 'ublock_rules',           // uBlock形式ルールセット
+    UBLOCK_FORMAT_ENABLED: 'ublock_format_enabled' // uBlock形式有効化フラグ
 };
 
 const DEFAULT_SETTINGS = {
@@ -60,7 +63,19 @@ const DEFAULT_SETTINGS = {
     // Privacy defaults
     [StorageKeys.PRIVACY_MODE]: 'masked_cloud',
     [StorageKeys.PII_CONFIRMATION_UI]: true,
-    [StorageKeys.PII_SANITIZE_LOGS]: true
+    [StorageKeys.PII_SANITIZE_LOGS]: true,
+    // uBlock format defaults
+    [StorageKeys.UBLOCK_RULES]: {
+        blockRules: [],
+        exceptionRules: [],
+        metadata: {
+            source: 'none',
+            importedAt: 0,
+            lineCount: 0,
+            ruleCount: 0
+        }
+    },
+    [StorageKeys.UBLOCK_FORMAT_ENABLED]: false
 };
 
 export async function getSettings() {
