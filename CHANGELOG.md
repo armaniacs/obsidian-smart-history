@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.0] - 2025-01-xx
+### Added
+- **Masked Information Visualization**: Enhanced PII masking display in preview modal.
+  - Shows count of masked items (e.g., "3件の個人情報をマスクしました")
+  - Highlighted masked content with tooltip showing PII type (email, phone, creditCard, etc.)
+  - Dynamic status message element creation and insertion
+- **Loading Spinner**: Visual feedback indicator during recording process.
+  - SVG-based spinner with smooth CSS animation
+  - Configurable status text (default: "処理中...")
+  - Proper show/hide behavior for success and error states
+- **Auto-Close Popup**: Automatic popup closure 2 seconds after successful recording.
+  - Only closes on main screen (preserves settings screen navigation)
+  - Cancelled on error or screen transition
+  - Countdown display for user feedback
+- **Test Suite Improvements**: Added comprehensive test coverage for new features.
+  - Masked information visualization tests (13 test cases)
+  - Loading spinner tests (8 test cases)
+  - Auto-close timer tests (9 test cases)
+  - All tests passing (61/61)
+
+### Changed
+- **Refactoring**: Improved `sanitizePreview.js` with constant definitions, helper functions, and JSDoc documentation.
+- **Jest Setup**: Enhanced DOM mocking for better test isolation (added loadingSpinner mock).
+
+### Documentation
+- **Plan Updates**: Updated plan/TODO.md to reflect current implementation status.
+  - Clarified keyboard shortcut feature status (documentation exists but not implemented)
+  - Marked UF-405, UF-406, UF-407 as "not implemented"
+
 ## [2.1.1] - 2026-01-22
 ### Changed
 - **Refactoring**: Internal code refactoring for improved maintainability.
