@@ -529,3 +529,23 @@ function convertUblockToSimple(ublockRules) {
 ```
 
 ただし、**初回実装ではこの変換機能は含めません**。
+
+---
+
+## 実装状況
+
+2026年1月時点で、上記すべてのデータ構造が実装されています。
+
+- ✅ UblockRule
+- ✅ UblockRuleOptions
+- ✅ UblockRules
+- ✅ UblockMetadata
+- ✅ ParseError
+- ✅ ParseResult
+- ✅ PreviewInfo
+- ✅ UblockMatcherContext
+- ✅ Storage形式
+- ✅ エクスポート形式
+- ✅ データフロー図
+- ✅ 制約・注意点
+- ✅ 移行計画

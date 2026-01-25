@@ -1,0 +1,152 @@
+/**
+ * @file src/popup/ublockExport.js
+ * uBlockエクスポートUIロジック
+ */
+
+import { StorageKeys, getSettings } from '../utils/storage.js';
+
+/**
+ * uBlockルールをテキスト形式でエクスポート
+ * @param {UblockRules} rules - ルールセット
+ * @returns {string} uBlock形式テキスト
+ */
+export function exportToText(rules) {
+  const lines = [];
+
+  // メタデータ
+  lines.push(`! Auto-exported from Obsidian Smart History`);
+  lines.push(`! Exported at: ${new Date().toISOString()}`);
+  lines.push(`! Total rules: ${rules.blockRules.length + rules.exceptionRules.length}`);
+  lines.push('');
+
+  // 例外ルール
+  rules.exceptionRules.forEach(rule => {
+    lines.push(rule.rawLine);
+  });
+
+  // ブロックルール
+  rules.blockRules.forEach(rule => {
+    lines.push(rule.rawLine);
+  });
+
+  return lines.join('\n');
+}
+
+/**
+ * uBlockルールを .txt ファイルとしてダウンロード
+ * @param {UblockRules} rules - ルールセット
+ * @param {string} [filename] - ファイル名
+ */
+export function downloadAsFile(rules, filename = 'ublock-filters.txt') {
+  const text = exportToText(rules);
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * uBlockルールをクリップボードにコピー
+ * @param {UblockRules} rules - ルールセット
+ * @returns {Promise<boolean>}
+ */
+export async function copyToClipboard(rules) {
+  const text = exportToText(rules);
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (error) {
+    console.error('クリップボードコピー失敗:', error);
+    return false;
+  }
+}
+
+/**
+ * エクスポートUIの初期化
+ */
+export function init() {
+  const exportBtn = document.getElementById('uBlockExportBtn');
+  const copyBtn = document.getElementById('uBlockCopyBtn');
+
+  if (exportBtn) {
+    exportBtn.addEventListener('click', handleExport);
+  }
+
+  if (copyBtn) {
+    copyBtn.addEventListener('click', handleCopy);
+  }
+}
+
+/**
+ * エクスポート処理
+ */
+async function handleExport() {
+  try {
+    const settings = await getSettings();
+    const rules = settings[StorageKeys.UBLOCK_RULES];
+
+    if (!rules) {
+      showStatus('エクスポートするルールがありません', 'error');
+      return;
+    }
+
+    downloadAsFile(rules);
+    showStatus('エクスポートしました', 'success');
+  } catch (error) {
+    console.error('エクスポートエラー:', error);
+    showStatus(`エクスポートエラー: ${error.message}`, 'error');
+  }
+}
+
+/**
+ * コピー処理
+ */
+async function handleCopy() {
+  try {
+    const settings = await getSettings();
+    const rules = settings[StorageKeys.UBLOCK_RULES];
+
+    if (!rules) {
+      showStatus('コピーするルールがありません', 'error');
+      return;
+    }
+
+    const success = await copyToClipboard(rules);
+    if (success) {
+      showStatus('クリップボードにコピーしました', 'success');
+    } else {
+      showStatus('コピーに失敗しました', 'error');
+    }
+  } catch (error) {
+    console.error('コピーエラー:', error);
+    showStatus(`コピーエラー: ${error.message}`, 'error');
+  }
+}
+
+/**
+ * ステータス表示
+ * @param {string} message 
+ * @param {string} type 
+ */
+function showStatus(message, type) {
+  const statusDiv = document.getElementById('domainStatus');
+  if (statusDiv) {
+    statusDiv.textContent = message;
+    statusDiv.className = type;
+
+    // Clear status after 5 seconds for errors, 3 seconds for success
+    const timeout = type === 'error' ? 5000 : 3000;
+    setTimeout(() => {
+      if (statusDiv) {
+        statusDiv.textContent = '';
+        statusDiv.className = '';
+      }
+    }, timeout);
+  }
+}

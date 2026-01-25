@@ -5,6 +5,7 @@
 
 import { StorageKeys, saveSettings, getSettings } from '../utils/storage.js';
 import { extractDomain, parseDomainList, validateDomainList } from '../utils/domainUtils.js';
+import { init as initUblockImport, saveUblockSettings } from './ublockImport.js';
 
 // Elements
 const generalTabBtn = document.getElementById('generalTab');
@@ -25,6 +26,11 @@ const domainListTextarea = document.getElementById('domainList');
 const addCurrentDomainBtn = document.getElementById('addCurrentDomain');
 const saveDomainSettingsBtn = document.getElementById('saveDomainSettings');
 const domainStatusDiv = document.getElementById('domainStatus');
+
+// uBlock形式要素
+const filterFormatSelect = document.getElementById('filterFormat');
+const simpleFormatUI = document.getElementById('simpleFormatUI');
+const uBlockFormatUI = document.getElementById('uBlockFormatUI');
 
 // Tab switching functionality
 export function init() {
@@ -48,11 +54,24 @@ export function init() {
         radio.addEventListener('change', updateDomainListVisibility);
     });
 
+    // フィルター形式切替
+    filterFormatSelect.addEventListener('change', toggleFormatUI);
+
     // Add current domain button
     addCurrentDomainBtn.addEventListener('click', addCurrentDomain);
 
+    // uBlock形式の初期化
+    initUblockImport();
+    
+    // uBlockエクスポート機能の初期化
+    import('./ublockExport.js').then(module => {
+      module.init();
+    }).catch(error => {
+      console.error('Failed to load ublockExport module:', error);
+    });
+
     // Save domain settings
-    saveDomainSettingsBtn.addEventListener('click', saveDomainSettings);
+    saveDomainSettingsBtn.addEventListener('click', handleSaveDomainSettings);
 
     // Load domain settings
     loadDomainSettings();
@@ -93,6 +112,21 @@ function updateDomainListVisibility() {
     }
 }
 
+/**
+ * フォーマットUIの切替
+ */
+function toggleFormatUI() {
+    const format = filterFormatSelect.value;
+    
+    if (format === 'simple') {
+        simpleFormatUI.style.display = 'block';
+        uBlockFormatUI.style.display = 'none';
+    } else {
+        simpleFormatUI.style.display = 'none';
+        uBlockFormatUI.style.display = 'block';
+    }
+}
+
 async function loadDomainSettings() {
     const settings = await getSettings();
 
@@ -111,6 +145,9 @@ async function loadDomainSettings() {
     domainListTextarea.value = domainList.join('\n');
 
     updateDomainListVisibility();
+    
+    // フィルター形式の読み込み
+    // TODO: uBlock形式の設定を読み込む処理を追加
 }
 
 async function addCurrentDomain() {
@@ -159,47 +196,63 @@ async function addCurrentDomain() {
     }
 }
 
-async function saveDomainSettings() {
+/**
+ * 保存ボタンのハンドラー
+ */
+async function handleSaveDomainSettings() {
     try {
-        // Check if filter mode is selected
-        const selectedMode = document.querySelector('input[name="domainFilter"]:checked');
-        if (!selectedMode) {
-            showDomainStatus('フィルターモードを選択してください', 'error');
-            return;
+        const format = filterFormatSelect.value;
+        
+        if (format === 'ublock') {
+            await saveUblockSettings();
+        } else {
+            await saveSimpleFormatSettings();
         }
-
-        const mode = selectedMode.value;
-        const domainListText = domainListTextarea.value.trim();
-        const domainList = domainListText ? parseDomainList(domainListText) : [];
-
-        // Validate domain list if not disabled
-        if (mode !== 'disabled' && domainList.length > 0) {
-            const errors = validateDomainList(domainList);
-            if (errors.length > 0) {
-                showDomainStatus(`ドメインリストのエラー:\n${errors.join('\n')}`, 'error');
-                return;
-            }
-        }
-
-        // Prepare settings object
-        const newSettings = {
-            [StorageKeys.DOMAIN_FILTER_MODE]: mode
-        };
-
-        if (mode === 'whitelist') {
-            newSettings[StorageKeys.DOMAIN_WHITELIST] = domainList;
-        } else if (mode === 'blacklist') {
-            newSettings[StorageKeys.DOMAIN_BLACKLIST] = domainList;
-        }
-
-        // Save settings
-        await saveSettings(newSettings);
-
-        showDomainStatus('ドメインフィルター設定を保存しました', 'success');
     } catch (error) {
         console.error('Error saving domain settings:', error);
         showDomainStatus(`保存エラー: ${error.message}`, 'error');
     }
+}
+
+/**
+ * シンプル形式の設定を保存
+ */
+async function saveSimpleFormatSettings() {
+    // Check if filter mode is selected
+    const selectedMode = document.querySelector('input[name="domainFilter"]:checked');
+    if (!selectedMode) {
+        showDomainStatus('フィルターモードを選択してください', 'error');
+        return;
+    }
+
+    const mode = selectedMode.value;
+    const domainListText = domainListTextarea.value.trim();
+    const domainList = domainListText ? parseDomainList(domainListText) : [];
+
+    // Validate domain list if not disabled
+    if (mode !== 'disabled' && domainList.length > 0) {
+        const errors = validateDomainList(domainList);
+        if (errors.length > 0) {
+            showDomainStatus(`ドメインリストのエラー:\n${errors.join('\n')}`, 'error');
+            return;
+        }
+    }
+
+    // Prepare settings object
+    const newSettings = {
+        [StorageKeys.DOMAIN_FILTER_MODE]: mode
+    };
+
+    if (mode === 'whitelist') {
+        newSettings[StorageKeys.DOMAIN_WHITELIST] = domainList;
+    } else if (mode === 'blacklist') {
+        newSettings[StorageKeys.DOMAIN_BLACKLIST] = domainList;
+    }
+
+    // Save settings
+    await saveSettings(newSettings);
+
+    showDomainStatus('ドメインフィルター設定を保存しました', 'success');
 }
 
 function showDomainStatus(message, type) {

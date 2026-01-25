@@ -5,6 +5,74 @@
 import { extractDomain, matchesPattern } from './domainUtils.js';
 
 /**
+ * Rule index for fast lookup (UF-302 performance optimization).
+ * Maps domains to arrays of rules for faster matching.
+ */
+class RuleIndex {
+  constructor(ublockRules) {
+    this.domainIndex = new Map();  // domain -> block rules
+    this.exceptionIndex = new Map();  // domain -> exception rules
+    this.wildcardRules = [];  // rules with wildcards
+    this.wildcardExceptions = [];  // exception rules with wildcards
+
+    this.buildIndex(ublockRules);
+  }
+
+  /**
+   * Build indices from rule sets.
+   * @param {Object} ublockRules - The parsed rule set from ublockParser.js.
+   */
+  buildIndex(ublockRules) {
+    // Index block rules
+    for (const rule of ublockRules.blockRules || []) {
+      if (rule.domain && rule.domain.includes('*')) {
+        this.wildcardRules.push(rule);
+      } else if (rule.domain) {
+        if (!this.domainIndex.has(rule.domain)) {
+          this.domainIndex.set(rule.domain, []);
+        }
+        this.domainIndex.get(rule.domain).push(rule);
+      }
+    }
+
+    // Index exception rules
+    for (const rule of ublockRules.exceptionRules || []) {
+      if (rule.domain && rule.domain.includes('*')) {
+        this.wildcardExceptions.push(rule);
+      } else if (rule.domain) {
+        if (!this.exceptionIndex.has(rule.domain)) {
+          this.exceptionIndex.set(rule.domain, []);
+        }
+        this.exceptionIndex.get(rule.domain).push(rule);
+      }
+    }
+  }
+
+  /**
+   * Get matching rules for a domain.
+   * @param {string} domain - The domain to match.
+   * @returns {Object} - Object containing matching block and exception rules.
+   */
+  getMatchingRules(domain) {
+    // Get exact matches
+    const blockRules = this.domainIndex.get(domain) || [];
+    const exceptionRules = this.exceptionIndex.get(domain) || [];
+
+    // Add wildcard matches
+    const wildcardBlocks = this.wildcardRules.filter(rule => matchesPattern(domain, rule.domain));
+    const wildcardExceptions = this.wildcardExceptions.filter(rule => matchesPattern(domain, rule.domain));
+
+    return {
+      blockRules: [...blockRules, ...wildcardBlocks],
+      exceptionRules: [...exceptionRules, ...wildcardExceptions]
+    };
+  }
+}
+
+// Global index cache for performance (WeakMap for automatic cleanup)
+const RULE_INDEX_CACHE = new WeakMap();
+
+/**
  * Context information for rule evaluation.
  * @typedef {Object} UblockMatcherContext
  * @property {string} [currentDomain] - The domain of the page where the request originates (for $domain option).
@@ -29,7 +97,15 @@ export async function isUrlBlocked(url, ublockRules, context = {}) {
     return false;
   }
 
-  const { blockRules = [], exceptionRules = [] } = ublockRules || {};
+  // Get or create rule index for performance (UF-302 optimization)
+  let index = RULE_INDEX_CACHE.get(ublockRules);
+  if (!index) {
+    index = new RuleIndex(ublockRules);
+    RULE_INDEX_CACHE.set(ublockRules, index);
+  }
+
+  // Get matching rules using index
+  const { blockRules, exceptionRules } = index.getMatchingRules(domain);
 
   // 1. Exception rules have priority – if any matches, the URL is allowed.
   for (const rule of exceptionRules) {
@@ -108,6 +184,10 @@ function evaluateOptions(rule, context) {
   // $important – for this simple matcher we treat it as a normal match.
   // If the rule has `important: false` (i.e., ~important) we still consider the rule matched.
   // Advanced priority handling can be added later.
+
+  // $match-case – for this simple matcher we treat it as a normal match.
+  // If the rule has `matchCase: true` we could do case-sensitive matching.
+  // If the rule has `matchCase: false` we do case-insensitive matching (default).
 
   return true;
 }

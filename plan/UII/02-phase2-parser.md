@@ -20,7 +20,7 @@ uBlock Origin形式のフィルターパーサーとマッチャーを実装し�
 
 - **タスク種別**: TDD
 - **推定時間**: 2時間
-- **ステータス**: 未実装
+- **ステータス**: ✅ 完了 (2026年1月実装)
 - **依存**: UF-002
 
 ### TDDサイクル
@@ -176,7 +176,7 @@ parseUblockFilterLine(line):
 
 - **タスク種別**: TDD
 - **推定時間**: 1.5時間
-- **ステータス**: 未実装
+- **ステータス**: ✅ 完了 (2026年1月実装)
 - **依存**: UF-101
 
 ### 実装場所
@@ -260,7 +260,7 @@ function parseOptions(optionsString) {
 
 - **タスク種別**: TDD
 - **推定時間**: 1時間
-- **ステータス**: 未実装
+- **ステータス**: ✅ 完了 (2026年1月実装)
 - **依存**: UF-102
 
 ### 実装ファイル
@@ -384,9 +384,9 @@ isUrlBlocked(url, ublockRules, context):
 - [ ] UF-103 domainUtils統合
 
 **完了条件**:
-- ⏳ `ublockParser.js` 実装完了（テスト通過）
-- ⏳ `ublockMatcher.js` 実装完了（テスト通過）
-- ⏳ `domainUtils.js` 拡張完了（後方互換性維持）
+- ✅ `ublockParser.js` 実装完了（テスト通過）
+- ✅ `ublockMatcher.js` 実装完了（テスト通過）
+- ✅ `domainUtils.js` 拡張完了（後方互換性維持）
 
 ---
 

@@ -340,6 +340,34 @@ describe('ublockParser', () => {
       expect(result.blockRules).toHaveLength(5000); // 【確認内容】: 5000個の有効ルールのみがパースされること 🟢
       expect(endTime - startTime).toBeLessThan(5000); // 【確認内容】: パース時間が5秒未満であること 🟢
     });
+
+    // 【UF-302追加テスト】キャッシュ機能のパフォーマンス改善を検証
+    test('キャッシュ機能により2回目のパースが高速化されること', () => {
+      // 【テスト目的】: キャッシュ機能により2回目のパースが高速化されることを確認
+      // 【テスト内容】: 同じテキストを2回パースし、2回目のパース時間が短縮されることを確認
+      // 【期待される動作】: 2回目のパース時間が1回目の1/10以下になる
+      // 🟢 信頼性レベル: UF-302 パフォーマンス最適化要件
+
+      // 【テストデータ準備】: 10,000行のフィルターリストを生成
+      const lines = Array.from({ length: 10000 }, (_, i) => `||domain${i}.com^`);
+      const input = lines.join('\n');
+
+      // 【実際の処理実行】: 1回目のパース時間を計測
+      const startTime1 = performance.now();
+      const result1 = parseUblockFilterList(input);
+      const endTime1 = performance.now();
+      const firstParseTime = endTime1 - startTime1;
+
+      // 【実際の処理実行】: 2回目のパース時間を計測
+      const startTime2 = performance.now();
+      const result2 = parseUblockFilterList(input);
+      const endTime2 = performance.now();
+      const secondParseTime = endTime2 - startTime2;
+
+      // 【結果検証】: 2回目のパース時間が1回目の1/10以下であることを確認
+      expect(result1).toEqual(result2); // 【確認内容】: 結果が同一であること 🟢
+      expect(secondParseTime).toBeLessThan(firstParseTime / 10); // 【確認内容】: 2回目のパース時間が1/10以下であること 🟢
+    });
   });
 
   describe('ヘルパー関数 - isCommentLine', () => {
@@ -732,6 +760,42 @@ describe('ublockParser', () => {
       expect(result.domains).toEqual(['example.com']); // 【確認内容]: domain配列が正確であること 🟢
       expect(result.thirdParty).toBe(true); // 【確認内容】: thirdPartyフラグがtrueであること 🟢
       expect(result.important).toBe(true); // 【確認内容】: importantフラグがtrueであること 🟢
+    });
+
+    // 【UF-301追加テスト1】match-caseオプション
+    test('大文字小文字を区別するオプションのパース', () => {
+      // 【テスト目的】: match-caseオプションのパース
+      // 【テスト内容】: `match-case` で大文字小文字を区別する設定ができることを確認
+      // 【期待される動作】: `match-case` を入力すると、`matchCase: true` が設定される
+      // 🟡 信頼性レベル: UF-301で追加された機能
+
+      // 【テストデータ準備】: 大文字小文字を区別するオプションを用意
+      const input = 'match-case';
+
+      // 【実際の処理実行】: parseOptions関数を呼び出し
+      const result = parseOptions(input);
+
+      // 【結果検証】: 大文字小文字を区別するフラグが正しく設定されることを確認
+      expect(result).toHaveProperty('matchCase'); // 【確認内容】: matchCaseプロパティが含まれること 🟡
+      expect(result.matchCase).toBe(true); // 【確認内容】: matchCaseフラグがtrueに設定されること 🟡
+    });
+
+    // 【UF-301追加テスト2】~match-caseオプション
+    test('大文字小文字を区別しないオプションのパース', () => {
+      // 【テスト目的】: ~match-caseオプションのパース
+      // 【テスト内容】: `~match-case` で大文字小文字を区別しない設定ができることを確認
+      // 【期待される動作】: `~match-case` を入力すると、`matchCase: false` が設定される
+      // 🟡 信頼性レベル: UF-301で追加された機能
+
+      // 【テストデータ準備】: 大文字小文字を区別しないオプションを用意
+      const input = '~match-case';
+
+      // 【実際の処理実行】: parseOptions関数を呼び出し
+      const result = parseOptions(input);
+
+      // 【結果検証】: 大文字小文字を区別しないフラグが正しく設定されることを確認
+      expect(result).toHaveProperty('matchCase'); // 【確認内容】: matchCaseプロパティが含まれること 🟡
+      expect(result.matchCase).toBe(false); // 【確認内容】: matchCaseフラグがfalseに設定されること 🟡
     });
   });
 });

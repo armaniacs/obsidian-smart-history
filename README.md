@@ -23,6 +23,7 @@
 - 🖱️ **手動記録機能**: 「今すぐ記録」ボタンで現在のページを即座に記録できます。重複チェックなしで同じページを複数回記録可能です。
 - 📱 **改良されたUI**: メイン画面と設定画面を分離し、ハンバーガーメニューから簡単にアクセスできます。
 - 🌐 **ドメインフィルター**: ホワイトリスト/ブラックリストで記録するドメインを制御できます。ワイルドカードパターンに対応。
+- 🚫 **uBlock Origin形式フィルター**: EasyListなどの既存のuBlockフィルターリストを直接インポートして使用できます。
 
 ### 必要なもの
 - [Obsidian](https://obsidian.md/) と [Local REST API プラグイン](https://github.com/coddingtonbear/obsidian-local-rest-api)
@@ -71,6 +72,17 @@
 
 ドメインリストではワイルドカードも使用できます（例: `*.example.com`）。「現在のページドメインを追加」ボタンで簡単にドメインを追加できます。
 
+#### uBlock Origin形式フィルターの使用
+設定画面の「ドメインフィルター」タブで、「フィルター形式」を「uBlock Origin 形式」に切り替えることで、uBlock Origin形式のフィルターリストを使用できます。
+
+フィルターの入力方法:
+- テキストエリアに直接uBlock形式のフィルターを貼り付ける
+- ローカルの.txtファイルから読み込む
+- ドラッグ＆ドロップでファイルを読み込む
+- URLからフィルターリストをダウンロードする
+
+詳細な使い方は [USER-GUIDE-UBLOCK-IMPORT.md](USER-GUIDE-UBLOCK-IMPORT.md) を参照してください。
+
 
 ### Obsidianへの追加の仕組みは以下のようになっています（src/background/obsidianClient.js）。
 
@@ -108,6 +120,7 @@ A Chrome extension that automatically saves your browsing history to Obsidian wi
 - 🖱️ **Manual Recording**: Record any page instantly with the "Record Now" button. No duplicate URL restrictions - record the same page multiple times.
 - 📱 **Improved UI**: Separated main screen and settings with easy hamburger menu access.
 - 🌐 **Domain Filtering**: Control which domains to record with whitelist/blacklist support. Wildcard patterns supported.
+- 🚫 **uBlock Origin Format Filters**: Import and use existing uBlock filter lists like EasyList directly.
 
 ### Requirements
 - [Obsidian](https://obsidian.md/) with [Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api)
@@ -150,6 +163,17 @@ In the "Domain Filter" tab of the settings screen, you can control which domains
 - **Blacklist**: Record all domains except those specified
 
 You can use wildcards in the domain list (e.g., `*.example.com`). Use the "Add Current Domain" button to easily add domains.
+
+#### Using uBlock Origin Format Filters
+In the "Domain Filter" tab of the settings screen, switch the "Filter Format" to "uBlock Origin Format" to use uBlock Origin format filter lists.
+
+Ways to input filters:
+- Paste uBlock format filters directly into the text area
+- Load from a local .txt file
+- Drag and drop a file to load
+- Download a filter list from a URL
+
+For detailed usage instructions, please refer to [USER-GUIDE-UBLOCK-IMPORT.md](USER-GUIDE-UBLOCK-IMPORT.md).
 
 ---
 

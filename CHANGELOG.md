@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- **uBlock Origin Filter Support**: Advanced domain filtering using uBlock Origin-style syntax.
+  - Integrated `ublockParser.js` and `ublockMatcher.js` for rule parsing and matching.
+  - Extended `domainUtils.js` to support combined whitelist/blacklist with uBlock rules.
+  - Comprehensive test coverage for new functionality.
 
 ## [2.2.0] - 2025-01-xx
 ### Added

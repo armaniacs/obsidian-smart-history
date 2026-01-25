@@ -602,3 +602,17 @@ const ALLOWED_FILE_EXTENSIONS = ['.txt'];
 ```javascript
 const MAX_FILTER_LINES = 10000;  // パース・保存の上限
 ```
+
+---
+
+## 実装状況
+
+2026年1月時点で、上記すべてのAPIが実装されています。
+
+- ✅ ublockParser.js
+- ✅ ublockMatcher.js
+- ✅ domainUtils.js (拡張)
+- ✅ ublockImport.js
+- ✅ ublockExport.js
+- ✅ storage.js (拡張)
+- ✅ 定数定義
