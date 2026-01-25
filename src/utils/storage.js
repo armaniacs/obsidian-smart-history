@@ -29,7 +29,8 @@ export const StorageKeys = {
     PII_SANITIZE_LOGS: 'pii_sanitize_logs',  // true | false
     // uBlock Origin format settings
     UBLOCK_RULES: 'ublock_rules',           // uBlock形式ルールセット
-    UBLOCK_FORMAT_ENABLED: 'ublock_format_enabled' // uBlock形式有効化フラグ
+    UBLOCK_FORMAT_ENABLED: 'ublock_format_enabled', // uBlock形式有効化フラグ
+    SIMPLE_FORMAT_ENABLED: 'simple_format_enabled' // シンプル形式有効化フラグ
 };
 
 const DEFAULT_SETTINGS = {
@@ -75,7 +76,8 @@ const DEFAULT_SETTINGS = {
             ruleCount: 0
         }
     },
-    [StorageKeys.UBLOCK_FORMAT_ENABLED]: false
+    [StorageKeys.UBLOCK_FORMAT_ENABLED]: false,
+    [StorageKeys.SIMPLE_FORMAT_ENABLED]: true
 };
 
 export async function getSettings() {

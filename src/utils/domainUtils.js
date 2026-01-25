@@ -2,7 +2,7 @@
  * domainUtils.js
  * Utility functions for domain filtering with wildcard support.
  */
- 
+
 import { getSettings, StorageKeys } from './storage.js';
 import { isUrlBlocked } from './ublockMatcher.js';
 import { parseUblockFilterList } from './ublockParser.js';
@@ -16,12 +16,12 @@ export function extractDomain(url) {
     try {
         const urlObj = new URL(url);
         let hostname = urlObj.hostname;
-        
+
         // Remove www. prefix if present
         if (hostname.startsWith('www.')) {
             hostname = hostname.substring(4);
         }
-        
+
         return hostname;
     } catch (e) {
         return null;
@@ -40,11 +40,11 @@ export function matchesPattern(domain, pattern) {
         const regexPattern = pattern
             .replace(/\./g, '\\.')  // Escape dots
             .replace(/\*/g, '.*');  // Convert wildcards to .*
-        
+
         const regex = new RegExp(`^${regexPattern}$`, 'i');
         return regex.test(domain);
     }
-    
+
     // Exact match (case insensitive)
     return domain.toLowerCase() === pattern.toLowerCase();
 }
@@ -59,7 +59,7 @@ export function isDomainInList(domain, domainList) {
     if (!domainList || domainList.length === 0) {
         return false;
     }
-    
+
     return domainList.some(pattern => matchesPattern(domain, pattern));
 }
 
@@ -72,10 +72,10 @@ export function isValidDomain(domain) {
     if (!domain || typeof domain !== 'string') {
         return false;
     }
-    
+
     // Basic domain validation
     const domainPattern = /^(\*\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    
+
     // Check if it's a valid domain or wildcard pattern
     return domainPattern.test(domain);
 }
@@ -96,71 +96,85 @@ export async function isDomainAllowed(url, whitelist = [], blacklist = [], ubloc
     // Backward compatibility: if called with original signature (only url)
     // we need to use the chrome storage settings
     if (arguments.length === 1 && typeof url === 'string') {
-        // Use the original implementation for backward compatibility
         const settings = await getSettings();
         const mode = settings[StorageKeys.DOMAIN_FILTER_MODE];
-        
-        // If filtering is disabled, allow all URLs
+
         if (mode === 'disabled') {
             return true;
         }
-        
+
         const domain = extractDomain(url);
         if (!domain) {
             return false;
         }
-        
-        const storedWhitelist = settings[StorageKeys.DOMAIN_WHITELIST] || [];
-        const storedBlacklist = settings[StorageKeys.DOMAIN_BLACKLIST] || [];
-        
-        // Simple domain filter result
-        let simpleResult;
-        if (mode === 'whitelist') {
-            simpleResult = isDomainInList(domain, storedWhitelist);
-        } else if (mode === 'blacklist') {
-            simpleResult = !isDomainInList(domain, storedBlacklist);
-        } else {
-            simpleResult = true;
+
+        // Simple Domain Filter
+        let simpleResult = true;
+        const simpleEnabled = settings[StorageKeys.SIMPLE_FORMAT_ENABLED] !== false;
+
+        if (simpleEnabled) {
+            const storedWhitelist = settings[StorageKeys.DOMAIN_WHITELIST] || [];
+            const storedBlacklist = settings[StorageKeys.DOMAIN_BLACKLIST] || [];
+
+            if (mode === 'whitelist') {
+                simpleResult = isDomainInList(domain, storedWhitelist);
+            } else if (mode === 'blacklist') {
+                simpleResult = !isDomainInList(domain, storedBlacklist);
+            }
         }
-        
-        // No uBlock rules in the original implementation
-        return simpleResult;
+
+        // uBlock Filter
+        const ublockEnabled = settings[StorageKeys.UBLOCK_FORMAT_ENABLED] === true;
+        let ublockBlocked = false;
+
+        if (ublockEnabled) {
+            const ublockRules = settings[StorageKeys.UBLOCK_RULES];
+            if (ublockRules && (ublockRules.blockRules.length > 0 || ublockRules.exceptionRules.length > 0)) {
+                // Determine context from URL if possible, or use empty
+                const context = {};
+                // We need to import isUrlBlocked and use it here.
+                // Note: isUrlBlocked is already imported at the top of domainUtils.js
+                ublockBlocked = await isUrlBlocked(url, ublockRules, context);
+            }
+        }
+
+        return simpleResult && !ublockBlocked;
     }
-    
+
     // New implementation with explicit parameters
     // If no filters at all, allow everything
-    if ((!whitelist || whitelist.length === 0) && 
-        (!blacklist || blacklist.length === 0) && 
+    if ((!whitelist || whitelist.length === 0) &&
+        (!blacklist || blacklist.length === 0) &&
         (!ublockRulesText || ublockRulesText.trim() === '')) {
         return true;
     }
-    
+
     const domain = extractDomain(url);
     if (!domain) {
         return false;
     }
-    
+
     // Default to whitelist mode if no explicit mode is provided
     let simpleResult = true;
-    
+
     // Apply whitelist if provided
     if (whitelist && whitelist.length > 0) {
         simpleResult = isDomainInList(domain, whitelist);
     }
-    
+
     // Apply blacklist if provided (only if whitelist didn't already reject)
     if (simpleResult && blacklist && blacklist.length > 0) {
         simpleResult = !isDomainInList(domain, blacklist);
     }
-    
+
     // If no uBlock rules provided, return simple result
     if (!ublockRulesText || ublockRulesText.trim() === '') {
         return simpleResult;
     }
-    
+
     // Parse uBlock rules
     const ublockRules = parseUblockFilterList(ublockRulesText);
-    
+
     // Evaluate uBlock rules; if URL is blocked, overall result is false
     const blocked = await isUrlBlocked(url, ublockRules, context);
     return simpleResult && !blocked;
@@ -175,7 +189,7 @@ export function parseDomainList(text) {
     if (!text) {
         return [];
     }
-    
+
     return text
         .split('\n')
         .map(line => line.trim())
@@ -189,17 +203,17 @@ export function parseDomainList(text) {
  */
 export function validateDomainList(domainList) {
     const errors = [];
-    
+
     if (!Array.isArray(domainList)) {
         errors.push('ドメインリストが不正な形式です');
         return errors;
     }
-    
+
     domainList.forEach((domain, index) => {
         if (!isValidDomain(domain)) {
             errors.push(`${index + 1}行目: "${domain}" は無効なドメイン形式です`);
         }
     });
-    
+
     return errors;
 }

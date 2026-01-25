@@ -28,7 +28,8 @@ const saveDomainSettingsBtn = document.getElementById('saveDomainSettings');
 const domainStatusDiv = document.getElementById('domainStatus');
 
 // uBlock形式要素
-const filterFormatSelect = document.getElementById('filterFormat');
+const simpleFormatEnabledCheckbox = document.getElementById('simpleFormatEnabled');
+const ublockFormatEnabledCheckbox = document.getElementById('ublockFormatEnabled');
 const simpleFormatUI = document.getElementById('simpleFormatUI');
 const uBlockFormatUI = document.getElementById('uBlockFormatUI');
 
@@ -55,19 +56,20 @@ export function init() {
     });
 
     // フィルター形式切替
-    filterFormatSelect.addEventListener('change', toggleFormatUI);
+    simpleFormatEnabledCheckbox.addEventListener('change', toggleFormatUI);
+    ublockFormatEnabledCheckbox.addEventListener('change', toggleFormatUI);
 
     // Add current domain button
     addCurrentDomainBtn.addEventListener('click', addCurrentDomain);
 
     // uBlock形式の初期化
     initUblockImport();
-    
+
     // uBlockエクスポート機能の初期化
     import('./ublockExport.js').then(module => {
-      module.init();
+        module.init();
     }).catch(error => {
-      console.error('Failed to load ublockExport module:', error);
+        console.error('Failed to load ublockExport module:', error);
     });
 
     // Save domain settings
@@ -115,19 +117,12 @@ function updateDomainListVisibility() {
 /**
  * フォーマットUIの切替
  */
-function toggleFormatUI() {
-    const format = filterFormatSelect.value;
-    
-    if (format === 'simple') {
-        simpleFormatUI.style.display = 'block';
-        uBlockFormatUI.style.display = 'none';
-    } else {
-        simpleFormatUI.style.display = 'none';
-        uBlockFormatUI.style.display = 'block';
-    }
+export function toggleFormatUI() {
+    simpleFormatUI.style.display = simpleFormatEnabledCheckbox.checked ? 'block' : 'none';
+    uBlockFormatUI.style.display = ublockFormatEnabledCheckbox.checked ? 'block' : 'none';
 }
 
-async function loadDomainSettings() {
+export async function loadDomainSettings() {
     const settings = await getSettings();
 
     // Load filter mode
@@ -145,9 +140,12 @@ async function loadDomainSettings() {
     domainListTextarea.value = domainList.join('\n');
 
     updateDomainListVisibility();
-    
+
     // フィルター形式の読み込み
-    // TODO: uBlock形式の設定を読み込む処理を追加
+    simpleFormatEnabledCheckbox.checked = settings[StorageKeys.SIMPLE_FORMAT_ENABLED] !== false;
+    ublockFormatEnabledCheckbox.checked = settings[StorageKeys.UBLOCK_FORMAT_ENABLED] === true;
+
+    toggleFormatUI();
 }
 
 async function addCurrentDomain() {
@@ -199,14 +197,17 @@ async function addCurrentDomain() {
 /**
  * 保存ボタンのハンドラー
  */
-async function handleSaveDomainSettings() {
+export async function handleSaveDomainSettings() {
     try {
-        const format = filterFormatSelect.value;
-        
-        if (format === 'ublock') {
+        // シンプル形式の保存
+        await saveSimpleFormatSettings();
+
+        // uBlock形式の保存 (有効な場合のみパースして保存されるが、有効化フラグだけは更新する)
+        const ublockEnabled = ublockFormatEnabledCheckbox.checked;
+        if (ublockEnabled) {
             await saveUblockSettings();
         } else {
-            await saveSimpleFormatSettings();
+            await saveSettings({ [StorageKeys.UBLOCK_FORMAT_ENABLED]: false });
         }
     } catch (error) {
         console.error('Error saving domain settings:', error);
@@ -240,7 +241,8 @@ async function saveSimpleFormatSettings() {
 
     // Prepare settings object
     const newSettings = {
-        [StorageKeys.DOMAIN_FILTER_MODE]: mode
+        [StorageKeys.DOMAIN_FILTER_MODE]: mode,
+        [StorageKeys.SIMPLE_FORMAT_ENABLED]: simpleFormatEnabledCheckbox.checked
     };
 
     if (mode === 'whitelist') {

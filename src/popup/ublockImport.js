@@ -12,37 +12,13 @@ let dropZoneActive = false;
  * uBlockインポートUIを初期化
  */
 export function init() {
-  setupFormatToggle();
   setupTextInputPreview();
   setupFileInput();
   setupDragAndDrop();
   setupUrlImport(); // URLインポート機能の初期化
 }
 
-/**
- * フォーマット切替処理
- */
-function setupFormatToggle() {
-  const formatSelect = document.getElementById('filterFormat');
-  formatSelect.addEventListener('change', toggleFormatUI);
-}
 
-/**
- * フォーマットUIの切替
- */
-function toggleFormatUI() {
-  const format = document.getElementById('filterFormat').value;
-  const simpleUI = document.getElementById('simpleFormatUI');
-  const uBlockUI = document.getElementById('uBlockFormatUI');
-
-  if (format === 'simple') {
-    simpleUI.style.display = 'block';
-    uBlockUI.style.display = 'none';
-  } else {
-    simpleUI.style.display = 'none';
-    uBlockUI.style.display = 'block';
-  }
-}
 
 /**
  * テキスト入力のプレビュー更新
@@ -70,7 +46,7 @@ function handleTextInputPreview() {
 export function previewUblockFilter(text) {
   try {
     const result = parseUblockFilterListWithErrors(text);
-    
+
     return {
       blockCount: result.rules.blockRules.length,
       exceptionCount: result.rules.exceptionRules.length,
@@ -94,7 +70,7 @@ function updatePreviewUI(result) {
   document.getElementById('uBlockRuleCount').textContent = result.blockCount;
   document.getElementById('uBlockExceptionCount').textContent = result.exceptionCount;
   document.getElementById('uBlockErrorCount').textContent = result.errorCount;
-  
+
   // エラー詳細の表示を更新
   const errorDetailsElement = document.getElementById('uBlockErrorDetails');
   if (Array.isArray(result.errorDetails)) {
@@ -144,11 +120,11 @@ async function handleFileSelect(event) {
 function readFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    
+
     // UTF-8エンコーディングを検出する
     reader.onload = (e) => {
       const text = e.target.result;
-      
+
       // BOMのチェック
       if (text.charCodeAt(0) === 0xFEFF) {
         // BOMを削除
@@ -157,9 +133,9 @@ function readFile(file) {
         resolve(text);
       }
     };
-    
+
     reader.onerror = reject;
-    
+
     // UTF-8として読み込む
     reader.readAsText(file, 'utf-8');
   });
@@ -170,16 +146,16 @@ function readFile(file) {
  */
 export async function saveUblockSettings() {
   const text = document.getElementById('uBlockFilterInput').value;
-  
+
   // エラーハンドリング付きでパース
   const result = parseUblockFilterListWithErrors(text);
-  
+
   // エラーがある場合は保存を中止してユーザーに通知
   if (result.errors.length > 0) {
     showStatus(`${result.errors.length}個のエラーが見つかりました。修正してください。`, 'error');
     return;
   }
-  
+
   // 有効なルールがない場合も通知
   if (result.rules.ruleCount === 0) {
     showStatus('有効なルールが見つかりませんでした', 'error');
@@ -213,17 +189,17 @@ export async function fetchFromUrl(url) {
       mode: 'cors',
       cache: 'no-cache'
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('text/plain')) {
       // テキストファイル以外も許容するが警告を表示
       console.warn('Content-Typeがtext/plainではありません:', contentType);
     }
-    
+
     return await response.text();
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -249,23 +225,23 @@ function setupUrlImport() {
 async function handleUrlImport() {
   const urlInput = document.getElementById('uBlockUrlInput');
   const url = urlInput.value.trim();
-  
+
   if (!url) {
     showStatus('URLを入力してください', 'error');
     return;
   }
-  
+
   try {
     // ローディング表示
     const importBtn = document.getElementById('uBlockUrlImportBtn');
     const originalText = importBtn.textContent;
     importBtn.textContent = '読み込み中...';
     importBtn.disabled = true;
-    
+
     const filterText = await fetchFromUrl(url);
     document.getElementById('uBlockFilterInput').value = filterText;
     handleTextInputPreview();
-    
+
     showStatus(`"${url}" からフィルターを読み込みました`, 'success');
   } catch (error) {
     showStatus(error.message, 'error');

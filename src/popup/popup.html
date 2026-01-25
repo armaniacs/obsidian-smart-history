@@ -362,8 +362,13 @@
 
     /* 🟢 UF-403 ローディングスピナーCSSアニメーション */
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
 
     .spinner {
@@ -406,14 +411,8 @@
     <button id="recordBtn" class="primary-btn">📝 今すぐ記録</button>
     <div id="loadingSpinner" class="spinner-container" style="display: none;">
       <svg class="spinner" viewBox="0 0 50 50">
-        <circle
-          class="spinner-path"
-          cx="25" cy="25" r="20"
-          fill="none"
-          stroke="#4CAF50"
-          stroke-width="4"
-          stroke-linecap="round"
-        />
+        <circle class="spinner-path" cx="25" cy="25" r="20" fill="none" stroke="#4CAF50" stroke-width="4"
+          stroke-linecap="round" />
       </svg>
       <span class="spinner-text">処理中...</span>
     </div>
@@ -553,11 +552,15 @@
 
       <!-- フィルター形式選択 -->
       <div class="form-group">
-        <label>フィルター形式</label>
-        <select id="filterFormat">
-          <option value="simple">シンプル (1行1ドメイン)</option>
-          <option value="ublock">uBlock Origin 形式</option>
-        </select>
+        <label>フィルター形式 (併用可能)</label>
+        <div>
+          <input type="checkbox" id="simpleFormatEnabled" checked>
+          <label for="simpleFormatEnabled" style="display:inline;">シンプル (1行1ドメイン)</label>
+        </div>
+        <div style="margin-top: 5px;">
+          <input type="checkbox" id="ublockFormatEnabled">
+          <label for="ublockFormatEnabled" style="display:inline;">uBlock Origin 形式</label>
+        </div>
       </div>
 
       <!-- simple形式用UI（既存） -->
