@@ -2,7 +2,9 @@
 
 ## 概要
 
-Obsidian Smart History拡張機能のuBlock Origin形式フィルターインポート機能を使用すると、既存のuBlock Originフィルターリスト（例：EasyList）を直接インポートして、特定のWebサイトの記録をブロックまたは許可できます。
+Obsidian Smart History拡張機能のuBlock Origin形式フィルターインポート機能を使用すると、既存のuBlock Originフィルターリストやhosts形式のフィルターリスト（例：Steven Black's hosts）を直接インポートして、特定のWebサイトの記録をブロックまたは許可できます。
+
+**複数のフィルターソースを同時に登録でき**、それぞれ個別に管理できます。
 
 ## 使い方
 
@@ -64,9 +66,27 @@ Obsidian Smart History拡張機能のuBlock Origin形式フィルターインポ
 
 ### 8. 設定の保存
 
-「保存」ボタンをクリックして、入力したフィルターを保存します。
+「保存」ボタンをクリックして、入力したフィルターを保存します。保存後、テキストエリアはクリアされ、「登録済みフィルターソース」一覧に追加されます。
 
-## サポートされているuBlock構文
+### 9. 複数ソースの管理
+
+複数のフィルターソースを登録して同時に使用できます。
+
+#### ソース一覧の確認
+「登録済みフィルターソース」セクションに、保存済みの全ソースが表示されます：
+- **URL**: インポート元のURL（クリックで開く）または「手動入力」
+- **インポート日時**: 最後にインポートした日時
+- **ルール数**: そのソースに含まれるルール数
+
+#### ソースの削除
+各ソースの横にある「削除」ボタンをクリックすると、そのソースを削除できます。削除後、残りのソースのルールのみが適用されます。
+
+#### ソースの更新
+同じURLから再度インポートすると、既存のソースが上書き更新されます。
+
+## サポートされているフィルター形式
+
+### uBlock Origin形式
 
 以下のuBlock Origin構文がサポートされています：
 
@@ -82,9 +102,71 @@ Obsidian Smart History拡張機能のuBlock Origin形式フィルターインポ
 | `$1p` | ファーストパーティのみ | `||script.com$1p` |
 | `$important` | 重要マーク（他のルールより優先） | `||analytics.com$important` |
 
+### hosts形式（AdGuard DNS / Steven Black互換）
+
+以下のhosts形式もサポートされています：
+
+| 形式 | 説明 | 例 |
+|------|------|-----|
+| `0.0.0.0 hostname` | ドメインをブロック | `0.0.0.0 ads.example.com` |
+| `127.0.0.1 hostname` | ドメインをブロック | `127.0.0.1 tracker.com` |
+| `#` | コメント行 | `# This is a comment` |
+| 行末コメント | 行末のコメント | `0.0.0.0 ads.com # 広告` |
+
+hosts形式のフィルターは自動的にuBlock Origin形式に変換されます：
+- `0.0.0.0 ads.example.com` → `||ads.example.com^`
+- `localhost`, `local`, `broadcasthost` などの特殊ドメインは自動的にスキップされます
+
+## 推奨フィルターリスト
+
+以下の公開フィルターリストをURLから直接インポートできます：
+
+| リスト名 | 説明 | URL |
+|---------|------|-----|
+| Steven Black's hosts | 広告・マルウェア・ポルノなど総合ブロック | `https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts` |
+| Steven Black's hosts (fakenews-gambling-porn-social) | 拡張版 | `https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn-social/hosts` |
+| OISD (nsfw) | NSFW ドメインリスト | `https://nsfw.oisd.nl/` |
+
 ## 注意事項
 
 - ファイルの文字エンコーディングはUTF-8であることを推奨します。
 - フィルターにエラーがある場合、保存前に修正してください。
 - プレビューでエラーが表示された場合でも、有効なルールは正常に機能します。
-- 大きなフィルターリストの読み込みには時間がかかる場合があります。
+- 大きなフィルターリスト（20万ドメイン以上）もサポートしています。
+- ストレージ容量を節約するため、ドメイン情報のみが保存されます（オプション情報は保持されません）。
+
+## 技術仕様
+
+### ストレージ形式（軽量化版）
+
+フィルターデータは以下の形式でChrome拡張機能のローカルストレージに保存されます：
+
+```javascript
+{
+  // マージ済みルール（全ソースの統合）
+  ublock_rules: {
+    blockDomains: ["ads.example.com", "tracker.com", ...],
+    exceptionDomains: ["trusted.com", ...],
+    metadata: {
+      importedAt: 1234567890,
+      ruleCount: 12345
+    }
+  },
+  // 個別ソース情報
+  ublock_sources: [
+    {
+      url: "https://example.com/filters.txt",
+      importedAt: 1234567890,
+      ruleCount: 1000,
+      blockDomains: [...],
+      exceptionDomains: [...]
+    }
+  ]
+}
+```
+
+### パフォーマンス最適化
+
+- **Setベースのマッチング**: 完全一致ドメインはO(1)で高速検索
+- **ワイルドカード**: `*`を含むパターンのみ配列でチェック
+- **キャッシュ**: ルールインデックスはWeakMapでキャッシュされ、再構築を回避

@@ -28,7 +28,8 @@ export const StorageKeys = {
     PII_CONFIRMATION_UI: 'pii_confirmation_ui', // true | false
     PII_SANITIZE_LOGS: 'pii_sanitize_logs',  // true | false
     // uBlock Origin format settings
-    UBLOCK_RULES: 'ublock_rules',           // uBlock形式ルールセット
+    UBLOCK_RULES: 'ublock_rules',           // uBlock形式ルールセット（マージ済み）
+    UBLOCK_SOURCES: 'ublock_sources',       // uBlockソースリスト（複数対応）
     UBLOCK_FORMAT_ENABLED: 'ublock_format_enabled', // uBlock形式有効化フラグ
     SIMPLE_FORMAT_ENABLED: 'simple_format_enabled' // シンプル形式有効化フラグ
 };
@@ -65,17 +66,16 @@ const DEFAULT_SETTINGS = {
     [StorageKeys.PRIVACY_MODE]: 'masked_cloud',
     [StorageKeys.PII_CONFIRMATION_UI]: true,
     [StorageKeys.PII_SANITIZE_LOGS]: true,
-    // uBlock format defaults
+    // uBlock format defaults（軽量化版: ドメイン配列のみ）
     [StorageKeys.UBLOCK_RULES]: {
-        blockRules: [],
-        exceptionRules: [],
+        blockDomains: [],
+        exceptionDomains: [],
         metadata: {
-            source: 'none',
             importedAt: 0,
-            lineCount: 0,
             ruleCount: 0
         }
     },
+    [StorageKeys.UBLOCK_SOURCES]: [], // 複数ソースのリスト
     [StorageKeys.UBLOCK_FORMAT_ENABLED]: false,
     [StorageKeys.SIMPLE_FORMAT_ENABLED]: true
 };

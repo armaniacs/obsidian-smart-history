@@ -6,66 +6,93 @@ import { extractDomain, matchesPattern } from './domainUtils.js';
 
 /**
  * Rule index for fast lookup (UF-302 performance optimization).
- * Maps domains to arrays of rules for faster matching.
+ * 軽量化版: ドメイン配列のみを使用したSetベースの高速マッチング
  */
 class RuleIndex {
   constructor(ublockRules) {
-    this.domainIndex = new Map();  // domain -> block rules
-    this.exceptionIndex = new Map();  // domain -> exception rules
-    this.wildcardRules = [];  // rules with wildcards
-    this.wildcardExceptions = [];  // exception rules with wildcards
+    this.blockDomainSet = new Set();  // exact block domains
+    this.exceptionDomainSet = new Set();  // exact exception domains
+    this.wildcardBlockDomains = [];  // block domains with wildcards
+    this.wildcardExceptionDomains = [];  // exception domains with wildcards
 
     this.buildIndex(ublockRules);
   }
 
   /**
    * Build indices from rule sets.
-   * @param {Object} ublockRules - The parsed rule set from ublockParser.js.
+   * @param {Object} ublockRules - 軽量化版ルールセット（ドメイン配列）または旧形式
    */
   buildIndex(ublockRules) {
-    // Index block rules
-    for (const rule of ublockRules.blockRules || []) {
-      if (rule.domain && rule.domain.includes('*')) {
-        this.wildcardRules.push(rule);
-      } else if (rule.domain) {
-        if (!this.domainIndex.has(rule.domain)) {
-          this.domainIndex.set(rule.domain, []);
+    // 新形式: blockDomains/exceptionDomains（配列）
+    if (ublockRules.blockDomains) {
+      for (const domain of ublockRules.blockDomains) {
+        if (domain.includes('*')) {
+          this.wildcardBlockDomains.push(domain);
+        } else {
+          this.blockDomainSet.add(domain);
         }
-        this.domainIndex.get(rule.domain).push(rule);
+      }
+    }
+    // 旧形式互換: blockRules（オブジェクト配列）
+    else if (ublockRules.blockRules) {
+      for (const rule of ublockRules.blockRules) {
+        if (rule.domain && rule.domain.includes('*')) {
+          this.wildcardBlockDomains.push(rule.domain);
+        } else if (rule.domain) {
+          this.blockDomainSet.add(rule.domain);
+        }
       }
     }
 
-    // Index exception rules
-    for (const rule of ublockRules.exceptionRules || []) {
-      if (rule.domain && rule.domain.includes('*')) {
-        this.wildcardExceptions.push(rule);
-      } else if (rule.domain) {
-        if (!this.exceptionIndex.has(rule.domain)) {
-          this.exceptionIndex.set(rule.domain, []);
+    // 新形式: exceptionDomains
+    if (ublockRules.exceptionDomains) {
+      for (const domain of ublockRules.exceptionDomains) {
+        if (domain.includes('*')) {
+          this.wildcardExceptionDomains.push(domain);
+        } else {
+          this.exceptionDomainSet.add(domain);
         }
-        this.exceptionIndex.get(rule.domain).push(rule);
+      }
+    }
+    // 旧形式互換: exceptionRules
+    else if (ublockRules.exceptionRules) {
+      for (const rule of ublockRules.exceptionRules) {
+        if (rule.domain && rule.domain.includes('*')) {
+          this.wildcardExceptionDomains.push(rule.domain);
+        } else if (rule.domain) {
+          this.exceptionDomainSet.add(rule.domain);
+        }
       }
     }
   }
 
   /**
-   * Get matching rules for a domain.
-   * @param {string} domain - The domain to match.
-   * @returns {Object} - Object containing matching block and exception rules.
+   * Check if domain is blocked (fast Set lookup + wildcard check).
+   * @param {string} domain - The domain to check.
+   * @returns {Object} - { isBlocked, isException }
    */
-  getMatchingRules(domain) {
-    // Get exact matches
-    const blockRules = this.domainIndex.get(domain) || [];
-    const exceptionRules = this.exceptionIndex.get(domain) || [];
+  checkDomain(domain) {
+    // 例外チェック（優先）
+    if (this.exceptionDomainSet.has(domain)) {
+      return { isBlocked: false, isException: true };
+    }
+    for (const pattern of this.wildcardExceptionDomains) {
+      if (matchesPattern(domain, pattern)) {
+        return { isBlocked: false, isException: true };
+      }
+    }
 
-    // Add wildcard matches
-    const wildcardBlocks = this.wildcardRules.filter(rule => matchesPattern(domain, rule.domain));
-    const wildcardExceptions = this.wildcardExceptions.filter(rule => matchesPattern(domain, rule.domain));
+    // ブロックチェック
+    if (this.blockDomainSet.has(domain)) {
+      return { isBlocked: true, isException: false };
+    }
+    for (const pattern of this.wildcardBlockDomains) {
+      if (matchesPattern(domain, pattern)) {
+        return { isBlocked: true, isException: false };
+      }
+    }
 
-    return {
-      blockRules: [...blockRules, ...wildcardBlocks],
-      exceptionRules: [...exceptionRules, ...wildcardExceptions]
-    };
+    return { isBlocked: false, isException: false };
   }
 }
 
@@ -81,9 +108,10 @@ const RULE_INDEX_CACHE = new WeakMap();
 
 /**
  * Determine if a URL is blocked by the provided uBlock rules.
+ * 軽量化版: Setベースの高速マッチング対応
  * @param {string} url - The URL to evaluate.
- * @param {Object} ublockRules - The parsed rule set from ublockParser.js.
- * @param {UblockMatcherContext} [context={}] - Optional matching context.
+ * @param {Object} ublockRules - 軽量化版ルールセットまたは旧形式
+ * @param {UblockMatcherContext} [context={}] - Optional matching context (軽量版では未使用).
  * @returns {Promise<boolean>} - true if the URL is blocked, false otherwise.
  */
 export async function isUrlBlocked(url, ublockRules, context = {}) {
@@ -104,25 +132,9 @@ export async function isUrlBlocked(url, ublockRules, context = {}) {
     RULE_INDEX_CACHE.set(ublockRules, index);
   }
 
-  // Get matching rules using index
-  const { blockRules, exceptionRules } = index.getMatchingRules(domain);
-
-  // 1. Exception rules have priority – if any matches, the URL is allowed.
-  for (const rule of exceptionRules) {
-    if (matchRule(domain, rule, context)) {
-      return false; // allowed
-    }
-  }
-
-  // 2. Block rules – if any matches, the URL is blocked.
-  for (const rule of blockRules) {
-    if (matchRule(domain, rule, context)) {
-      return true; // blocked
-    }
-  }
-
-  // No matching rule → not blocked.
-  return false;
+  // 軽量化版: シンプルなドメインチェック
+  const result = index.checkDomain(domain);
+  return result.isBlocked;
 }
 
 /**

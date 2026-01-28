@@ -1,24 +1,140 @@
 /**
  * @file src/popup/ublockImport.js
- * uBlockインポートUIロジック
+ * uBlockインポートUIロジック（複数ソース対応・軽量化版）
  */
 
-import { parseUblockFilterList } from '../utils/ublockParser.js';
-import { StorageKeys, saveSettings } from '../utils/storage.js';
+import { parseUblockFilterList, parseUblockFilterListWithErrors } from '../utils/ublockParser.js';
+import { StorageKeys, saveSettings, getSettings } from '../utils/storage.js';
 
 let dropZoneActive = false;
+let currentSourceUrl = null;
 
 /**
  * uBlockインポートUIを初期化
  */
-export function init() {
+export async function init() {
   setupTextInputPreview();
   setupFileInput();
   setupDragAndDrop();
-  setupUrlImport(); // URLインポート機能の初期化
+  setupUrlImport();
+  await loadAndDisplaySources();
 }
 
+/**
+ * 保存済みソース一覧を読み込んで表示
+ */
+async function loadAndDisplaySources() {
+  const settings = await getSettings();
+  const sources = settings[StorageKeys.UBLOCK_SOURCES] || [];
+  renderSourceList(sources);
+}
 
+/**
+ * ソースリストをUIに描画
+ * @param {Array} sources - ソースリスト
+ */
+function renderSourceList(sources) {
+  const container = document.getElementById('uBlockSourceItems');
+  const noSourcesMsg = document.getElementById('uBlockNoSources');
+
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  if (sources.length === 0) {
+    noSourcesMsg.style.display = 'block';
+    return;
+  }
+
+  noSourcesMsg.style.display = 'none';
+
+  sources.forEach((source, index) => {
+    const item = document.createElement('div');
+    item.className = 'source-item';
+    item.dataset.index = index;
+
+    const urlText = source.url === 'manual' ? '手動入力' : source.url;
+    const isUrl = source.url !== 'manual';
+
+    const urlElement = isUrl
+      ? `<a href="${source.url}" target="_blank" rel="noopener noreferrer" class="source-url">${source.url}</a>`
+      : `<span class="source-url">${urlText}</span>`;
+
+    const date = new Date(source.importedAt);
+    const dateStr = date.toLocaleString('ja-JP');
+
+    item.innerHTML = `
+      ${urlElement}
+      <div class="source-meta">
+        <span>${dateStr} | ルール: ${source.ruleCount}</span>
+        <button class="delete-btn" data-index="${index}">削除</button>
+      </div>
+    `;
+
+    container.appendChild(item);
+  });
+
+  container.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', handleDeleteSource);
+  });
+}
+
+/**
+ * ソース削除ハンドラ
+ * @param {Event} event
+ */
+async function handleDeleteSource(event) {
+  const index = parseInt(event.target.dataset.index, 10);
+
+  const settings = await getSettings();
+  const sources = settings[StorageKeys.UBLOCK_SOURCES] || [];
+
+  if (index < 0 || index >= sources.length) return;
+
+  sources.splice(index, 1);
+
+  // ルールを再構築
+  const mergedRules = rebuildRulesFromSources(sources);
+
+  await saveSettings({
+    [StorageKeys.UBLOCK_SOURCES]: sources,
+    [StorageKeys.UBLOCK_RULES]: mergedRules,
+    [StorageKeys.UBLOCK_FORMAT_ENABLED]: sources.length > 0
+  });
+
+  renderSourceList(sources);
+  showStatus('ソースを削除しました', 'success');
+}
+
+/**
+ * 超軽量化: ソースからドメインセットを構築
+ * ストレージにはドメイン文字列の配列のみを保存
+ * @param {Array} sources - ソースリスト
+ * @returns {Object} 軽量なルールデータ
+ */
+function rebuildRulesFromSources(sources) {
+  const blockDomains = new Set();
+  const exceptionDomains = new Set();
+
+  for (const source of sources) {
+    if (source.blockDomains) {
+      source.blockDomains.forEach(d => blockDomains.add(d));
+    }
+    if (source.exceptionDomains) {
+      source.exceptionDomains.forEach(d => exceptionDomains.add(d));
+    }
+  }
+
+  // ストレージには配列のみ保存（オブジェクトは保存しない）
+  return {
+    blockDomains: Array.from(blockDomains),
+    exceptionDomains: Array.from(exceptionDomains),
+    metadata: {
+      importedAt: Date.now(),
+      ruleCount: blockDomains.size + exceptionDomains.size
+    }
+  };
+}
 
 /**
  * テキスト入力のプレビュー更新
@@ -34,7 +150,6 @@ function setupTextInputPreview() {
 function handleTextInputPreview() {
   const text = document.getElementById('uBlockFilterInput').value;
   const result = previewUblockFilter(text);
-
   updatePreviewUI(result);
 }
 
@@ -71,10 +186,8 @@ function updatePreviewUI(result) {
   document.getElementById('uBlockExceptionCount').textContent = result.exceptionCount;
   document.getElementById('uBlockErrorCount').textContent = result.errorCount;
 
-  // エラー詳細の表示を更新
   const errorDetailsElement = document.getElementById('uBlockErrorDetails');
   if (Array.isArray(result.errorDetails)) {
-    // ParseErrorオブジェクトの場合
     const errorTexts = result.errorDetails.map(e =>
       typeof e === 'string' ? e : `${e.lineNumber}行: ${e.message}`
     );
@@ -110,24 +223,20 @@ async function handleFileSelect(event) {
 
   const text = await readFile(file);
   document.getElementById('uBlockFilterInput').value = text;
+  currentSourceUrl = null;
   handleTextInputPreview();
 }
 
 /**
  * ファイル読み込み
- * UTF-8エンコーディングを検出する
  */
 function readFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    // UTF-8エンコーディングを検出する
     reader.onload = (e) => {
       const text = e.target.result;
-
-      // BOMのチェック
       if (text.charCodeAt(0) === 0xFEFF) {
-        // BOMを削除
         resolve(text.slice(1));
       } else {
         resolve(text);
@@ -135,39 +244,73 @@ function readFile(file) {
     };
 
     reader.onerror = reject;
-
-    // UTF-8として読み込む
     reader.readAsText(file, 'utf-8');
   });
 }
 
 /**
- * uBlock設定の保存
+ * uBlock設定の保存（軽量化版）
  */
 export async function saveUblockSettings() {
   const text = document.getElementById('uBlockFilterInput').value;
 
-  // エラーハンドリング付きでパース
   const result = parseUblockFilterListWithErrors(text);
 
-  // エラーがある場合は保存を中止してユーザーに通知
   if (result.errors.length > 0) {
     showStatus(`${result.errors.length}個のエラーが見つかりました。修正してください。`, 'error');
     return;
   }
 
-  // 有効なルールがない場合も通知
   if (result.rules.ruleCount === 0) {
     showStatus('有効なルールが見つかりませんでした', 'error');
     return;
   }
 
-  await saveSettings({
-    [StorageKeys.UBLOCK_RULES]: result.rules,
-    [StorageKeys.UBLOCK_FORMAT_ENABLED]: true
-  });
+  const settings = await getSettings();
+  const sources = settings[StorageKeys.UBLOCK_SOURCES] || [];
 
-  showStatus('uBlockフィルターを保存しました', 'success');
+  const sourceUrl = currentSourceUrl || 'manual';
+  const existingIndex = sources.findIndex(s => s.url === sourceUrl);
+
+  // ドメインリストのみを抽出（軽量化）
+  const blockDomains = result.rules.blockRules.map(r => r.domain);
+  const exceptionDomains = result.rules.exceptionRules.map(r => r.domain);
+
+  const newSource = {
+    url: sourceUrl,
+    importedAt: Date.now(),
+    ruleCount: result.rules.ruleCount,
+    blockDomains,
+    exceptionDomains
+  };
+
+  if (existingIndex >= 0) {
+    sources[existingIndex] = newSource;
+  } else {
+    sources.push(newSource);
+  }
+
+  // ルールを再構築
+  const mergedRules = rebuildRulesFromSources(sources);
+
+  try {
+    await saveSettings({
+      [StorageKeys.UBLOCK_SOURCES]: sources,
+      [StorageKeys.UBLOCK_RULES]: mergedRules,
+      [StorageKeys.UBLOCK_FORMAT_ENABLED]: true
+    });
+
+    renderSourceList(sources);
+    document.getElementById('uBlockFilterInput').value = '';
+    document.getElementById('uBlockPreview').style.display = 'none';
+    currentSourceUrl = null;
+
+    const action = existingIndex >= 0 ? '更新' : '追加';
+    showStatus(`フィルターソースを${action}しました（${result.rules.ruleCount}ルール）`, 'success');
+  } catch (error) {
+    console.error('保存エラー:', error);
+    showStatus(`保存エラー: ${error.message}`, 'error');
+  }
 }
 
 /**
@@ -177,7 +320,6 @@ export async function saveUblockSettings() {
  */
 export async function fetchFromUrl(url) {
   try {
-    // URLのバリデーション
     try {
       new URL(url);
     } catch (e) {
@@ -196,7 +338,6 @@ export async function fetchFromUrl(url) {
 
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('text/plain')) {
-      // テキストファイル以外も許容するが警告を表示
       console.warn('Content-Typeがtext/plainではありません:', contentType);
     }
 
@@ -232,21 +373,19 @@ async function handleUrlImport() {
   }
 
   try {
-    // ローディング表示
     const importBtn = document.getElementById('uBlockUrlImportBtn');
-    const originalText = importBtn.textContent;
     importBtn.textContent = '読み込み中...';
     importBtn.disabled = true;
 
     const filterText = await fetchFromUrl(url);
     document.getElementById('uBlockFilterInput').value = filterText;
+    currentSourceUrl = url;
     handleTextInputPreview();
 
     showStatus(`"${url}" からフィルターを読み込みました`, 'success');
   } catch (error) {
     showStatus(error.message, 'error');
   } finally {
-    // ローディング表示を元に戻す
     const importBtn = document.getElementById('uBlockUrlImportBtn');
     importBtn.textContent = 'URLからインポート';
     importBtn.disabled = false;
@@ -261,7 +400,6 @@ export function setupDragAndDrop() {
   const textarea = document.getElementById('uBlockFilterInput');
   const uBlockFormatUI = document.getElementById('uBlockFormatUI');
 
-  // ドラッグ開始時の処理
   textarea.addEventListener('dragover', (event) => {
     event.preventDefault();
     if (!dropZoneActive) {
@@ -271,9 +409,7 @@ export function setupDragAndDrop() {
     }
   });
 
-  // ドラッグ終了時の処理
   uBlockFormatUI.addEventListener('dragleave', (event) => {
-    // ドロップゾーン外に出たときに非表示にする
     if (dropZoneActive && !isElementInDropZone(event.relatedTarget, dropZone)) {
       dropZone.classList.remove('active');
       dropZone.style.display = 'none';
@@ -281,7 +417,6 @@ export function setupDragAndDrop() {
     }
   });
 
-  // ドロップ処理
   dropZone.addEventListener('drop', handleDrop);
 }
 
@@ -312,6 +447,7 @@ async function processFile(file) {
   try {
     const text = await readFile(file);
     document.getElementById('uBlockFilterInput').value = text;
+    currentSourceUrl = null;
     handleTextInputPreview();
     showStatus(`"${file.name}" を読み込みました`, 'success');
   } catch (error) {
@@ -321,9 +457,6 @@ async function processFile(file) {
 
 /**
  * 要素がドロップゾーン内にあるかどうかをチェック
- * @param {Element} element 
- * @param {Element} dropZone 
- * @returns {boolean}
  */
 function isElementInDropZone(element, dropZone) {
   while (element) {
@@ -337,8 +470,8 @@ function isElementInDropZone(element, dropZone) {
 
 /**
  * ステータス表示
- * @param {string} message 
- * @param {string} type 
+ * @param {string} message
+ * @param {string} type
  */
 function showStatus(message, type) {
   const statusDiv = document.getElementById('domainStatus');
@@ -346,7 +479,6 @@ function showStatus(message, type) {
     statusDiv.textContent = message;
     statusDiv.className = type;
 
-    // Clear status after 5 seconds for errors, 3 seconds for success
     const timeout = type === 'error' ? 5000 : 3000;
     setTimeout(() => {
       if (statusDiv) {

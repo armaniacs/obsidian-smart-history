@@ -31,6 +31,10 @@ const PATTERNS = {
   EMPTY_LINE: /^\s*$/,
   /** `!` コメントプレフィックス検出 */
   COMMENT_PREFIX: /^!/,
+  /** `#` コメントプレフィックス検出（hosts形式） */
+  HOSTS_COMMENT_PREFIX: /^#/,
+  /** hosts形式検出: 0.0.0.0 または 127.0.0.1 で始まる行 */
+  HOSTS_FORMAT: /^(0\.0\.0\.0|127\.0\.0\.1)\s+(.+)$/,
   /** ドメイン形式検証 */
   DOMAIN_VALIDATION: /^[a-z0-9.*-]+(\.[a-z0-9.*-]+)*$/i,
 };
@@ -526,10 +530,21 @@ export function parseUblockFilterLine(line) {
     return null;
   }
 
+  // 【hosts形式コメントスキップ】: `#` で始まる行は無効（nullを返す）🟢
+  if (PATTERNS.HOSTS_COMMENT_PREFIX.test(trimmedLine)) {
+    return null;
+  }
+
   // 【空行スキップ】: 空行は無効（nullを返す）🟢
   // 【テスト対応】: テスト5「空行はスキップされる」
   if (isEmptyLine(trimmedLine)) {
     return null;
+  }
+
+  // 【hosts形式検出】: 0.0.0.0 または 127.0.0.1 で始まる行を処理 🟢
+  const hostsMatch = PATTERNS.HOSTS_FORMAT.exec(trimmedLine);
+  if (hostsMatch) {
+    return parseHostsLine(trimmedLine, hostsMatch[2]);
   }
 
   // 【ルールタイプ判定】: プレフィックス解析 🟢
@@ -555,6 +570,44 @@ export function parseUblockFilterLine(line) {
 
   // 【ルール構築】: UblockRuleオブジェクトを生成して返却 🟢
   return buildRuleObject(trimmedLine, typeResult.type, domain);
+}
+
+/**
+ * hosts形式の行をパース
+ * 【設計方針】: 0.0.0.0/127.0.0.1 ドメイン 形式をブロックルールに変換
+ * @param {string} rawLine - 元の行
+ * @param {string} hostsPart - IPアドレス以降の部分
+ * @returns {Object|null} - パースされたルール
+ */
+function parseHostsLine(rawLine, hostsPart) {
+  // ホスト部分からドメインを抽出（コメント部分を除去）
+  let domain = hostsPart.split('#')[0].trim();
+
+  // 複数のスペースで区切られている場合は最初のドメインのみ使用
+  domain = domain.split(/\s+/)[0];
+
+  // ドメインが空または localhost の場合はスキップ
+  if (!domain || domain === 'localhost' || domain === 'local' ||
+      domain === 'localhost.localdomain' || domain === 'broadcasthost') {
+    return null;
+  }
+
+  // ドメイン検証
+  if (!validateDomain(domain)) {
+    return null;
+  }
+
+  // uBlock形式に変換してルールオブジェクトを構築
+  const convertedLine = `||${domain}^`;
+  return {
+    id: generateRuleId(convertedLine),
+    rawLine: convertedLine,
+    originalLine: rawLine, // 元のhosts形式を保持
+    type: RULE_TYPES.BLOCK,
+    domain: domain,
+    pattern: domain,
+    options: { thirdParty: null, firstParty: null, domains: [], important: false }
+  };
 }
 
 /**

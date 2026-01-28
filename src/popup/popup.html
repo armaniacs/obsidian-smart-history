@@ -262,6 +262,66 @@
       background-color: rgba(76, 175, 80, 0.1);
     }
 
+    /* ソースリストセクション */
+    .source-list {
+      margin-top: 10px;
+    }
+
+    .source-list h4 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .source-item {
+      background-color: #e8f5e9;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      border-left: 3px solid #4CAF50;
+      position: relative;
+    }
+
+    .source-item .source-url {
+      font-size: 12px;
+      color: #1976d2;
+      word-break: break-all;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .source-item .source-meta {
+      font-size: 11px;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .source-item .source-meta span {
+      margin-right: 10px;
+    }
+
+    .source-item .delete-btn {
+      background-color: #f44336;
+      color: white;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .source-item .delete-btn:hover {
+      background-color: #d32f2f;
+    }
+
+    .no-sources {
+      color: #999;
+      font-style: italic;
+      font-size: 12px;
+    }
+
     /* プレビューセクション */
     .preview-section {
       background-color: #f5f5f5;
@@ -585,10 +645,11 @@
         <div class="form-group">
           <label>uBlockフィルター</label>
           <textarea id="uBlockFilterInput" rows="8"
-            placeholder="||example.com^&#10;@@||trusted.com^&#10;||*.ads.net^$3p&#10;! Comment line"></textarea>
+            placeholder="||example.com^&#10;@@||trusted.com^&#10;0.0.0.0 ads.example.com&#10;! Comment line"></textarea>
           <div class="help-text">
-            uBlock Origin形式のフィルターを貼り付け<br>
-            サポート: ||hostname^, @@||hostname^, *, !Comments, $domain=, $3p, $1p
+            uBlock Origin形式 または hosts形式のフィルターを貼り付け<br>
+            uBlock: ||hostname^, @@||hostname^, *, !Comments<br>
+            hosts: 0.0.0.0/127.0.0.1 hostname (#コメント対応)
           </div>
         </div>
 
@@ -608,6 +669,13 @@
           <label>URLから読み込み</label>
           <input type="url" id="uBlockUrlInput" placeholder="https://example.com/filters.txt">
           <button id="uBlockUrlImportBtn" class="secondary-btn">URLからインポート</button>
+        </div>
+
+        <!-- 現在のソース一覧 -->
+        <div id="uBlockSourceList" class="source-list">
+          <h4>登録済みフィルターソース</h4>
+          <div id="uBlockSourceItems"></div>
+          <p id="uBlockNoSources" class="no-sources">ソースが登録されていません</p>
         </div>
 
         <!-- プレビューセクション -->
