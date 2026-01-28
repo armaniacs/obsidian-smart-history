@@ -3,11 +3,17 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [2.2.1] - 2026-01-29
 ### Added
 - **uBlock Origin Filter Support**: Advanced domain filtering using uBlock Origin-style syntax.
   - Integrated `ublockParser.js` and `ublockMatcher.js` for rule parsing and matching.
   - Extended `domainUtils.js` to support combined whitelist/blacklist with uBlock rules.
   - Comprehensive test coverage for new functionality.
+
+### Fixed
+- **uBlock Filter Format Compatibility**: Fixed "Cannot read properties of undefined (reading 'length')" error when using the lightweight uBlock filter format (`blockDomains`/`exceptionDomains`).
+  - Added `hasUblockRules()` helper function in `domainUtils.js` to safely check for rules in both old and new formats.
 
 ## [2.2.0] - 2025-01-xx
 ### Added

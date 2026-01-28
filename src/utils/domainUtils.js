@@ -8,6 +8,23 @@ import { isUrlBlocked } from './ublockMatcher.js';
 import { parseUblockFilterList } from './ublockParser.js';
 
 /**
+ * Check if ublockRules object has any rules (supports both old and new formats)
+ * @param {Object} ublockRules - The uBlock rules object
+ * @returns {boolean} - True if there are any rules
+ */
+function hasUblockRules(ublockRules) {
+    // New format: blockDomains/exceptionDomains (arrays)
+    const hasBlockDomains = Array.isArray(ublockRules.blockDomains) && ublockRules.blockDomains.length > 0;
+    const hasExceptionDomains = Array.isArray(ublockRules.exceptionDomains) && ublockRules.exceptionDomains.length > 0;
+
+    // Old format: blockRules/exceptionRules (object arrays)
+    const hasBlockRules = Array.isArray(ublockRules.blockRules) && ublockRules.blockRules.length > 0;
+    const hasExceptionRules = Array.isArray(ublockRules.exceptionRules) && ublockRules.exceptionRules.length > 0;
+
+    return hasBlockDomains || hasExceptionDomains || hasBlockRules || hasExceptionRules;
+}
+
+/**
  * Extract domain from URL, removing www subdomain
  * @param {string} url - The URL to extract domain from
  * @returns {string|null} - The extracted domain without www, or null if invalid
@@ -129,7 +146,7 @@ export async function isDomainAllowed(url, whitelist = [], blacklist = [], ubloc
 
         if (ublockEnabled) {
             const ublockRules = settings[StorageKeys.UBLOCK_RULES];
-            if (ublockRules && (ublockRules.blockRules.length > 0 || ublockRules.exceptionRules.length > 0)) {
+            if (ublockRules && hasUblockRules(ublockRules)) {
                 // Determine context from URL if possible, or use empty
                 const context = {};
                 // We need to import isUrlBlocked and use it here.
