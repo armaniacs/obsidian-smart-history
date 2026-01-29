@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-01-30
+### Added
+- **Filter Source Reload**: Added a "Reload" (再読込) button to registered uBlock filter sources, allowing users to refresh rules from the original URL.
+  - Updates timestamp and rule count upon successful reload.
+  - Validates filter content before updating.
+
 ## [2.2.1] - 2026-01-29
 ### Added
 - **uBlock Origin Filter Support**: Advanced domain filtering using uBlock Origin-style syntax.

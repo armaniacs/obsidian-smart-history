@@ -63,11 +63,18 @@ function renderSourceList(sources) {
     const date = new Date(source.importedAt);
     const dateStr = date.toLocaleString('ja-JP');
 
+    const reloadBtn = isUrl
+      ? `<button class="reload-btn" data-index="${index}" title="再読み込み">再読込</button>`
+      : '';
+
     item.innerHTML = `
       ${urlElement}
       <div class="source-meta">
         <span>${dateStr} | ルール: ${source.ruleCount}</span>
-        <button class="delete-btn" data-index="${index}">削除</button>
+        <div>
+          ${reloadBtn}
+          <button class="delete-btn" data-index="${index}">削除</button>
+        </div>
       </div>
     `;
 
@@ -76,6 +83,10 @@ function renderSourceList(sources) {
 
   container.querySelectorAll('.delete-btn').forEach(btn => {
     btn.addEventListener('click', handleDeleteSource);
+  });
+
+  container.querySelectorAll('.reload-btn').forEach(btn => {
+    btn.addEventListener('click', handleReloadSource);
   });
 }
 
@@ -104,6 +115,83 @@ async function handleDeleteSource(event) {
 
   renderSourceList(sources);
   showStatus('ソースを削除しました', 'success');
+}
+
+/**
+ * ソース再読み込みハンドラ
+ * @param {Event} event
+ */
+async function handleReloadSource(event) {
+  const btn = event.target;
+  const index = parseInt(btn.dataset.index, 10);
+
+  const settings = await getSettings();
+  const sources = settings[StorageKeys.UBLOCK_SOURCES] || [];
+
+  if (index < 0 || index >= sources.length) return;
+
+  const source = sources[index];
+  if (source.url === 'manual') return;
+
+  try {
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    const filterText = await fetchFromUrl(source.url);
+
+    // エラーチェック付きでパース
+    const result = parseUblockFilterListWithErrors(filterText);
+
+    if (result.errors.length > 0) {
+      // エラーがあっても続行するか？ ここでは安全のため中止し、ユーザーに通知
+      showStatus(`${result.errors.length}個のエラーが見つかりました。更新を中止します。`, 'error');
+      // renderSourceList(sources); // ボタン状態を戻すために再描画
+      // return; 
+      // ※ 元のコードではmanual入力時にエラーがあると保存しない方針なので、それに合わせる
+      // ただし、外部ソースの場合は一部エラーがあっても取り込みたい場合があるかもしれないが
+      // ここでは厳密にチェックする
+
+      // ボタンの状態を戻すために再描画が必要だが、finallyで処理する手もあるが
+      // renderSourceListを呼ぶと一括でリセットされるのでそうする
+      renderSourceList(sources);
+      return;
+    }
+
+    if (result.rules.ruleCount === 0) {
+      showStatus('有効なルールが見つかりませんでした。更新を中止します。', 'error');
+      renderSourceList(sources);
+      return;
+    }
+
+    // ドメインリストのみを抽出（軽量化）
+    const blockDomains = result.rules.blockRules.map(r => r.domain);
+    const exceptionDomains = result.rules.exceptionRules.map(r => r.domain);
+
+    // ソース更新
+    sources[index] = {
+      ...source,
+      importedAt: Date.now(),
+      ruleCount: result.rules.ruleCount,
+      blockDomains,
+      exceptionDomains
+    };
+
+    // ルールを再構築
+    const mergedRules = rebuildRulesFromSources(sources);
+
+    await saveSettings({
+      [StorageKeys.UBLOCK_SOURCES]: sources,
+      [StorageKeys.UBLOCK_RULES]: mergedRules
+    });
+
+    renderSourceList(sources);
+    showStatus(`ソースを更新しました（${result.rules.ruleCount}ルール）`, 'success');
+
+  } catch (error) {
+    console.error('更新エラー:', error);
+    showStatus(`更新エラー: ${error.message}`, 'error');
+    renderSourceList(sources); // ボタン状態リセット
+  }
 }
 
 /**
