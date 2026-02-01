@@ -4,6 +4,7 @@
  */
 
 import { StorageKeys, getSettings } from '../utils/storage.js';
+import { addLog, LogType } from '../utils/logger.js';
 
 /**
  * uBlockルールをテキスト形式でエクスポート
@@ -62,7 +63,7 @@ export async function copyToClipboard(rules) {
     await navigator.clipboard.writeText(text);
     return true;
   } catch (error) {
-    console.error('クリップボードコピー失敗:', error);
+    addLog(LogType.ERROR, 'クリップボードコピー失敗', { error: error.message });
     return false;
   }
 }
@@ -99,7 +100,7 @@ async function handleExport() {
     downloadAsFile(rules);
     showStatus('エクスポートしました', 'success');
   } catch (error) {
-    console.error('エクスポートエラー:', error);
+    addLog(LogType.ERROR, 'エクスポートエラー', { error: error.message });
     showStatus(`エクスポートエラー: ${error.message}`, 'error');
   }
 }
@@ -124,7 +125,7 @@ async function handleCopy() {
       showStatus('コピーに失敗しました', 'error');
     }
   } catch (error) {
-    console.error('コピーエラー:', error);
+    addLog(LogType.ERROR, 'コピーエラー', { error: error.message });
     showStatus(`コピーエラー: ${error.message}`, 'error');
   }
 }

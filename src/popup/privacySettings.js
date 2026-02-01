@@ -4,6 +4,7 @@
  */
 
 import { StorageKeys, saveSettings, getSettings } from '../utils/storage.js';
+import { addLog, LogType } from '../utils/logger.js';
 
 // Elements
 const savePrivacySettingsBtn = document.getElementById('savePrivacySettings');
@@ -54,7 +55,7 @@ async function savePrivacySettings() {
         showStatus('プライバシー設定を保存しました', 'success');
 
     } catch (error) {
-        console.error('Error saving privacy settings:', error);
+        addLog(LogType.ERROR, 'Error saving privacy settings', { error: error.message });
         showStatus(`保存エラー: ${error.message}`, 'error');
     }
 }

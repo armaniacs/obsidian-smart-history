@@ -3,11 +3,11 @@ import { getSettings, StorageKeys } from '../utils/storage.js';
 import { showPreview } from './sanitizePreview.js';
 import { showSpinner, hideSpinner } from './spinner.js';
 import { startAutoCloseTimer } from './autoClose.js';
+import { getCurrentTab, isRecordable } from './tabUtils.js';
 
 // 現在のタブ情報を取得して表示
 async function loadCurrentTab() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
+  const tab = await getCurrentTab();
   if (!tab) return;
 
   // Favicon設定
@@ -21,7 +21,7 @@ async function loadCurrentTab() {
 
   // 記録可能ページチェック
   const recordBtn = document.getElementById('recordBtn');
-  if (!url.startsWith('http')) {
+  if (!isRecordable(tab)) {
     recordBtn.disabled = true;
     recordBtn.textContent = '記録できないページです';
   } else {
@@ -38,9 +38,9 @@ async function recordCurrentPage(force = false) {
   statusDiv.className = '';
 
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = await getCurrentTab();
 
-    if (!tab || !tab.url.startsWith('http')) {
+    if (!isRecordable(tab)) {
       throw new Error('記録できないページです');
     }
 

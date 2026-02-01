@@ -29,7 +29,7 @@ export async function addLog(type, message, details = {}) {
         let logs = storage[LOG_STORAGE_KEY] || [];
 
         const entry = {
-            id: crypto.randomUUID(),
+            id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2),
             timestamp: Date.now(),
             type,
             message,

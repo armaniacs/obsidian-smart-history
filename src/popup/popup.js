@@ -3,6 +3,7 @@ import { ObsidianClient } from '../background/obsidianClient.js';
 import { init as initNavigation } from './navigation.js';
 import { init as initDomainFilter } from './domainFilter.js';
 import { init as initPrivacySettings } from './privacySettings.js';
+import { loadSettingsToInputs, extractSettingsFromInputs } from './settingsUiHelper.js';
 
 // Elements
 const apiKeyInput = document.getElementById('apiKey');
@@ -31,6 +32,25 @@ const minScrollDepthInput = document.getElementById('minScrollDepth');
 const saveBtn = document.getElementById('save');
 const statusDiv = document.getElementById('status');
 
+// Mapping of StorageKeys to DOM elements
+const settingsMapping = {
+    [StorageKeys.OBSIDIAN_API_KEY]: apiKeyInput,
+    [StorageKeys.OBSIDIAN_PROTOCOL]: protocolInput,
+    [StorageKeys.OBSIDIAN_PORT]: portInput,
+    [StorageKeys.OBSIDIAN_DAILY_PATH]: dailyPathInput,
+    [StorageKeys.AI_PROVIDER]: aiProviderSelect,
+    [StorageKeys.GEMINI_API_KEY]: geminiApiKeyInput,
+    [StorageKeys.GEMINI_MODEL]: geminiModelInput,
+    [StorageKeys.OPENAI_BASE_URL]: openaiBaseUrlInput,
+    [StorageKeys.OPENAI_API_KEY]: openaiApiKeyInput,
+    [StorageKeys.OPENAI_MODEL]: openaiModelInput,
+    [StorageKeys.OPENAI_2_BASE_URL]: openai2BaseUrlInput,
+    [StorageKeys.OPENAI_2_API_KEY]: openai2ApiKeyInput,
+    [StorageKeys.OPENAI_2_MODEL]: openai2ModelInput,
+    [StorageKeys.MIN_VISIT_DURATION]: minVisitDurationInput,
+    [StorageKeys.MIN_SCROLL_DEPTH]: minScrollDepthInput
+};
+
 function updateVisibility() {
     const provider = aiProviderSelect.value;
     geminiSettingsDiv.style.display = 'none';
@@ -51,42 +71,7 @@ aiProviderSelect.addEventListener('change', updateVisibility);
 // Load current settings
 async function load() {
     const settings = await getSettings();
-
-    // Obsidian
-    if (settings[StorageKeys.OBSIDIAN_API_KEY]) {
-        apiKeyInput.value = settings[StorageKeys.OBSIDIAN_API_KEY];
-    }
-    protocolInput.value = settings[StorageKeys.OBSIDIAN_PROTOCOL] || 'http';
-    portInput.value = settings[StorageKeys.OBSIDIAN_PORT] || '27123';
-    dailyPathInput.value = settings[StorageKeys.OBSIDIAN_DAILY_PATH] || '092.Daily';
-
-    // AI Provider
-    aiProviderSelect.value = settings[StorageKeys.AI_PROVIDER] || 'gemini';
-
-    // Gemini
-    if (settings[StorageKeys.GEMINI_API_KEY]) {
-        geminiApiKeyInput.value = settings[StorageKeys.GEMINI_API_KEY];
-    }
-    geminiModelInput.value = settings[StorageKeys.GEMINI_MODEL] || 'gemini-1.5-flash';
-
-    // OpenAI
-    openaiBaseUrlInput.value = settings[StorageKeys.OPENAI_BASE_URL] || 'https://api.groq.com/openai/v1';
-    if (settings[StorageKeys.OPENAI_API_KEY]) {
-        openaiApiKeyInput.value = settings[StorageKeys.OPENAI_API_KEY];
-    }
-    openaiModelInput.value = settings[StorageKeys.OPENAI_MODEL] || 'openai/gpt-oss-20b';
-
-    // OpenAI 2
-    openai2BaseUrlInput.value = settings[StorageKeys.OPENAI_2_BASE_URL] || 'http://127.0.0.1:11434/v1';
-    if (settings[StorageKeys.OPENAI_2_API_KEY]) {
-        openai2ApiKeyInput.value = settings[StorageKeys.OPENAI_2_API_KEY];
-    }
-    openai2ModelInput.value = settings[StorageKeys.OPENAI_2_MODEL] || 'llama3';
-
-
-    minVisitDurationInput.value = settings[StorageKeys.MIN_VISIT_DURATION] || 5;
-    minScrollDepthInput.value = settings[StorageKeys.MIN_SCROLL_DEPTH] || 50;
-
+    loadSettingsToInputs(settings, settingsMapping);
     updateVisibility();
 }
 
@@ -124,29 +109,7 @@ saveBtn.addEventListener('click', async () => {
         return;
     }
 
-    const newSettings = {
-        [StorageKeys.OBSIDIAN_API_KEY]: apiKeyInput.value.trim(),
-        [StorageKeys.OBSIDIAN_PROTOCOL]: protocolInput.value.trim(),
-        [StorageKeys.OBSIDIAN_PORT]: portInput.value.trim(),
-        [StorageKeys.OBSIDIAN_DAILY_PATH]: dailyPathInput.value.trim(),
-
-        [StorageKeys.AI_PROVIDER]: aiProviderSelect.value,
-
-        [StorageKeys.GEMINI_API_KEY]: geminiApiKeyInput.value.trim(),
-        [StorageKeys.GEMINI_MODEL]: geminiModelInput.value.trim(),
-
-        [StorageKeys.OPENAI_BASE_URL]: openaiBaseUrlInput.value.trim(),
-        [StorageKeys.OPENAI_API_KEY]: openaiApiKeyInput.value.trim(),
-        [StorageKeys.OPENAI_MODEL]: openaiModelInput.value.trim(),
-
-        [StorageKeys.OPENAI_2_BASE_URL]: openai2BaseUrlInput.value.trim(),
-        [StorageKeys.OPENAI_2_API_KEY]: openai2ApiKeyInput.value.trim(),
-        [StorageKeys.OPENAI_2_MODEL]: openai2ModelInput.value.trim(),
-
-        [StorageKeys.MIN_VISIT_DURATION]: parseInt(minVisitDurationInput.value, 10),
-        [StorageKeys.MIN_SCROLL_DEPTH]: parseInt(minScrollDepthInput.value, 10)
-    };
-
+    const newSettings = extractSettingsFromInputs(settingsMapping);
     await saveSettings(newSettings);
 
     // Test connection
@@ -172,3 +135,4 @@ initNavigation();
 initDomainFilter();
 initPrivacySettings();
 load();
+

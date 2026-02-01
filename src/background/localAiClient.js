@@ -4,6 +4,8 @@
  * Service Worker (Manifest V3) environment -> Offscreen Document -> window.ai
  */
 
+import { addLog, LogType } from '../utils/logger.js';
+
 const OFFSCREEN_DOCUMENT_PATH = 'src/offscreen/offscreen.html';
 
 export class LocalAIClient {
@@ -65,7 +67,7 @@ export class LocalAIClient {
             const response = await this.msgOffscreen('CHECK_AVAILABILITY');
             return response?.status || 'unsupported';
         } catch (e) {
-            console.error('LocalAIClient: Failed to check availability via offscreen', e);
+            addLog(LogType.ERROR, 'LocalAIClient: Failed to check availability via offscreen', { error: e.message });
             return 'unsupported';
         }
     }
@@ -95,7 +97,7 @@ export class LocalAIClient {
                 return { success: false, error: response.error };
             }
         } catch (error) {
-            console.error('LocalAIClient: Summarization failed via offscreen', error);
+            addLog(LogType.ERROR, 'LocalAIClient: Summarization failed via offscreen', { error: error.message });
             return { success: false, error: error.message };
         }
     }

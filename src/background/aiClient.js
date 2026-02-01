@@ -1,4 +1,6 @@
 import { getSettings, StorageKeys } from '../utils/storage.js';
+import { LocalAIClient } from './localAiClient.js';
+import { addLog, LogType } from '../utils/logger.js';
 
 /**
  * AI Client
@@ -8,7 +10,9 @@ import { getSettings, StorageKeys } from '../utils/storage.js';
  * 🟢
  */
 export class AIClient {
-    constructor() { }
+    constructor() {
+        this.localAiClient = new LocalAIClient();
+    }
 
     /**
      * 要約を生成する
@@ -87,7 +91,7 @@ export class AIClient {
     async generateGeminiSummary(content, apiKey, modelName) {
         // 【設定検証】: APIキーの存在チェック
         if (!apiKey) {
-            console.warn("Gemini API Key not found.");
+            addLog(LogType.WARN, 'Gemini API Key not found');
             return "No Gemini API Key provided.";
         }
 
@@ -135,7 +139,7 @@ export class AIClient {
             }
 
         } catch (error) {
-            console.error("Gemini Request Failed:", error);
+            addLog(LogType.ERROR, 'Gemini Request Failed', { error: error.message });
             return `Error generating summary: ${error.message}`;
         }
     }
@@ -160,7 +164,7 @@ export class AIClient {
         // 【APIキーチェック】: null/undefinedの場合のみ警告（空文字はローカルLLM等を想定）
         if (apiKey === undefined || apiKey === null) {
             // 【注意】: 一部のローカルLLMはAPIキーを必要としないため、空文字は許容する
-            console.warn("OpenAI API Key is empty or missing.");
+            addLog(LogType.WARN, 'OpenAI API Key is empty or missing');
         }
 
         // 【URL構築】: ベースURLの末尾スラッシュを削除してエンドポイントを構築
@@ -210,7 +214,7 @@ export class AIClient {
             }
 
         } catch (error) {
-            console.error("OpenAI Request Failed:", error);
+            addLog(LogType.ERROR, 'OpenAI Request Failed', { error: error.message });
             return `Error generating summary: ${error.message}`;
         }
     }
@@ -234,5 +238,21 @@ export class AIClient {
         } catch (e) {
             return `List models failed: ${e.message}`;
         }
+    }
+    /**
+     * ローカルAIで要約を生成する
+     * @param {string} content
+     * @returns {Promise<{success: boolean, summary: string|null, error?: string}>}
+     */
+    async summarizeLocally(content) {
+        return this.localAiClient.summarize(content);
+    }
+
+    /**
+     * ローカルAIの利用可能性を確認する
+     * @returns {Promise<string>}
+     */
+    async getLocalAvailability() {
+        return this.localAiClient.getAvailability();
     }
 }

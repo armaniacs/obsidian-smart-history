@@ -10,10 +10,10 @@ import { extractDomain, matchesPattern } from './domainUtils.js';
  */
 class RuleIndex {
   constructor(ublockRules) {
-    this.blockDomainSet = new Set();  // exact block domains
-    this.exceptionDomainSet = new Set();  // exact exception domains
-    this.wildcardBlockDomains = [];  // block domains with wildcards
-    this.wildcardExceptionDomains = [];  // exception domains with wildcards
+    this.blockRulesByDomain = new Map();
+    this.exceptionRulesByDomain = new Map();
+    this.wildcardBlockRules = [];
+    this.wildcardExceptionRules = [];
 
     this.buildIndex(ublockRules);
   }
@@ -23,44 +23,32 @@ class RuleIndex {
    * @param {Object} ublockRules - 軽量化版ルールセット（ドメイン配列）または旧形式
    */
   buildIndex(ublockRules) {
-    // 新形式: blockDomains/exceptionDomains（配列）
-    if (ublockRules.blockDomains) {
-      for (const domain of ublockRules.blockDomains) {
-        if (domain.includes('*')) {
-          this.wildcardBlockDomains.push(domain);
-        } else {
-          this.blockDomainSet.add(domain);
-        }
-      }
-    }
-    // 旧形式互換: blockRules（オブジェクト配列）
-    else if (ublockRules.blockRules) {
+    // blockRules
+    if (ublockRules.blockRules) {
       for (const rule of ublockRules.blockRules) {
-        if (rule.domain && rule.domain.includes('*')) {
-          this.wildcardBlockDomains.push(rule.domain);
-        } else if (rule.domain) {
-          this.blockDomainSet.add(rule.domain);
+        if (!rule.domain) continue;
+        if (rule.domain.includes('*')) {
+          this.wildcardBlockRules.push(rule);
+        } else {
+          if (!this.blockRulesByDomain.has(rule.domain)) {
+            this.blockRulesByDomain.set(rule.domain, []);
+          }
+          this.blockRulesByDomain.get(rule.domain).push(rule);
         }
       }
     }
 
-    // 新形式: exceptionDomains
-    if (ublockRules.exceptionDomains) {
-      for (const domain of ublockRules.exceptionDomains) {
-        if (domain.includes('*')) {
-          this.wildcardExceptionDomains.push(domain);
-        } else {
-          this.exceptionDomainSet.add(domain);
-        }
-      }
-    }
-    // 旧形式互換: exceptionRules
-    else if (ublockRules.exceptionRules) {
+    // exceptionRules
+    if (ublockRules.exceptionRules) {
       for (const rule of ublockRules.exceptionRules) {
-        if (rule.domain && rule.domain.includes('*')) {
-          this.wildcardExceptionDomains.push(rule.domain);
-        } else if (rule.domain) {
-          this.exceptionDomainSet.add(rule.domain);
+        if (!rule.domain) continue;
+        if (rule.domain.includes('*')) {
+          this.wildcardExceptionRules.push(rule);
+        } else {
+          if (!this.exceptionRulesByDomain.has(rule.domain)) {
+            this.exceptionRulesByDomain.set(rule.domain, []);
+          }
+          this.exceptionRulesByDomain.get(rule.domain).push(rule);
         }
       }
     }
@@ -71,23 +59,29 @@ class RuleIndex {
    * @param {string} domain - The domain to check.
    * @returns {Object} - { isBlocked, isException }
    */
-  checkDomain(domain) {
+  checkDomain(domain, context) {
     // 例外チェック（優先）
-    if (this.exceptionDomainSet.has(domain)) {
-      return { isBlocked: false, isException: true };
+    const exactExceptions = this.exceptionRulesByDomain.get(domain) || [];
+    for (const rule of exactExceptions) {
+      if (evaluateOptions(rule, context)) {
+        return { isBlocked: false, isException: true };
+      }
     }
-    for (const pattern of this.wildcardExceptionDomains) {
-      if (matchesPattern(domain, pattern)) {
+    for (const rule of this.wildcardExceptionRules) {
+      if (matchesPattern(domain, rule.domain) && evaluateOptions(rule, context)) {
         return { isBlocked: false, isException: true };
       }
     }
 
     // ブロックチェック
-    if (this.blockDomainSet.has(domain)) {
-      return { isBlocked: true, isException: false };
+    const exactBlocks = this.blockRulesByDomain.get(domain) || [];
+    for (const rule of exactBlocks) {
+      if (evaluateOptions(rule, context)) {
+        return { isBlocked: true, isException: false };
+      }
     }
-    for (const pattern of this.wildcardBlockDomains) {
-      if (matchesPattern(domain, pattern)) {
+    for (const rule of this.wildcardBlockRules) {
+      if (matchesPattern(domain, rule.domain) && evaluateOptions(rule, context)) {
         return { isBlocked: true, isException: false };
       }
     }
@@ -132,8 +126,8 @@ export async function isUrlBlocked(url, ublockRules, context = {}) {
     RULE_INDEX_CACHE.set(ublockRules, index);
   }
 
-  // 軽量化版: シンプルなドメインチェック
-  const result = index.checkDomain(domain);
+  // Perform matching with context
+  const result = index.checkDomain(domain, context);
   return result.isBlocked;
 }
 
@@ -168,7 +162,7 @@ function matchRule(urlDomain, rule, context) {
  */
 function evaluateOptions(rule, context) {
   const opts = rule.options;
-
+  if (!opts) return true; // No options means rule matches domain.
   // $domain=example.com|other.com – allow only when currentDomain matches one of the list.
   if (opts.domains && opts.domains.length > 0) {
     if (!context.currentDomain) return false;

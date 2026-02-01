@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.3] - 2026-02-02
+### Added
+- **Enhanced Logging**: Unified logging system with `addLog` function for consistent error/warning reporting across all modules.
+- **Local AI Client Improvements**: Added better error handling and availability checking for local AI models.
+- **Settings Management Refactor**: Centralized settings mapping and extraction in popup UI for better maintainability.
+- **uBlock Filter Enhancements**: Added reload functionality for filter sources with validation and status updates.
+
+### Changed
+- **Improved Error Handling**: Replaced console.log/error/warn statements with structured logging throughout the codebase.
+- **Optimized uBlock Matcher**: Refactored rule indexing and matching for better performance with wildcard domains.
+- **Storage Utilities**: Added functions for managing saved URLs to prevent duplicates.
+
+### Fixed
+- **uBlock Filter Format Compatibility**: Fixed undefined length error when using lightweight uBlock filter format.
+- **Content-Type Validation**: Added warning for non-text/plain content types when importing uBlock filters.
+- **Crypto API Fallback**: Added fallback for environments where `crypto.randomUUID` is not available.
+
 ## [2.2.2] - 2026-01-30
 ### Added
 - **Filter Source Reload**: Added a "Reload" (再読込) button to registered uBlock filter sources, allowing users to refresh rules from the original URL.

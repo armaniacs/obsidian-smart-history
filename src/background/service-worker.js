@@ -1,14 +1,14 @@
 import { ObsidianClient } from './obsidianClient.js';
 import { AIClient } from './aiClient.js';
-import { LocalAIClient } from './localAiClient.js';
+
 import { sanitizeRegex } from '../utils/piiSanitizer.js';
-import { getSettings, StorageKeys } from '../utils/storage.js';
+import { getSettings, StorageKeys, getSavedUrls, setSavedUrls } from '../utils/storage.js';
 import { isDomainAllowed } from '../utils/domainUtils.js';
 import { addLog, LogType } from '../utils/logger.js';
 
 const obsidian = new ObsidianClient();
 const aiClient = new AIClient();
-const localAiClient = new LocalAIClient();
+
 
 // Cache to store tab data including content and validation status
 // Key: TabID, Value: { title, url, content, isValidVisit, timestamp }
@@ -62,8 +62,7 @@ async function processUrlRecording(data) {
 
     // 2. Check for details
     const settings = await getSettings(); // Load settings
-    const savedUrls = await chrome.storage.local.get('savedUrls');
-    const urlSet = new Set(savedUrls.savedUrls || []);
+    const urlSet = await getSavedUrls();
 
     if (!skipDuplicateCheck && urlSet.has(url)) {
       return { success: true, skipped: true };
@@ -87,16 +86,16 @@ async function processUrlRecording(data) {
       // L1: Local Summarization (縮約)
       if (sanitizedSettings.useLocalAi) {
         // LocalAIが利用可能な場合、それで要約（あるいは前処理）
-        const localStatus = await localAiClient.getAvailability();
+        const localStatus = await aiClient.getLocalAvailability();
         if (localStatus === 'readily' || mode === 'local_only') {
-          const localResult = await localAiClient.summarize(content);
+          const localResult = await aiClient.summarizeLocally(content);
           if (localResult.success) {
             processingText = localResult.summary;
             // Local Onlyならここで完了
             if (mode === 'local_only') {
               summary = localResult.summary;
             }
-          }else {
+          } else {
             if (mode === 'local_only') {
               summary = `Summary not available. (Error: ${localResult.error})`;
             }
@@ -157,7 +156,7 @@ async function processUrlRecording(data) {
     // 6. Update saved list
     if (!urlSet.has(url)) {
       urlSet.add(url);
-      await chrome.storage.local.set({ savedUrls: Array.from(urlSet) });
+      await setSavedUrls(urlSet);
     }
 
     // 7. Notification

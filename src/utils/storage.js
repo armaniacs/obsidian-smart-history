@@ -93,3 +93,21 @@ export async function getApiKey() {
     const settings = await getSettings();
     return settings[StorageKeys.OBSIDIAN_API_KEY];
 }
+
+/**
+ * Get the list of saved URLs
+ * @returns {Promise<Set<string>>} Set of saved URLs
+ */
+export async function getSavedUrls() {
+    const result = await chrome.storage.local.get('savedUrls');
+    return new Set(result.savedUrls || []);
+}
+
+/**
+ * Save the list of URLs
+ * @param {Set<string>} urlSet - Set of URLs to save
+ */
+export async function setSavedUrls(urlSet) {
+    await chrome.storage.local.set({ savedUrls: Array.from(urlSet) });
+}
+

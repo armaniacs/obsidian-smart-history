@@ -30,7 +30,7 @@ const DISPLAY_VALUES = {
 };
 
 const MESSAGES = {
-  MASK_STATUS_TEMPLATE: function(count) {
+  MASK_STATUS_TEMPLATE: function (count) {
     return `${count}件の個人情報をマスクしました`;
   },
   MODAL_NOT_FOUND: 'Confirmation modal not found in DOM',

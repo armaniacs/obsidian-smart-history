@@ -6,6 +6,8 @@
 import { StorageKeys, saveSettings, getSettings } from '../utils/storage.js';
 import { extractDomain, parseDomainList, validateDomainList } from '../utils/domainUtils.js';
 import { init as initUblockImport, saveUblockSettings } from './ublockImport.js';
+import { addLog, LogType } from '../utils/logger.js';
+import { getCurrentTab, isRecordable } from './tabUtils.js';
 
 // Elements
 const generalTabBtn = document.getElementById('generalTab');
@@ -69,7 +71,7 @@ export function init() {
     import('./ublockExport.js').then(module => {
         module.init();
     }).catch(error => {
-        console.error('Failed to load ublockExport module:', error);
+        addLog(LogType.ERROR, 'Failed to load ublockExport module', { error: error.message });
     });
 
     // Save domain settings
@@ -150,20 +152,14 @@ export async function loadDomainSettings() {
 
 async function addCurrentDomain() {
     try {
-        // Check if we have permission to access tabs
-        if (!chrome.tabs) {
-            showDomainStatus('タブへのアクセス権限がありません', 'error');
-            return;
-        }
-
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const tab = await getCurrentTab();
 
         if (!tab) {
             showDomainStatus('アクティブなタブが見つかりません', 'error');
             return;
         }
 
-        if (!tab.url || !tab.url.startsWith('http')) {
+        if (!isRecordable(tab)) {
             showDomainStatus('現在のページはHTTP/HTTPSページではありません', 'error');
             return;
         }
@@ -189,7 +185,7 @@ async function addCurrentDomain() {
 
         showDomainStatus(`ドメイン "${domain}" を追加しました`, 'success');
     } catch (error) {
-        console.error('Error adding current domain:', error);
+        addLog(LogType.ERROR, 'Error adding current domain', { error: error.message });
         showDomainStatus(`エラーが発生しました: ${error.message}`, 'error');
     }
 }
@@ -210,7 +206,7 @@ export async function handleSaveDomainSettings() {
             await saveSettings({ [StorageKeys.UBLOCK_FORMAT_ENABLED]: false });
         }
     } catch (error) {
-        console.error('Error saving domain settings:', error);
+        addLog(LogType.ERROR, 'Error saving domain settings', { error: error.message });
         showDomainStatus(`保存エラー: ${error.message}`, 'error');
     }
 }
@@ -259,7 +255,7 @@ async function saveSimpleFormatSettings() {
 
 function showDomainStatus(message, type) {
     if (!domainStatusDiv) {
-        console.error('Domain status div not found');
+        addLog(LogType.ERROR, 'Domain status div not found');
         return;
     }
 

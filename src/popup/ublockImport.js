@@ -5,6 +5,7 @@
 
 import { parseUblockFilterList, parseUblockFilterListWithErrors } from '../utils/ublockParser.js';
 import { StorageKeys, saveSettings, getSettings } from '../utils/storage.js';
+import { addLog, LogType } from '../utils/logger.js';
 
 let dropZoneActive = false;
 let currentSourceUrl = null;
@@ -188,7 +189,7 @@ async function handleReloadSource(event) {
     showStatus(`ソースを更新しました（${result.rules.ruleCount}ルール）`, 'success');
 
   } catch (error) {
-    console.error('更新エラー:', error);
+    addLog(LogType.ERROR, '更新エラー', { error: error.message });
     showStatus(`更新エラー: ${error.message}`, 'error');
     renderSourceList(sources); // ボタン状態リセット
   }
@@ -396,7 +397,7 @@ export async function saveUblockSettings() {
     const action = existingIndex >= 0 ? '更新' : '追加';
     showStatus(`フィルターソースを${action}しました（${result.rules.ruleCount}ルール）`, 'success');
   } catch (error) {
-    console.error('保存エラー:', error);
+    addLog(LogType.ERROR, '保存エラー', { error: error.message });
     showStatus(`保存エラー: ${error.message}`, 'error');
   }
 }
@@ -426,7 +427,7 @@ export async function fetchFromUrl(url) {
 
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('text/plain')) {
-      console.warn('Content-Typeがtext/plainではありません:', contentType);
+      addLog(LogType.WARN, 'Content-Typeがtext/plainではありません', { contentType });
     }
 
     return await response.text();

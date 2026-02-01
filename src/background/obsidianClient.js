@@ -1,4 +1,5 @@
 import { getSettings, StorageKeys } from '../utils/storage.js';
+import { addLog, LogType } from '../utils/logger.js';
 
 export class ObsidianClient {
     constructor() {
@@ -14,7 +15,7 @@ export class ObsidianClient {
         const apiKey = settings[StorageKeys.OBSIDIAN_API_KEY];
 
         if (!apiKey) {
-            console.warn('Obsidian API Key is missing.');
+            addLog(LogType.WARN, 'Obsidian API Key is missing');
             throw new Error('API Key missing');
         }
 
