@@ -4,7 +4,35 @@
  * UF-401: 基本DOM要素のモック設定
  */
 
-import { jest } from '@jest/globals';
+// jestをグローバル変数として定義
+global.jest = global.jest || {};
+
+// viをグローバル変数として定義
+global.vi = global.jest;
+
+// documentをグローバル変数として定義
+global.document = {
+  getElementById: function(id) {
+    return null;
+  },
+  querySelector: function(selector) {
+    return null;
+  },
+  querySelectorAll: function(selector) {
+    return [];
+  },
+  createElement: function(tagName) {
+    return {
+      addEventListener: function() {},
+      classList: { add: function() {}, remove: function() {} },
+      setAttribute: function() {},
+      innerHTML: '',
+    };
+  },
+  body: {
+    innerHTML: '',
+  }
+};
 
 // 【UF-401】基本DOM要素のモック設定
 // 【実装方針】: jest.setup.jsでDOM要素を事前に作成することで、モジュール読み込み時にdocument.getElementByIdが正しく動作するようにする
@@ -211,23 +239,23 @@ jest.spyOn(document, 'getElementById').mockImplementation((id) => {
         const preview = document.getElementById('uBlockPreview');
         
         if (ruleCount && exceptionCount && errorCount && errorDetails && preview) {
-          // Parse the text to get counts
-          try {
-            const { parseUblockFilterList } = require('./src/utils/ublockParser.js');
-            const result = parseUblockFilterList(el.value);
-            ruleCount.textContent = result.blockRules.length.toString();
-            exceptionCount.textContent = result.exceptionRules.length.toString();
-            errorCount.textContent = result.errors.length.toString();
-            errorDetails.textContent = result.errors.join('\n');
-            preview.style.display = 'block';
-          } catch (error) {
-            ruleCount.textContent = '0';
-            exceptionCount.textContent = '0';
-            errorCount.textContent = '1';
-            errorDetails.textContent = error.message;
-            preview.style.display = 'block';
-          }
-        }
+         // Parse the text to get counts
+         try {
+           const { parseUblockFilterList } = require('../src/utils/ublockParser.js');
+           const result = parseUblockFilterList(el.value);
+           ruleCount.textContent = result.blockRules.length.toString();
+           exceptionCount.textContent = result.exceptionRules.length.toString();
+           errorCount.textContent = result.errors.length.toString();
+           errorDetails.textContent = result.errors.join('\n');
+           preview.style.display = 'block';
+         } catch (error) {
+           ruleCount.textContent = '0';
+           exceptionCount.textContent = '0';
+           errorCount.textContent = '1';
+           errorDetails.textContent = error.message;
+           preview.style.display = 'block';
+         }
+       }
       }
       if (event.type === 'dragover' && el._dragOverHandler) {
         el._dragOverHandler(event);
@@ -344,10 +372,51 @@ jest.spyOn(document, 'getElementById').mockImplementation((id) => {
     });
     return el;
   }
+  // domainFilter.js 等のトップレベルで必要な要素（キャッシュ付き）
+  // 同一IDに対して常に同じオブジェクトを返す
+  if (!global.__mockElementCache) {
+    global.__mockElementCache = {};
+  }
   if (id === 'domainStatus') {
-    const el = createMockElement('div');
-    el.textContent = '';
-    return el;
+    if (!global.__mockElementCache['domainStatus']) {
+      const el = createMockElement('div');
+      el.textContent = '';
+      global.__mockElementCache['domainStatus'] = el;
+    }
+    return global.__mockElementCache['domainStatus'];
+  }
+  if (!global.__mockElementCache[id]) {
+    const domainFilterIds = {
+      'generalTab': 'button',
+      'domainTab': 'button',
+      'privacyTab': 'button',
+      'generalPanel': 'div',
+      'domainPanel': 'div',
+      'privacyPanel': 'div',
+      'filterDisabled': 'radio',
+      'filterWhitelist': 'radio',
+      'filterBlacklist': 'radio',
+      'domainListSection': 'div',
+      'domainListLabel': 'label',
+      'domainList': 'textarea',
+      'addCurrentDomain': 'button',
+      'saveDomainSettings': 'button',
+      'simpleFormatEnabled': 'checkbox',
+      'ublockFormatEnabled': 'checkbox',
+    };
+    const elType = domainFilterIds[id];
+    if (elType) {
+      const el = createMockElement(elType === 'radio' || elType === 'checkbox' ? 'input' : elType);
+      if (elType === 'radio') { el.type = 'radio'; el.checked = false; }
+      if (elType === 'checkbox') { el.type = 'checkbox'; el.checked = id === 'simpleFormatEnabled'; }
+      if (id === 'generalPanel' || id === 'domainPanel' || id === 'privacyPanel') {
+        el.classList.toggle = jest.fn();
+      }
+      global.__mockElementCache[id] = el;
+    }
+  }
+  if (global.__mockElementCache[id]) {
+    return global.__mockElementCache[id];
   }
   return null;
 });
@@ -363,8 +432,6 @@ jest.spyOn(document, 'createElement').mockImplementation((tagName) => {
 });
 
 // グローバル変数のリセット（各テスト前に実行）
-import { beforeEach } from '@jest/globals';
-
 beforeEach(() => {
   jest.clearAllMocks();
   // モックをリセット

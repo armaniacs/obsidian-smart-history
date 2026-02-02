@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [2.2.3] - 2026-02-02
+## [2.2.3] - 2026-02-01
 ### Added
 - **Enhanced Logging**: Unified logging system with `addLog` function for consistent error/warning reporting across all modules.
 - **Local AI Client Improvements**: Added better error handling and availability checking for local AI models.

@@ -5,8 +5,11 @@ import { showSpinner, hideSpinner } from './spinner.js';
 import { startAutoCloseTimer } from './autoClose.js';
 import { getCurrentTab, isRecordable } from './tabUtils.js';
 
+// Export functions for testing
+export { getCurrentTab };
+
 // 現在のタブ情報を取得して表示
-async function loadCurrentTab() {
+export async function loadCurrentTab() {
   const tab = await getCurrentTab();
   if (!tab) return;
 
@@ -31,7 +34,7 @@ async function loadCurrentTab() {
 }
 
 // 手動記録処理
-async function recordCurrentPage(force = false) {
+export async function recordCurrentPage(force = false) {
   const statusDiv = document.getElementById('mainStatus');
   hideSpinner(); // 前回のスピナー状態をクリア
   statusDiv.textContent = '';
@@ -163,7 +166,10 @@ async function recordCurrentPage(force = false) {
 }
 
 // イベントリスナー設定
-document.getElementById('recordBtn').addEventListener('click', () => recordCurrentPage(false));
+const recordBtn = document.getElementById('recordBtn');
+if (recordBtn) {
+  recordBtn.addEventListener('click', () => recordCurrentPage(false));
+}
 
 // 初期化
 loadCurrentTab();

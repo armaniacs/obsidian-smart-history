@@ -3,12 +3,17 @@
  * ES Modules対応のChrome拡張機能テスト設定
  */
 
-export default {
+module.exports = {
   // テスト環境: Node.js環境でjsdomを使用
-  testEnvironment: 'jsdom',
+  testEnvironment: 'node',
 
   // ES Modulesを有効化
-  transform: {},
+  transform: {
+    '^.+\\.js$': ['babel-jest', { configFile: './babel.config.cjs' }]
+  },
+  transformIgnorePatterns: [
+    '/node_modules/(?!(jest|@jest)/)'
+  ],
 
   // テストファイルのパターン
   testMatch: [
@@ -35,11 +40,12 @@ export default {
 
   // モジュール解決
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1'
+    '^src/(.*)$': '<rootDir>/src/$1',
+    '^@/(.*)$': '<rootDir>/src/$1'
   },
 
   // セットアップファイル
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  setupFilesAfterEnv: ['./jest.setup.js'],
 
   // 冗長モード
   verbose: true

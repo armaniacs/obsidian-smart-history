@@ -16,10 +16,41 @@
 const CACHE_CONFIG = {
   /** キャッシュの最大サイズ */
   MAX_SIZE: 100,
+  /** LRUキャッシュの最大エントリ数 */
+  LRU_MAX_ENTRIES: 50
 };
 
 /** 【キャッシュ】: パーサーキャッシュ 🟢 */
 const PARSER_CACHE = new Map();
+/** 【LRUキャッシュ】: 最近使用されたエントリを追跡 */
+const LRU_TRACKER = new Set();
+
+/**
+ * LRUキャッシュから最も古いエントリを削除
+ */
+function evictLRUEntry() {
+  const firstKey = LRU_TRACKER.values().next().value;
+  if (firstKey !== undefined) {
+    LRU_TRACKER.delete(firstKey);
+    PARSER_CACHE.delete(firstKey);
+  }
+}
+
+/**
+ * LRUトラッカーを更新
+ * @param {string} key - キャッシュキー
+ */
+function updateLRUTracker(key) {
+  // 既存のキーを削除
+  LRU_TRACKER.delete(key);
+  // キーを最後に追加（最近使用）
+  LRU_TRACKER.add(key);
+  
+  // LRUキャッシュの最大サイズを超えた場合は最も古いエントリを削除
+  if (LRU_TRACKER.size > CACHE_CONFIG.LRU_MAX_ENTRIES) {
+    evictLRUEntry();
+  }
+}
 
 /** 【正規表現定数】: uBlock形式の基本パターンマッチング 🟢 */
 const PATTERNS = {
@@ -38,6 +69,9 @@ const PATTERNS = {
   /** ドメイン形式検証 */
   DOMAIN_VALIDATION: /^[a-z0-9.*-]+(\.[a-z0-9.*-]+)*$/i,
 };
+
+// 正規表現キャッシュ
+const REGEX_CACHE = new Map();
 
 /** 【ルールタイプ定数】: ルールの種類を表す文字列定数 🟢 */
 const RULE_TYPES = {
@@ -106,6 +140,49 @@ const NULL_RULE_ID = '00000000-0000-0000-0000-000000000000';
  */
 function isValidString(value) {
   return value != null && typeof value === 'string';
+}
+
+/**
+ * キャッシュされた正規表現の実行
+ * @param {RegExp} regex - 正規表現
+ * @param {string} str - 文字列
+ * @returns {boolean} - マッチ結果
+ */
+function cachedRegexTest(regex, str) {
+  const cacheKey = regex.source + '|' + str;
+  if (REGEX_CACHE.has(cacheKey)) {
+    return REGEX_CACHE.get(cacheKey);
+  }
+  
+  const result = regex.test(str);
+  REGEX_CACHE.set(cacheKey, result);
+  
+  // キャッシュサイズ制限
+  if (REGEX_CACHE.size > 1000) {
+    const firstKey = REGEX_CACHE.keys().next().value;
+    REGEX_CACHE.delete(firstKey);
+  }
+  
+  return result;
+}
+
+// LRUキャッシュのクリーンアップ間隔（ミリ秒）
+const CLEANUP_INTERVAL = 300000; // 5分
+
+// 最後にクリーンアップした時間
+let lastCleanupTime = Date.now();
+
+/**
+ * LRUキャッシュのクリーンアップ
+ */
+function cleanupCache() {
+  const now = Date.now();
+  if (now - lastCleanupTime > CLEANUP_INTERVAL) {
+    REGEX_CACHE.clear();
+    PARSER_CACHE.clear();
+    LRU_TRACKER.clear();
+    lastCleanupTime = now;
+  }
 }
 
 // ============================================================================
@@ -305,7 +382,7 @@ export function isCommentLine(line) {
     return false;
   }
   // 【パターンマッチング】: `!` で始まる行をコメント行と判定
-  return PATTERNS.COMMENT_PREFIX.test(line);
+  return cachedRegexTest(PATTERNS.COMMENT_PREFIX, line);
 }
 
 /**
@@ -345,8 +422,8 @@ export function isValidRulePattern(line) {
     return false;
   }
   // 【パターン検証】: `||` プレフィックスと `^` サフィックスの両方を検出
-  const hasPrefix = PATTERNS.RULE_PREFIX.test(line);
-  const hasSuffix = PATTERNS.RULE_SUFFIX.test(line);
+  const hasPrefix = cachedRegexTest(PATTERNS.RULE_PREFIX, line);
+  const hasSuffix = cachedRegexTest(PATTERNS.RULE_SUFFIX, line);
   return hasPrefix && hasSuffix;
 }
 
@@ -531,7 +608,7 @@ export function parseUblockFilterLine(line) {
   }
 
   // 【hosts形式コメントスキップ】: `#` で始まる行は無効（nullを返す）🟢
-  if (PATTERNS.HOSTS_COMMENT_PREFIX.test(trimmedLine)) {
+  if (cachedRegexTest(PATTERNS.HOSTS_COMMENT_PREFIX, trimmedLine)) {
     return null;
   }
 
@@ -542,7 +619,7 @@ export function parseUblockFilterLine(line) {
   }
 
   // 【hosts形式検出】: 0.0.0.0 または 127.0.0.1 で始まる行を処理 🟢
-  const hostsMatch = PATTERNS.HOSTS_FORMAT.exec(trimmedLine);
+  const hostsMatch = cachedRegexTest(PATTERNS.HOSTS_FORMAT, trimmedLine) ? PATTERNS.HOSTS_FORMAT.exec(trimmedLine) : null;
   if (hostsMatch) {
     return parseHostsLine(trimmedLine, hostsMatch[2]);
   }
@@ -656,6 +733,9 @@ function parseHostsLine(rawLine, hostsPart) {
  * @returns {ParseResultWithErrors} - パース結果とエラー情報
  */
 export function parseUblockFilterListWithErrors(text) {
+  // 【キャッシュクリーンアップ】: 定期的にキャッシュをクリーンアップ 🟢
+  cleanupCache();
+  
   // 【入力値検証】: null/undefinedの場合は空のルールセットを返す 🟢
   if (!isValidString(text)) {
     return {
@@ -668,6 +748,8 @@ export function parseUblockFilterListWithErrors(text) {
   // 【キャッシュキー生成】: 最初の100文字と長さでキャッシュキーを生成
   const cacheKey = text.substring(0, 100) + '_' + text.length;
   if (PARSER_CACHE.has(cacheKey)) {
+    // LRUトラッカーを更新
+    updateLRUTracker(cacheKey);
     return { ...PARSER_CACHE.get(cacheKey) }; // ディープコピーして返す
   }
 
@@ -681,8 +763,20 @@ export function parseUblockFilterListWithErrors(text) {
 
   // 【行パース】: 各行をパースしてルールに分類 🟢
   // 【パフォーマンス】: linearループで効率的、1,000行<1秒が達成可能 🟢
+  // 【メモリ最適化】: early returnで無駄な処理をスキップ 🟢
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    
+    // 【空行スキップ】: 空行は事前にスキップして処理を軽量化 🟢
+    if (isEmptyLine(line)) {
+      continue;
+    }
+    
+    // 【コメント行スキップ】: コメント行も事前にスキップ 🟢
+    if (isCommentLine(line)) {
+      continue;
+    }
+    
     try {
       const rule = parseUblockFilterLine(line); // 【単行パース】: 1行ずつ処理
 
@@ -721,11 +815,8 @@ export function parseUblockFilterListWithErrors(text) {
   const result = { rules, errors };
 
   // 【キャッシュ保存】: キャッシュに結果を保存 🟢
-  // 【キャッシュサイズ管理】: 最大サイズを超えた場合は古いキャッシュを削除
-  if (PARSER_CACHE.size >= CACHE_CONFIG.MAX_SIZE) {
-    const firstKey = PARSER_CACHE.keys().next().value;
-    PARSER_CACHE.delete(firstKey);
-  }
+  // LRUトラッカーを更新
+  updateLRUTracker(cacheKey);
   PARSER_CACHE.set(cacheKey, result);
 
   return result;
@@ -747,6 +838,9 @@ export function parseUblockFilterListWithErrors(text) {
  * @returns {Object} - パースされたUblockRulesオブジェクト
  */
 export function parseUblockFilterList(text) {
+  // 【キャッシュクリーンアップ】: 定期的にキャッシュをクリーンアップ 🟢
+  cleanupCache();
+  
   // 【入力値検証】: null/undefinedの場合は空のルールセットを返す 🟢
   if (!isValidString(text)) {
     return createEmptyRuleset();
@@ -756,6 +850,8 @@ export function parseUblockFilterList(text) {
   // 【キャッシュキー生成】: 最初の100文字と長さでキャッシュキーを生成
   const cacheKey = text.substring(0, 100) + '_' + text.length;
   if (PARSER_CACHE.has(cacheKey)) {
+    // LRUトラッカーを更新
+    updateLRUTracker(cacheKey);
     return { ...PARSER_CACHE.get(cacheKey) }; // ディープコピーして返す
   }
 
@@ -768,7 +864,18 @@ export function parseUblockFilterList(text) {
 
   // 【行パース】: 各行をパースしてルールに分類 🟢
   // 【パフォーマンス】: linearループで効率的、1,000行<1秒が達成可能 🟢
+  // 【メモリ最適化】: early returnで無駄な処理をスキップ 🟢
   for (const line of lines) {
+    // 【空行スキップ】: 空行は事前にスキップして処理を軽量化 🟢
+    if (isEmptyLine(line)) {
+      continue;
+    }
+    
+    // 【コメント行スキップ】: コメント行も事前にスキップ 🟢
+    if (isCommentLine(line)) {
+      continue;
+    }
+    
     const rule = parseUblockFilterLine(line); // 【単行パース】: 1行ずつ処理
 
     // 【ルール分類】: nullでない場合にタイプごとに追加 🟢
@@ -784,7 +891,7 @@ export function parseUblockFilterList(text) {
   // 【メタデータ構築】: パース結果の集計情報 🟢
   const result = {
     blockRules: blockRules,                         // 【ブロックルール配列】
-    exceptionRules: exceptionRules,                     // 【例外ルール配列】
+    exceptionRules: exceptionRules,                 // 【例外ルール配列】
     metadata: {
       source: DEFAULT_METADATA.SOURCE,  // 【データソース】: テキストエリア貼り付け
       importedAt: Date.now(),           // 【インポート日時】: UNIXタイムスタンプ
@@ -794,11 +901,8 @@ export function parseUblockFilterList(text) {
   };
 
   // 【キャッシュ保存】: キャッシュに結果を保存 🟢
-  // 【キャッシュサイズ管理】: 最大サイズを超えた場合は古いキャッシュを削除
-  if (PARSER_CACHE.size >= CACHE_CONFIG.MAX_SIZE) {
-    const firstKey = PARSER_CACHE.keys().next().value;
-    PARSER_CACHE.delete(firstKey);
-  }
+  // LRUトラッカーを更新
+  updateLRUTracker(cacheKey);
   PARSER_CACHE.set(cacheKey, result);
 
   return result;
