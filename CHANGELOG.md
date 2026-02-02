@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.4] - 2026-02-03
+### Fixed
+- **Jest ESM設定修正**: babel-jestバージョン不整合(v30→v29)の解消、`--experimental-vm-modules`とbabel-jest変換の競合を修正
+- **テスト基盤改善**: jest.config.jsをCJS形式に変更し、jest.setup.jsをsetupFilesAfterEnvに正しく登録
+- **DOMモック強化**: jest.setup.jsにquerySelector/querySelectorAllを追加、domainFilter.js用DOM要素のキャッシュ付きモックを導入
+- **domainFilter.test.js全面書き直し**: jest.mockによる正しい依存モック、fakeTimersによるタイマー処理で全12テストがパス
+
 ## [2.2.3] - 2026-02-01
 ### Added
 - **Enhanced Logging**: Unified logging system with `addLog` function for consistent error/warning reporting across all modules.
