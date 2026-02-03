@@ -3,6 +3,8 @@
  * Wrapper for chrome.storage.local to manage settings.
  */
 
+import { migrateUblockSettings } from './migration.js';
+
 export const StorageKeys = {
     OBSIDIAN_API_KEY: 'obsidian_api_key',
     OBSIDIAN_PROTOCOL: 'obsidian_protocol', // 'http' or 'https'
@@ -81,7 +83,12 @@ const DEFAULT_SETTINGS = {
 };
 
 export async function getSettings() {
-    const settings = await chrome.storage.local.get(null);
+    let settings = await chrome.storage.local.get(null);
+    const migrated = await migrateUblockSettings();
+    if (migrated) {
+        // Re-fetch settings after migration
+        settings = await chrome.storage.local.get(null);
+    }
     return { ...DEFAULT_SETTINGS, ...settings };
 }
 

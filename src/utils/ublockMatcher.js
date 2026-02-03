@@ -3,6 +3,7 @@
 // This module is used by domainUtils.js to extend domain filtering with uBlock rules.
 
 import { extractDomain, matchesPattern } from './domainUtils.js';
+import { migrateToLightweightFormat } from './migration.js';
 
 /**
  * Rule index for fast lookup (UF-302 performance optimization).
@@ -23,9 +24,12 @@ class RuleIndex {
    * @param {Object} ublockRules - 軽量化版ルールセット（ドメイン配列）または旧形式
    */
   buildIndex(ublockRules) {
-    // blockRules
-    if (ublockRules.blockRules) {
-      for (const rule of ublockRules.blockRules) {
+    // Handle migration for backward compatibility
+    const rules = migrateToLightweightFormat(ublockRules);
+
+    // Handle blockRules (old format)
+    if (rules.blockRules) {
+      for (const rule of rules.blockRules) {
         if (!rule.domain) continue;
         if (rule.domain.includes('*')) {
           this.wildcardBlockRules.push(rule);
@@ -38,9 +42,23 @@ class RuleIndex {
       }
     }
 
-    // exceptionRules
-    if (ublockRules.exceptionRules) {
-      for (const rule of ublockRules.exceptionRules) {
+    // Handle blockDomains (new lightweight format)
+    if (rules.blockDomains) {
+      for (const domain of rules.blockDomains) {
+        if (domain.includes('*')) {
+          this.wildcardBlockRules.push({ domain, options: {} });
+        } else {
+          if (!this.blockRulesByDomain.has(domain)) {
+            this.blockRulesByDomain.set(domain, []);
+          }
+          this.blockRulesByDomain.get(domain).push({ domain, options: {} });
+        }
+      }
+    }
+
+    // Handle exceptionRules (old format)
+    if (rules.exceptionRules) {
+      for (const rule of rules.exceptionRules) {
         if (!rule.domain) continue;
         if (rule.domain.includes('*')) {
           this.wildcardExceptionRules.push(rule);
@@ -48,7 +66,21 @@ class RuleIndex {
           if (!this.exceptionRulesByDomain.has(rule.domain)) {
             this.exceptionRulesByDomain.set(rule.domain, []);
           }
-          this.exceptionRulesByDomain.get(rule.domain).push(rule);
+          this.exceptionRulesByDomain.get(domain).push(rule);
+        }
+      }
+    }
+
+    // Handle exceptionDomains (new lightweight format)
+    if (rules.exceptionDomains) {
+      for (const domain of rules.exceptionDomains) {
+        if (domain.includes('*')) {
+          this.wildcardExceptionRules.push({ domain, options: {} });
+        } else {
+          if (!this.exceptionRulesByDomain.has(domain)) {
+            this.exceptionRulesByDomain.set(domain, []);
+          }
+          this.exceptionRulesByDomain.get(domain).push({ domain, options: {} });
         }
       }
     }
