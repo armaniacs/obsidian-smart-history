@@ -66,7 +66,7 @@ class RuleIndex {
           if (!this.exceptionRulesByDomain.has(rule.domain)) {
             this.exceptionRulesByDomain.set(rule.domain, []);
           }
-          this.exceptionRulesByDomain.get(domain).push(rule);
+          this.exceptionRulesByDomain.get(rule.domain).push(rule);
         }
       }
     }
