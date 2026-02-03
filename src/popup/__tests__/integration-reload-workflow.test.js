@@ -18,16 +18,6 @@ describe('フローワーク: URLからインポートしてソースを再読�
 @@||safe.com^
 `;
 
-  const sources = [
-    {
-      url: 'https://example.com/filters.txt',
-      importedAt: Date.now() - 86400000,
-      ruleCount: 2,
-      blockDomains: ['example.com'],
-      exceptionDomains: ['safe.com']
-    }
-  ];
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -61,7 +51,7 @@ describe('フローワーク: URLからインポートしてソースを再読�
     expect(new Set(merged.exceptionDomains)).toEqual(new Set(['safe.com']));
   });
 
-  test('無効な行がスキップされる（サフィックスなしのドメインルールは無効）', async () => {
+  test('無効な行がスキップされる（サフィックスなしのドメインルールは無効）', () => {
     const mixedFilterText = `
 ||example.com
 invalid line without caret
@@ -71,11 +61,11 @@ invalid line without caret
     const result = parseUblockFilterListWithErrors(mixedFilterText);
 
     expect(result.errors.length).toBe(0);
-    expect(result.rules.blockRules.length).toBe(0); // ||example.com^がないため(parseUblockFilterLineはnullを返す)
+    expect(result.rules.blockRules.length).toBe(0); // ||example.comがないため（サフィックス^がない）
     expect(result.rules.exceptionRules.length).toBe(1); // @@||safe.com^は有効
   });
 
-  test('空のフィルターリストを検出', async () => {
+  test('空のフィルターリストを検出', () => {
     const emptyFilterText = `
 # Only comments here
 !
