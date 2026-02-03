@@ -31,6 +31,17 @@ async function loadAndDisplaySources() {
 }
 
 /**
+ * URLが安全なプロトコルかどうかを検証する
+ * @param {string} url - 検証するURL
+ * @returns {boolean} 安全なhttps/http/ftpプロトコルの場合true
+ */
+function isValidUrl(url) {
+  if (!url) return false;
+  // Prevent javascript:, data:, vbscript: and other dangerous protocols
+  return /^(https?:\/\/|ftp:\/\/)/i.test(url.trim());
+}
+
+/**
  * ソースリストをUIに描画
  * @param {Array} sources - ソースリスト
  */
@@ -38,7 +49,7 @@ function renderSourceList(sources) {
   const container = document.getElementById('uBlockSourceItems');
   const noSourcesMsg = document.getElementById('uBlockNoSources');
 
-  if (!container) return;
+  if (!container || !noSourcesMsg) return;
 
   container.innerHTML = '';
 
@@ -61,7 +72,7 @@ function renderSourceList(sources) {
     const urlElement = document.createElement(isUrl ? 'a' : 'span');
     urlElement.className = 'source-url';
     urlElement.textContent = urlText;
-    if (isUrl) {
+    if (isUrl && isValidUrl(source.url)) {
       urlElement.href = source.url;
       urlElement.target = '_blank';
       urlElement.rel = 'noopener noreferrer';

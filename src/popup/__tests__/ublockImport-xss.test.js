@@ -154,12 +154,19 @@ describe('renderSourceList - XSS Protection', () => {
       _container: container
     };
 
+    // URL validation function to prevent dangerous protocols
+    const isValidUrl = function(url) {
+      if (!url) return false;
+      // Prevent javascript:, data:, vbscript: and other dangerous protocols
+      return /^(https?:\/\/|ftp:\/\/)/i.test(url.trim());
+    };
+
     // Create renderSourceList function
     const renderSourceList = function(sources) {
       const container = document.getElementById('uBlockSourceItems');
       const noSourcesMsg = document.getElementById('uBlockNoSources');
 
-      if (!container) return;
+      if (!container || !noSourcesMsg) return;
 
       container._children = []; // Clear container
 
@@ -182,7 +189,7 @@ describe('renderSourceList - XSS Protection', () => {
         const urlElement = document.createElement(isUrl ? 'a' : 'span');
         urlElement.className = 'source-url';
         urlElement.textContent = urlText;  // THIS IS THE XSS PROTECTION
-        if (isUrl) {
+        if (isUrl && isValidUrl(source.url)) {
           urlElement.href = source.url;
           urlElement.target = '_blank';
           urlElement.rel = 'noopener noreferrer';
@@ -332,8 +339,8 @@ describe('renderSourceList - XSS Protection', () => {
     const items = document.querySelectorAll('.source-url');
     expect(items.length).toBe(1);
     expect(items[0].textContent).toBe('javascript:alert(1)');
-    // The href attribute contains the malicious URL (this is normal for href - browsers handle it)
-    expect(items[0].href).toBe('javascript:alert(1)');
+    // The href attribute should NOT be set for javascript: URLs (protocol validation)
+    expect(items[0].href).toBe('');
   });
 
   test('safe URL is displayed correctly', () => {
@@ -496,5 +503,72 @@ describe('renderSourceList - XSS Protection', () => {
     expect(deleteBtns.length).toBe(2);
     expect(deleteBtns[0].textContent).toBe('削除');
     expect(deleteBtns[1].textContent).toBe('削除');
+  });
+
+  describe('isValidUrl - URL validation', () => {
+    function createTestDocument() {
+      return {
+        getElementById: () => null
+      };
+    }
+
+    const isValidUrl = function(url) {
+      if (!url) return false;
+      return /^(https?:\/\/|ftp:\/\/)/i.test(url.trim());
+    };
+
+    test('accepts valid HTTPS URLs', () => {
+      expect(isValidUrl('https://example.com')).toBe(true);
+      expect(isValidUrl('https://example.com/path?query=1')).toBe(true);
+      expect(isValidUrl('  https://example.com  ')).toBe(true); // Trimmed
+    });
+
+    test('accepts valid HTTP URLs', () => {
+      expect(isValidUrl('http://example.com')).toBe(true);
+      expect(isValidUrl('http://example.com/path')).toBe(true);
+    });
+
+    test('accepts valid FTP URLs', () => {
+      expect(isValidUrl('ftp://example.com')).toBe(true);
+      expect(isValidUrl('ftp://ftp.example.com/files')).toBe(true);
+    });
+
+    test('rejects javascript: URLs', () => {
+      expect(isValidUrl('javascript:alert(1)')).toBe(false);
+      expect(isValidUrl('javascript:void(0)')).toBe(false);
+      expect(isValidUrl('Javascript:alert(1)')).toBe(false); // Case insensitive
+    });
+
+    test('rejects data: URLs', () => {
+      expect(isValidUrl('data:text/html,<script>alert(1)</script>')).toBe(false);
+      expect(isValidUrl('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA')).toBe(false);
+    });
+
+    test('rejects vbscript: URLs', () => {
+      expect(isValidUrl('vbscript:msgbox("xss")')).toBe(false);
+      expect(isValidUrl('VbScript:msgbox("xss")')).toBe(false); // Case insensitive
+    });
+
+    test('rejects file: URLs', () => {
+      expect(isValidUrl('file:///etc/passwd')).toBe(false);
+      expect(isValidUrl('file://C:/Windows/System32/config/sam')).toBe(false);
+    });
+
+    test('rejects null and empty strings', () => {
+      expect(isValidUrl(null)).toBe(false);
+      expect(isValidUrl('')).toBe(false);
+      expect(isValidUrl(undefined)).toBe(false);
+    });
+
+    test('rejects URLs without protocol', () => {
+      expect(isValidUrl('example.com')).toBe(false);
+      expect(isValidUrl('example.com/path')).toBe(false);
+      expect(isValidUrl('www.example.com')).toBe(false);
+    });
+
+    test('rejects http: URLs with path but no slashes', () => {
+      expect(isValidUrl('http:example.com')).toBe(false);
+      expect(isValidUrl('https:example.com')).toBe(false);
+    });
   });
 });
