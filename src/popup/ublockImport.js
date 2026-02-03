@@ -457,11 +457,19 @@ export async function fetchFromUrl(url) {
     }
 
     const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('text/plain')) {
-      addLog(LogType.WARN, 'Content-Typeがtext/plainではありません', { contentType });
+    const text = await response.text();
+
+    // 取得後にテキストが有効かチェック
+    if (!text || text.trim().length === 0) {
+      throw new Error('取得されたテキストが空です');
     }
 
-    return await response.text();
+    // Content-Typeがテキストでない場合は警告
+    if (contentType && !contentType.includes('text/') && !contentType.includes('application/octet-stream')) {
+      addLog(LogType.WARN, 'Content-Typeがテキスト形式ではありません', { contentType });
+    }
+
+    return text;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error('ネットワークエラーが発生しました。インターネット接続を確認してください。');
