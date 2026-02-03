@@ -71,7 +71,7 @@ global.chrome = mockChrome;
 describe('main', () => {
   beforeEach(() => {
     // Clear all mocks before each test
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     
     // Mock DOM elements
     document.body.innerHTML = `

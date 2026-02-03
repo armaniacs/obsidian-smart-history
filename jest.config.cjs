@@ -4,8 +4,8 @@
  */
 
 module.exports = {
-  // テスト環境: Node.js環境でjsdomを使用
-  testEnvironment: 'node',
+  // テスト環境: jsdom（ブラウザAPIを必要とするテスト用）
+  testEnvironment: 'jsdom',
 
   // ES Modulesを有効化
   transform: {
