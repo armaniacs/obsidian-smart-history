@@ -232,7 +232,7 @@ async function handleReloadSource(event) {
  * @param {Array} sources - ソースリスト
  * @returns {Object} 軽量なルールデータ
  */
-function rebuildRulesFromSources(sources) {
+export function rebuildRulesFromSources(sources) {
   const blockDomains = new Set();
   const exceptionDomains = new Set();
 
