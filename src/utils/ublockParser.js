@@ -70,9 +70,6 @@ const PATTERNS = {
   DOMAIN_VALIDATION: /^[a-z0-9.*-]+(\.[a-z0-9.*-]+)*$/i,
 };
 
-// 正規表現キャッシュ
-const REGEX_CACHE = new Map();
-
 /** 【ルールタイプ定数】: ルールの種類を表す文字列定数 🟢 */
 const RULE_TYPES = {
   /** ドメインをブロックするルール */
@@ -143,27 +140,14 @@ function isValidString(value) {
 }
 
 /**
- * キャッシュされた正規表現の実行
+ * 正規表現の実行
+ * 正規表現のテストは非常に高速なのでキャッシュを省略し、メモリオーバーヘッドを回避
  * @param {RegExp} regex - 正規表現
  * @param {string} str - 文字列
  * @returns {boolean} - マッチ結果
  */
 function cachedRegexTest(regex, str) {
-  const cacheKey = regex.source + '|' + str;
-  if (REGEX_CACHE.has(cacheKey)) {
-    return REGEX_CACHE.get(cacheKey);
-  }
-  
-  const result = regex.test(str);
-  REGEX_CACHE.set(cacheKey, result);
-  
-  // キャッシュサイズ制限
-  if (REGEX_CACHE.size > 1000) {
-    const firstKey = REGEX_CACHE.keys().next().value;
-    REGEX_CACHE.delete(firstKey);
-  }
-  
-  return result;
+  return regex.test(str);
 }
 
 // LRUキャッシュのクリーンアップ間隔（ミリ秒）
@@ -178,7 +162,6 @@ let lastCleanupTime = Date.now();
 function cleanupCache() {
   const now = Date.now();
   if (now - lastCleanupTime > CLEANUP_INTERVAL) {
-    REGEX_CACHE.clear();
     PARSER_CACHE.clear();
     LRU_TRACKER.clear();
     lastCleanupTime = now;
