@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.5] - 2026-02-04
+### Fixed
+- Jestテスト環境をjsdomに復元し、ブラウザAPIを必要とするテストを修復
+- XSS脆弱性を修正: source URL表示をinnerHTMLからtextContentへ変更
+- URLインポート時のエラーハンドリングを改善（空レスポンスの検出など）
+- URLバリデーションを強化し、危険なプロトコル（javascript:, data:, vbscript:, file:）をブロック
+
+### Added
+- uBlockフィルターのデータマイグレーション機能（旧形式から軽量化形式への自動移行）
+- マイグレーション用テストケース
+- XSS防止テストケース（22テスト）
+- URLインポートエラーハンドリングテストケース（28テスト）
+
+### Changed
+- 正規表現キャッシュを削除（メモリオーバーヘッド回避）
+- 重複関数 saveDomainSettings() を削除
+- uBlockフィルターの軽量化形式がデフォルトに
+
+### Security
+- XSS脆弱性の修正 (renderSourceListでのテキストエスケープ強化)
+- 危険なURLプロトコルの検出とブロック
+
 ## [2.2.4] - 2026-02-03
 ### Fixed
 - **Jest ESM設定修正**: babel-jestバージョン不整合(v30→v29)の解消、`--experimental-vm-modules`とbabel-jest変換の競合を修正
