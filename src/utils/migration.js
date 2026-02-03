@@ -15,19 +15,26 @@
  * @returns {Object} - New format {blockDomains, exceptionDomains, metadata}
  */
 export function migrateToLightweightFormat(oldRules) {
-  // If already in new format, return as-is
-  if (oldRules.blockDomains && oldRules.exceptionDomains) {
+  // Check that new format exists AND old format does NOT exist
+  // This avoids incorrectly detecting a mixed object as already migrated
+  if (oldRules.blockDomains && oldRules.exceptionDomains &&
+      !oldRules.blockRules && !oldRules.exceptionRules) {
     return oldRules;
   }
 
-  const blockDomains = (oldRules.blockRules || []).map(r => r.domain);
-  const exceptionDomains = (oldRules.exceptionRules || []).map(r => r.domain);
+  // Filter out rules without domain property before mapping
+  const blockDomains = (oldRules.blockRules || [])
+    .filter(r => r.domain)
+    .map(r => r.domain);
+  const exceptionDomains = (oldRules.exceptionRules || [])
+    .filter(r => r.domain)
+    .map(r => r.domain);
 
   return {
     blockDomains,
     exceptionDomains,
     metadata: {
-      ...oldRules.metadata,
+      ...(oldRules.metadata || {}),
       importedAt: oldRules.metadata?.importedAt || Date.now(),
       ruleCount: blockDomains.length + exceptionDomains.length,
       migrated: true
@@ -45,8 +52,9 @@ export async function migrateUblockSettings() {
   const result = await chrome.storage.local.get([StorageKeys.UBLOCK_RULES]);
   const ublockRules = result[StorageKeys.UBLOCK_RULES];
 
-  // If already in new format or no data exists, nothing to do
-  if (!ublockRules || ublockRules.blockDomains) {
+  // If already in new format (and NOT in old format) or no data exists, nothing to do
+  if (!ublockRules ||
+      (ublockRules.blockDomains && ublockRules.exceptionDomains && !ublockRules.blockRules && !ublockRules.exceptionRules)) {
     return false;
   }
 
