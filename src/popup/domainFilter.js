@@ -215,27 +215,6 @@ async function addCurrentDomain() {
     }
 }
 
-/**
- * 保存ボタンのハンドラー
- */
-export async function saveDomainSettings() {
-    try {
-        // シンプル形式の保存
-        await saveSimpleFormatSettings();
-
-        // uBlock形式の保存 (有効な場合のみパースして保存されるが、有効化フラグだけは更新する)
-        const ublockEnabled = ublockFormatEnabledCheckbox.checked;
-        if (ublockEnabled) {
-            await saveUblockSettings();
-        } else {
-            await saveSettings({ [StorageKeys.UBLOCK_FORMAT_ENABLED]: false });
-        }
-    } catch (error) {
-        addLog(LogType.ERROR, 'Error saving domain settings', { error: error.message });
-        showDomainStatus(`保存エラー: ${error.message}`, 'error');
-    }
-}
-
 export async function handleSaveDomainSettings() {
     try {
         // シンプル形式の保存
