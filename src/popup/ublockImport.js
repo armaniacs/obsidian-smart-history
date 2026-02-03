@@ -57,27 +57,47 @@ function renderSourceList(sources) {
     const urlText = source.url === 'manual' ? '手動入力' : source.url;
     const isUrl = source.url !== 'manual';
 
-    const urlElement = isUrl
-      ? `<a href="${source.url}" target="_blank" rel="noopener noreferrer" class="source-url">${source.url}</a>`
-      : `<span class="source-url">${urlText}</span>`;
+    // XSS対策: textContentを使用
+    const urlElement = document.createElement(isUrl ? 'a' : 'span');
+    urlElement.className = 'source-url';
+    urlElement.textContent = urlText;
+    if (isUrl) {
+      urlElement.href = source.url;
+      urlElement.target = '_blank';
+      urlElement.rel = 'noopener noreferrer';
+    }
 
     const date = new Date(source.importedAt);
     const dateStr = date.toLocaleString('ja-JP');
 
-    const reloadBtn = isUrl
-      ? `<button class="reload-btn" data-index="${index}" title="再読み込み">再読込</button>`
-      : '';
+    const metaDiv = document.createElement('div');
+    metaDiv.className = 'source-meta';
 
-    item.innerHTML = `
-      ${urlElement}
-      <div class="source-meta">
-        <span>${dateStr} | ルール: ${source.ruleCount}</span>
-        <div>
-          ${reloadBtn}
-          <button class="delete-btn" data-index="${index}">削除</button>
-        </div>
-      </div>
-    `;
+    const metaSpan = document.createElement('span');
+    metaSpan.textContent = `${dateStr} | ルール: ${source.ruleCount}`;
+
+    const actionDiv = document.createElement('div');
+
+    if (isUrl) {
+      const reloadBtn = document.createElement('button');
+      reloadBtn.className = 'reload-btn';
+      reloadBtn.dataset.index = index;
+      reloadBtn.textContent = '再読込';
+      reloadBtn.title = '再読み込み';
+      actionDiv.appendChild(reloadBtn);
+    }
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-btn';
+    deleteBtn.dataset.index = index;
+    deleteBtn.textContent = '削除';
+    actionDiv.appendChild(deleteBtn);
+
+    metaDiv.appendChild(metaSpan);
+    metaDiv.appendChild(actionDiv);
+
+    item.appendChild(urlElement);
+    item.appendChild(metaDiv);
 
     container.appendChild(item);
   });
