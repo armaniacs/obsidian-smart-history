@@ -5,6 +5,7 @@
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
+import { fetchFromUrl, isValidUrl } from '../ublockImport.js';
 
 // Mock the logger module
 jest.mock('../../utils/logger.js', () => ({
@@ -12,59 +13,9 @@ jest.mock('../../utils/logger.js', () => ({
   LogType: { ERROR: 'ERROR', WARN: 'WARN', INFO: 'INFO' }
 }));
 
-// Create a standalone version of fetchFromUrl for testing
-function createFetchFromUrl(addLogMock, LogTypeMock) {
-  return async function fetchFromUrl(url) {
-    try {
-      try {
-        new URL(url);
-      } catch (e) {
-        throw new Error('無効なURLです');
-      }
-
-      const response = await fetch(url, {
-        method: 'GET',
-        mode: 'cors',
-        cache: 'no-cache'
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const contentType = response.headers.get('content-type');
-      const text = await response.text();
-
-      // 取得後にテキストが有効かチェック
-      if (!text || text.trim().length === 0) {
-        throw new Error('取得されたテキストが空です');
-      }
-
-      // Content-Typeがテキストでない場合は警告
-      if (contentType && !contentType.includes('text/') && !contentType.includes('application/octet-stream')) {
-        addLogMock(LogTypeMock.WARN, 'Content-Typeがテキスト形式ではありません', { contentType });
-      }
-
-      return text;
-    } catch (error) {
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        throw new Error('ネットワークエラーが発生しました。インターネット接続を確認してください。');
-      }
-      throw new Error(`URL読み込みエラー: ${error.message}`);
-    }
-  };
-}
-
 describe('fetchFromUrl - Error Handling', () => {
-  let fetchFromUrl;
-  let addLogMock;
-  let LogTypeMock;
-
   beforeEach(() => {
     jest.clearAllMocks();
-    addLogMock = jest.fn();
-    LogTypeMock = { ERROR: 'ERROR', WARN: 'WARN', INFO: 'INFO' };
-    fetchFromUrl = createFetchFromUrl(addLogMock, LogTypeMock);
     global.fetch = jest.fn();
   });
 
@@ -97,19 +48,19 @@ describe('fetchFromUrl - Error Handling', () => {
   });
 
   test('無効なURL protocol (javascript:)を検出', async () => {
-    await expect(fetchFromUrl('javascript:alert(1)')).rejects.not.toThrow('無効なURLです'); // Valid URL but invalid protocol
+    await expect(fetchFromUrl('javascript:alert(1)')).rejects.toThrow('無効なURLです');
+  });
 
-    // Check that it attempts to fetch
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: { get: () => 'text/plain' },
-      text: () => Promise.resolve('example.com')
-    });
+  test('無効なURL protocol (data:)を検出', async () => {
+    await expect(fetchFromUrl('data:text/html,<script>alert(1)</script>')).rejects.toThrow('無効なURLです');
+  });
 
-    // This would require actual fetch but should not throw URL validation error
-    global.fetch.mockClear();
+  test('無効なURL protocol (vbscript:)を検出', async () => {
+    await expect(fetchFromUrl('vbscript:msgbox("xss")')).rejects.toThrow('無効なURLです');
+  });
+
+  test('無効なURL protocol (file:)を検出', async () => {
+    await expect(fetchFromUrl('file:///etc/passwd')).rejects.toThrow('無効なURLです');
   });
 
   test('有効なURLとContent-Type for text/plain', async () => {
@@ -123,7 +74,6 @@ describe('fetchFromUrl - Error Handling', () => {
 
     const result = await fetchFromUrl('https://example.com/filters.txt');
     expect(result).toBe('example.com');
-    expect(addLogMock).not.toHaveBeenCalled();
   });
 
   test('有効なURLとContent-Type for text/html', async () => {
@@ -137,7 +87,6 @@ describe('fetchFromUrl - Error Handling', () => {
 
     const result = await fetchFromUrl('https://example.com/filters.html');
     expect(result).toBe('example.com');
-    expect(addLogMock).not.toHaveBeenCalled();
   });
 
   test('有効なURLとContent-Type for application/octet-stream', async () => {
@@ -151,10 +100,11 @@ describe('fetchFromUrl - Error Handling', () => {
 
     const result = await fetchFromUrl('https://example.com/filters.dat');
     expect(result).toBe('example.com');
-    expect(addLogMock).not.toHaveBeenCalled();
   });
 
   test('非テキストContent-Typeで警告ログを出力', async () => {
+    const { addLog, LogType } = require('../../utils/logger.js');
+
     global.fetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -165,8 +115,8 @@ describe('fetchFromUrl - Error Handling', () => {
 
     const result = await fetchFromUrl('https://example.com/filters.json');
     expect(result).toBe('{"domain":"example.com"}');
-    expect(addLogMock).toHaveBeenCalledWith(
-      LogTypeMock.WARN,
+    expect(addLog).toHaveBeenCalledWith(
+      LogType.WARN,
       'Content-Typeがテキスト形式ではありません',
       { contentType: 'application/json' }
     );
@@ -183,7 +133,6 @@ describe('fetchFromUrl - Error Handling', () => {
 
     const result = await fetchFromUrl('https://example.com/filters.txt');
     expect(result).toBe('example.com');
-    expect(addLogMock).not.toHaveBeenCalled();
   });
 
   test('HTTP 500エラーを適切に処理', async () => {
@@ -232,5 +181,61 @@ describe('fetchFromUrl - Error Handling', () => {
 
   test('undefined URLを検出', async () => {
     await expect(fetchFromUrl(undefined)).rejects.toThrow('無効なURLです');
+  });
+
+  describe('isValidUrl - URL検証', () => {
+    test('accepts valid HTTPS URLs', () => {
+      expect(isValidUrl('https://example.com')).toBe(true);
+      expect(isValidUrl('https://example.com/path?query=1')).toBe(true);
+      expect(isValidUrl('  https://example.com  ')).toBe(true); // Trimmed
+    });
+
+    test('accepts valid HTTP URLs', () => {
+      expect(isValidUrl('http://example.com')).toBe(true);
+      expect(isValidUrl('http://example.com/path')).toBe(true);
+    });
+
+    test('accepts valid FTP URLs', () => {
+      expect(isValidUrl('ftp://example.com')).toBe(true);
+      expect(isValidUrl('ftp://ftp.example.com/files')).toBe(true);
+    });
+
+    test('rejects javascript: URLs', () => {
+      expect(isValidUrl('javascript:alert(1)')).toBe(false);
+      expect(isValidUrl('javascript:void(0)')).toBe(false);
+      expect(isValidUrl('Javascript:alert(1)')).toBe(false); // Case insensitive
+    });
+
+    test('rejects data: URLs', () => {
+      expect(isValidUrl('data:text/html,<script>alert(1)</script>')).toBe(false);
+      expect(isValidUrl('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA')).toBe(false);
+    });
+
+    test('rejects vbscript: URLs', () => {
+      expect(isValidUrl('vbscript:msgbox("xss")')).toBe(false);
+      expect(isValidUrl('VbScript:msgbox("xss")')).toBe(false); // Case insensitive
+    });
+
+    test('rejects file: URLs', () => {
+      expect(isValidUrl('file:///etc/passwd')).toBe(false);
+      expect(isValidUrl('file://C:/Windows/System32/config/sam')).toBe(false);
+    });
+
+    test('rejects null and empty strings', () => {
+      expect(isValidUrl(null)).toBe(false);
+      expect(isValidUrl('')).toBe(false);
+      expect(isValidUrl(undefined)).toBe(false);
+    });
+
+    test('rejects URLs without protocol', () => {
+      expect(isValidUrl('example.com')).toBe(false);
+      expect(isValidUrl('example.com/path')).toBe(false);
+      expect(isValidUrl('www.example.com')).toBe(false);
+    });
+
+    test('rejects http: URLs with path but no slashes', () => {
+      expect(isValidUrl('http:example.com')).toBe(false);
+      expect(isValidUrl('https:example.com')).toBe(false);
+    });
   });
 });

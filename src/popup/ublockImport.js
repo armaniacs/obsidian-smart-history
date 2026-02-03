@@ -35,7 +35,7 @@ async function loadAndDisplaySources() {
  * @param {string} url - 検証するURL
  * @returns {boolean} 安全なhttps/http/ftpプロトコルの場合true
  */
-function isValidUrl(url) {
+export function isValidUrl(url) {
   if (!url) return false;
   // Prevent javascript:, data:, vbscript: and other dangerous protocols
   return /^(https?:\/\/|ftp:\/\/)/i.test(url.trim());
@@ -439,13 +439,11 @@ export async function saveUblockSettings() {
  * @returns {Promise<string>}
  */
 export async function fetchFromUrl(url) {
-  try {
-    try {
-      new URL(url);
-    } catch (e) {
-      throw new Error('無効なURLです');
-    }
+  if (!isValidUrl(url)) {
+    throw new Error('無効なURLです');
+  }
 
+  try {
     const response = await fetch(url, {
       method: 'GET',
       mode: 'cors',
