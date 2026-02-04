@@ -1,6 +1,6 @@
 // Main screen functionality
 import { getSettings, StorageKeys } from '../utils/storage.js';
-import { showPreview } from './sanitizePreview.js';
+import { showPreview, initializeModalEvents } from './sanitizePreview.js';
 import { showSpinner, hideSpinner } from './spinner.js';
 import { startAutoCloseTimer } from './autoClose.js';
 import { getCurrentTab, isRecordable } from './tabUtils.js';
@@ -172,4 +172,5 @@ if (recordBtn) {
 }
 
 // 初期化
+initializeModalEvents();
 loadCurrentTab();

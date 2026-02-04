@@ -12,7 +12,8 @@ import { loadCurrentTab, recordCurrentPage } from 'src/popup/main.js';
 
 // Mock all dependencies (must be defined before imports)
 jest.mock('src/popup/sanitizePreview.js', () => ({
-  showPreview: jest.fn()
+  showPreview: jest.fn(),
+  initializeModalEvents: jest.fn()
 }));
 
 jest.mock('src/popup/spinner.js', () => ({

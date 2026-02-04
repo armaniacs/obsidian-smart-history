@@ -186,8 +186,4 @@ function handleAction(confirmed) {
   resolvePromise = null;
 }
 
-// 【既存実装対応インジケータ】: HTMLから直接ロードされた場合の自動初期化
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-  // このファイルは <script type="module"> として読み込まれる
-  // Events are initialized when popup.html loads, which happens after DOM is ready.
-}
+// Events are initialized via initializeModalEvents() called from main.js

@@ -4,11 +4,37 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.8] - 2026-02-05
+### Fixed
+- 確認ダイアログの「送信する」ボタンが動作しない不具合を修正
+  - `initializeModalEvents()`がどこからも呼び出されておらず、ボタンのクリックイベントリスナーが未登録だった
+  - `main.js`の初期化時に`initializeModalEvents()`を呼び出すように修正
+
 ## [2.2.7] - 2026-02-05
 ### Fixed
 - Service Worker内での動的インポートエラーを修正
   - migration.jsで`await import('./storage.js')`を削除し、ハードコードされた定数 `'ublock_rules'` を使用
   - HTML仕様によりServiceWorkerGlobalScopeで禁止されている動的インポートの使用を回避
+
+### Changed
+- 大規模リファクタリング: service-worker.jsを責任ごとに分離し、保守性とテスタビリティを大幅向上
+  - service-worker.js: 269行 → 97行（約64%削減）
+  - 新規クラスの抽出:
+    - `PrivacyPipeline.js` (80行): L1/L2/L3のプライバシー処理パイプライン
+    - `RecordingLogic.js` (86行): URL記録フロー管理
+    - `NotificationHelper.js` (22行): 成功/エラー通知処理
+    - `NoteSectionEditor.js` (40行): Obsidianセクション編集ロジック
+    - `dailyNotePathBuilder.js` (16行): 日付パス構築ユーティリティ
+  - ObsidianClient.jsのリファクタリング: 抽出されたユーティリティを使用してシンプル化
+
+### Added
+- リファクタリングに伴う新規テストファイル（352行のテストコード追加）
+  - `integration-recording.test.js` (118行): エンドツーエンド統合テスト
+  - `privacyPipeline.test.js` (45行): プライバシーパイプラインのユニットテスト
+  - `recordingLogic.test.js` (73行): 記録ロジックのユニットテスト
+  - `notificationHelper.test.js` (38行): 通知ヘルパーのユニットテスト
+  - `noteSectionEditor.test.js` (45行): セクション編集のユニットテスト
+  - `dailyNotePathBuilder.test.js` (33行): パス構築のユニットテスト
 
 ## [2.2.6] - 2026-02-04
 ### Fixed
