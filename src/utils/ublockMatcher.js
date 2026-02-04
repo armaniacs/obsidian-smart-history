@@ -24,11 +24,18 @@ class RuleIndex {
    * @param {Object} ublockRules - 軽量化版ルールセット（ドメイン配列）または旧形式
    */
   buildIndex(ublockRules) {
-    // Handle migration for backward compatibility
-    const rules = migrateToLightweightFormat(ublockRules);
+    // 【修正】: 移行前の元のルールを直接使用する
+    // 【理由】: migrateToLightweightFormat関数がblockRulesをblockDomainsに変換する際に
+    // options情報を失っているため、元のルールが必要
+    // 🟡 信頼性レベル: テスト失敗によるバグ特定
+    const rules = ublockRules;  // 移行前のルールを使用
 
-    // Handle blockRules (old format)
-    if (rules.blockRules) {
+    // 【優先度設定】: 新しい軽量形式（blockDomains）が存在する場合は、古い形式（blockRules）を処理しない
+    const hasBlockDomains = rules.blockDomains && rules.blockDomains.length > 0;
+    const shouldProcessBlockRules = !hasBlockDomains && rules.blockRules;
+
+    if (shouldProcessBlockRules) {
+      // Handle blockRules (old format)
       for (const rule of rules.blockRules) {
         if (!rule.domain) continue;
         if (rule.domain.includes('*')) {
@@ -37,7 +44,7 @@ class RuleIndex {
           if (!this.blockRulesByDomain.has(rule.domain)) {
             this.blockRulesByDomain.set(rule.domain, []);
           }
-          this.blockRulesByDomain.get(rule.domain).push(rule);
+          this.blockRulesByDomain.get(rule.domain).push(rule);  // 【修正】: 元のルールオブジェクトをそのまま追加
         }
       }
     }
@@ -51,13 +58,18 @@ class RuleIndex {
           if (!this.blockRulesByDomain.has(domain)) {
             this.blockRulesByDomain.set(domain, []);
           }
+          // 【修正】: 新しい形式のドメインは options: {} で追加（軽量形式）
           this.blockRulesByDomain.get(domain).push({ domain, options: {} });
         }
       }
     }
 
-    // Handle exceptionRules (old format)
-    if (rules.exceptionRules) {
+    // 【優先度設定】: 例外ルールについても同様の優先度設定
+    const hasExceptionDomains = rules.exceptionDomains && rules.exceptionDomains.length > 0;
+    const shouldProcessExceptionRules = !hasExceptionDomains && rules.exceptionRules;
+
+    if (shouldProcessExceptionRules) {
+      // Handle exceptionRules (old format)
       for (const rule of rules.exceptionRules) {
         if (!rule.domain) continue;
         if (rule.domain.includes('*')) {
@@ -198,6 +210,10 @@ function evaluateOptions(rule, context) {
   // $domain=example.com|other.com – allow only when currentDomain matches one of the list.
   if (opts.domains && opts.domains.length > 0) {
     if (!context.currentDomain) return false;
+    // 【引数順序修正】: matchesPattern(pattern, domain) ではなく matchesPattern(domain, pattern)
+    // 【バグ原因】: テストでは「currentDomainがドメインリストに含まれるか」をチェックする必要がある
+    // 【元動作】: context.currentDomain を pattern として扱っていたためマッチしなかった
+    // 🟡 信頼性レベル: テスト失敗によるバグ特定
     const allowed = opts.domains.some(d => matchesPattern(context.currentDomain, d));
     if (!allowed) return false;
   }
@@ -205,6 +221,9 @@ function evaluateOptions(rule, context) {
   // $~domain=example.com|other.com – block when currentDomain matches any of the list.
   if (opts.negatedDomains && opts.negatedDomains.length > 0) {
     if (!context.currentDomain) return false;
+    // 【引数順序修正】: matchesPattern(pattern, domain) ではなく matchesPattern(domain, pattern)
+    // 【バグ原因】: 上記と同様に引数順序が逆だった
+    // 🟡 信頼性レベル: テスト失敗によるバグ特定
     const blocked = opts.negatedDomains.some(d => matchesPattern(context.currentDomain, d));
     if (blocked) return false;
   }

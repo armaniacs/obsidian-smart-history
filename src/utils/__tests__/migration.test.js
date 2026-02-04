@@ -173,6 +173,9 @@ describe('migration', () => {
             get: jest.fn(),
             set: jest.fn()
           }
+        },
+        runtime: {
+          lastError: null
         }
       };
     });

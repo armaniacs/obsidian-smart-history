@@ -9,7 +9,8 @@ import { StorageKeys } from '../../utils/storage.js';
 // モックの設定
 global.fetch = jest.fn();
 global.chrome = {
-  storage: { local: { get: jest.fn(), set: jest.fn() } }
+  storage: { local: { get: jest.fn(), set: jest.fn() } },
+  runtime: { lastError: null }
 };
 
 describe('フローワーク: URLからインポートしてソースを再読み込み', () => {

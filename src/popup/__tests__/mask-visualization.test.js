@@ -3,10 +3,32 @@
  * UF-401: マスク情報の可視化機能
  */
 
-import { describe, test, expect } from '@jest/globals';
+import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import * as sanitizePreview from '../sanitizePreview.js';
 
 describe('Masked Information Visualization - プレビュー画面のマスク表示', () => {
+  // 【修正】: beforeEach/afterEach を追加して jsdom 環境で DOM 要素を作成する
+  // 【理由】: showPreview 関数が必要とする DOM 要素を jsdom で提供するため
+  beforeEach(() => {
+    // showPreview が期待する DOM 要素を作成
+    document.body.innerHTML = `
+      <div id="confirmationModal" style="display: none;">
+        <div class="modal-body">
+          <textarea id="previewContent"></textarea>
+          <div id="maskStatusMessage"></div>
+        </div>
+        <button id="closeModalBtn">閉じる</button>
+        <button id="cancelPreviewBtn">キャンセル</button>
+        <button id="confirmPreviewBtn">確定</button>
+      </div>
+    `;
+  });
+
+  afterEach(() => {
+    // DOM をクリーンアップ
+    document.body.innerHTML = '';
+  });
+
   describe('正常系 - マスク件数表示', () => {
     test('TC-MV-001: マスク件数1件が正しく表示される', () => {
       const content = "連絡先は[MASKED:email]example.comです。";

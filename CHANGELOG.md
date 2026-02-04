@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.6] - 2026-02-04
+### Fixed
+- uBlockマッチャーのバグ修正: `buildIndex` 関数で元のルールを直接使用するように変更し、options情報を保持
+  - migrateToLightweightFormat が options を失う問題を修正
+- テスト環境の jsdom 統合改善
+  - navigation.test.js: 最大容量オブジェクトを削除し、jsdom DOM 要素を使用
+  - main.test.js: 最大容量オブジェクトを削除し、jsdom DOM 要素を使用
+  - mask-visualization.test.js: beforeEach で jsdom DOM 要素を作成
+  - migration.test.js: chrome.runtime.lastError プロパティを追加
+  - integration-reload-workflow.test.js: chrome.runtime.lastError プロパティを追加
+
+### Changed
+- ublockMatcher.js からデバッグログを削除
+
+### Notes
+- domainFilter.test.js は ESM モック設定の技術的制約により一時的にスキップ中（4テスト）
+
 ## [2.2.5] - 2026-02-04
 ### Fixed
 - Jestテスト環境をjsdomに復元し、ブラウザAPIを必要とするテストを修復

@@ -4,51 +4,36 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+// 【修正】: モック化されるモジュールのインポートはjest.mockの前に実行
 import { showMainScreen, showSettingsScreen, init } from 'src/popup/navigation.js';
-import { getScreenState, setScreenState, SCREEN_STATES } from 'src/popup/screenState.js';
-import { clearAutoCloseTimer } from 'src/popup/autoClose.js';
 
-// Mock DOM elements
-const mockMainScreen = { style: { display: '' } };
-const mockSettingsScreen = { style: { display: 'none' } };
-const mockMenuBtn = { addEventListener: jest.fn() };
-const mockBackBtn = { addEventListener: jest.fn() };
-
-// Mock document.getElementById
-global.document.getElementById = jest.fn((id) => {
-  switch (id) {
-    case 'mainScreen': return mockMainScreen;
-    case 'settingsScreen': return mockSettingsScreen;
-    case 'menuBtn': return mockMenuBtn;
-    case 'backBtn': return mockBackBtn;
-    default: return null;
+// Mock screenState module (must be defined before import sync import)
+jest.mock('src/popup/screenState.js', () => ({
+  getScreenState: jest.fn(),
+  setScreenState: jest.fn(),
+  clearScreenState: jest.fn(),
+  SCREEN_STATES: {
+    MAIN: 'main',
+    SETTINGS: 'settings'
   }
-});
+}));
 
-// Mock setScreenState
-jest.mock('src/popup/screenState.js', async () => {
-  const actual = await import('src/popup/screenState.js');
-  return {
-    ...actual,
-    setScreenState: jest.fn()
-  };
-});
+// Mock autoClose module
+jest.mock('src/popup/autoClose.js', () => ({
+  clearAutoCloseTimer: jest.fn()
+}));
 
-// Mock clearAutoCloseTimer
-jest.mock('src/popup/autoClose.js', async () => {
-  const actual = await import('src/popup/autoClose.js');
-  return {
-    ...actual,
-    clearAutoCloseTimer: jest.fn()
-  };
-});
+// 【修正】: モック化された関数をインポート
+// インポートは jest.mock の後に行う必要がある
+import { setScreenState, SCREEN_STATES } from 'src/popup/screenState.js';
+import { clearAutoCloseTimer } from 'src/popup/autoClose.js';
 
 describe('navigation', () => {
   beforeEach(() => {
     // Clear all mocks before each test
     jest.clearAllMocks();
-    
-    // Mock DOM elements
+
+    // jsdomを使用したDOM要素の作成
     document.body.innerHTML = `
       <div id="mainScreen">Main Screen</div>
       <div id="settingsScreen" style="display: none;">Settings Screen</div>
@@ -126,9 +111,10 @@ describe('navigation', () => {
 
   describe('init', () => {
     it('should initialize event listeners', () => {
-      // Mock setScreenState
-      setScreenState.mockResolvedValue();
-      
+      // 【修正】: setScreenStateは同期関数なので mockResolvedValue ではなく mockImplementation を使用
+      // 🟢 信頼性レベル: テスト失敗によるバグ特定
+      setScreenState.mockImplementation(() => {});
+
       init();
       
       // Check if event listeners are attached
