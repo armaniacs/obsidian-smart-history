@@ -369,6 +369,7 @@
     .modal-content {
       background: white;
       width: 90%;
+      min-width: 280px;
       max-height: 90%;
       border-radius: 8px;
       display: flex;
@@ -397,14 +398,16 @@
 
     .preview-textarea {
       width: 100%;
-      height: 200px;
+      min-width: 250px;
+      height: 600px;
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 4px;
       font-family: inherit;
       font-size: 13px;
       line-height: 1.5;
-      resize: vertical;
+      resize: both;
+      overflow: auto;
     }
 
     .modal-footer {
@@ -792,6 +795,7 @@
           Obsidianに保存する内容を確認・編集できます。<br>
           <span style="color:#d9534f;">※ マスキングされた箇所を確認してください。</span>
         </p>
+        <div id="maskNavAnchor"></div>
         <textarea id="previewContent" class="preview-textarea"></textarea>
       </div>
       <div class="modal-footer">

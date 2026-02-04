@@ -5,6 +5,7 @@
 
 import { StorageKeys, getSettings } from '../utils/storage.js';
 import { addLog, LogType } from '../utils/logger.js';
+import { showStatus } from './settingsUiHelper.js';
 
 /**
  * uBlockルールをテキスト形式でエクスポート
@@ -93,15 +94,15 @@ async function handleExport() {
     const rules = settings[StorageKeys.UBLOCK_RULES];
 
     if (!rules) {
-      showStatus('エクスポートするルールがありません', 'error');
+      showStatus('domainStatus', 'エクスポートするルールがありません', 'error');
       return;
     }
 
     downloadAsFile(rules);
-    showStatus('エクスポートしました', 'success');
+    showStatus('domainStatus', 'エクスポートしました', 'success');
   } catch (error) {
     addLog(LogType.ERROR, 'エクスポートエラー', { error: error.message });
-    showStatus(`エクスポートエラー: ${error.message}`, 'error');
+    showStatus('domainStatus', `エクスポートエラー: ${error.message}`, 'error');
   }
 }
 
@@ -114,40 +115,19 @@ async function handleCopy() {
     const rules = settings[StorageKeys.UBLOCK_RULES];
 
     if (!rules) {
-      showStatus('コピーするルールがありません', 'error');
+      showStatus('domainStatus', 'コピーするルールがありません', 'error');
       return;
     }
 
     const success = await copyToClipboard(rules);
     if (success) {
-      showStatus('クリップボードにコピーしました', 'success');
+      showStatus('domainStatus', 'クリップボードにコピーしました', 'success');
     } else {
-      showStatus('コピーに失敗しました', 'error');
+      showStatus('domainStatus', 'コピーに失敗しました', 'error');
     }
   } catch (error) {
     addLog(LogType.ERROR, 'コピーエラー', { error: error.message });
-    showStatus(`コピーエラー: ${error.message}`, 'error');
+    showStatus('domainStatus', `コピーエラー: ${error.message}`, 'error');
   }
 }
 
-/**
- * ステータス表示
- * @param {string} message 
- * @param {string} type 
- */
-function showStatus(message, type) {
-  const statusDiv = document.getElementById('domainStatus');
-  if (statusDiv) {
-    statusDiv.textContent = message;
-    statusDiv.className = type;
-
-    // Clear status after 5 seconds for errors, 3 seconds for success
-    const timeout = type === 'error' ? 5000 : 3000;
-    setTimeout(() => {
-      if (statusDiv) {
-        statusDiv.textContent = '';
-        statusDiv.className = '';
-      }
-    }, timeout);
-  }
-}

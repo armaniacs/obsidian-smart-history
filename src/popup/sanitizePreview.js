@@ -8,40 +8,27 @@
  * 🟢 青信号: Refactorフェーズ対応 - 定数化・JSDoc充実化・関数分割実装
  */
 
-// 【定数定義】魔法の値の排除 - Refactorフェーズ実装
 const DOM_IDS = {
   MODAL: 'confirmationModal',
   PREVIEW_CONTENT: 'previewContent',
   MASK_STATUS_MESSAGE: 'maskStatusMessage',
 };
 
-const CSS_SELECTORS = {
-  MODAL_BODY: '.modal-body',
-};
-
 const CLASS_NAMES = {
   MASK_STATUS_MESSAGE: 'mask-status-message',
-  MASKED_HIGHLIGHT: 'masked-highlight',
 };
 
-const DISPLAY_VALUES = {
-  VISIBLE: 'flex',
-  HIDDEN: 'none',
-};
-
-const MESSAGES = {
-  MASK_STATUS_TEMPLATE: function (count) {
-    return `${count}件の個人情報をマスクしました`;
-  },
-  MODAL_NOT_FOUND: 'Confirmation modal not found in DOM',
-  MODAL_OR_CONTENT_NOT_FOUND: 'Modal or preview content not found in DOM',
-};
-
-const PATTERNS = {
-  MASKED_TOKEN: /\[MASKED:(\w+)\]/g,
+const PII_TYPE_LABELS = {
+  creditCard: 'クレジットカード番号',
+  myNumber: 'マイナンバー',
+  bankAccount: '銀行口座番号',
+  email: 'E-mail',
+  phoneJp: '電話番号',
 };
 
 let resolvePromise = null;
+let maskedPositions = [];
+let currentMaskedIndex = -1;
 
 /**
  * DOM要素取得ヘルパー関数
@@ -76,6 +63,22 @@ export function initializeModalEvents() {
     cancelBtn.addEventListener('click', () => handleAction(false));
     confirmBtn.addEventListener('click', () => handleAction(true));
   }
+
+  // textareaのリサイズに合わせてポップアップ幅を追従させる
+  const previewContent = getPreviewContent();
+  if (previewContent && typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(() => {
+      const needed = previewContent.offsetWidth + 60; // padding + border分
+      const minWidth = 320;
+      document.body.style.width = Math.max(needed, minWidth) + 'px';
+    }).observe(previewContent);
+  }
+}
+
+const DEFAULT_WIDTH = '320px';
+
+function resetBodyWidth() {
+  document.body.style.width = DEFAULT_WIDTH;
 }
 
 /**
@@ -85,10 +88,10 @@ export function initializeModalEvents() {
 export function showPreview(content, maskedItems = null, maskedCount = 0) {
   const modal = getModal();
   const previewContent = getPreviewContent();
-  const modalBody = modal?.querySelector(CSS_SELECTORS.MODAL_BODY);
+  const modalBody = modal?.querySelector('.modal-body');
 
   if (!modal) {
-    console.error(MESSAGES.MODAL_NOT_FOUND);
+    console.error('Confirmation modal not found in DOM');
     return Promise.resolve({ confirmed: true, content });
   }
 
@@ -103,16 +106,30 @@ export function showPreview(content, maskedItems = null, maskedCount = 0) {
     }
   }
 
-  maskStatusMessage.textContent = MESSAGES.MASK_STATUS_TEMPLATE(maskedCount);
+  if (maskedCount > 0) {
+    maskStatusMessage.textContent = buildMaskStatusText(maskedItems, maskedCount);
+    maskStatusMessage.style.display = '';
+  } else {
+    maskStatusMessage.textContent = '';
+    maskStatusMessage.style.display = 'none';
+  }
 
-  // ハイライト処理適用
-  const processedContent = applyHighlights(content, maskedItems);
+  // プレビューコンテンツの設定（プレーンテキストのまま表示）
+  setPreviewContent(previewContent, content || '');
 
-  // プレビューコンテンツの設定
-  setPreviewContent(previewContent, processedContent);
+  // マスク位置を収集してナビゲーション構築
+  maskedPositions = collectMaskedPositions(content || '');
+  currentMaskedIndex = -1;
+  const navAnchor = document.getElementById('maskNavAnchor');
+  buildMaskNavigation(navAnchor || modalBody);
 
   // モーダル表示
-  modal.style.display = DISPLAY_VALUES.VISIBLE;
+  modal.style.display = 'flex';
+
+  // マスク箇所がある場合、最初の箇所へ自動ジャンプ
+  if (maskedPositions.length > 0) {
+    jumpToMaskedPosition(0);
+  }
 
   return new Promise((resolve) => {
     resolvePromise = resolve;
@@ -120,40 +137,13 @@ export function showPreview(content, maskedItems = null, maskedCount = 0) {
 }
 
 /**
- * ハイライト処理の適用
- * 【機能概要】: マスクされたPIIパターンをハイライトHTMLに変換する
- * 【実装方針]: 単一責任原則に従い、ハイライト処理を分離
- */
-function applyHighlights(content, maskedItems) {
-  const processedContent = content || '';
-
-  // エラーハンドリング: null/undefined/非配列の場合はスキップ
-  if (maskedItems === null || maskedItems === undefined || !Array.isArray(maskedItems)) {
-    return processedContent;
-  }
-
-  // 正規表現パターンの置換
-  return processedContent.replace(PATTERNS.MASKED_TOKEN, (match, type) => {
-    return `<span class="${CLASS_NAMES.MASKED_HIGHLIGHT}" title="${type}">${match}</span>`;
-  });
-}
-
-/**
  * プレビューコンテンツの設定
- * 【機能概要】: プレビュー領域に処理済みコンテンツを設定する
- * 【実装方針】: 単一責任原則に従い、コンテンツ設定処理を分離
  */
-function setPreviewContent(previewContent, processedContent) {
+function setPreviewContent(previewContent, text) {
   if (!previewContent) {
     return;
   }
-
-  previewContent.value = processedContent;
-
-  // テストが期待するouterHTMLを提供するため、ハイライト情報をアトリビュートで保持
-  if (processedContent.includes(CLASS_NAMES.MASKED_HIGHLIGHT)) {
-    previewContent.setAttribute('data-highlighted', processedContent);
-  }
+  previewContent.value = text;
 }
 
 /**
@@ -170,12 +160,13 @@ function handleAction(confirmed) {
 
   // DOM検証
   if (!modal || !previewContent) {
-    console.error(MESSAGES.MODAL_OR_CONTENT_NOT_FOUND);
+    console.error('Modal or preview content not found in DOM');
     resolvePromise = null;
     return;
   }
 
-  modal.style.display = DISPLAY_VALUES.HIDDEN;
+  modal.style.display = 'none';
+  resetBodyWidth();
   const content = previewContent.value;
 
   resolvePromise({
@@ -184,6 +175,121 @@ function handleAction(confirmed) {
   });
 
   resolvePromise = null;
+}
+
+/**
+ * マスク種別ごとの件数をまとめたステータステキストを生成する
+ */
+function buildMaskStatusText(maskedItems, maskedCount) {
+  if (!Array.isArray(maskedItems) || maskedItems.length === 0) {
+    return `${maskedCount}件の個人情報をマスクしました`;
+  }
+
+  // 種別ごとに件数を集計
+  const typeCounts = {};
+  for (const item of maskedItems) {
+    const label = PII_TYPE_LABELS[item.type] || item.type;
+    typeCounts[label] = (typeCounts[label] || 0) + 1;
+  }
+
+  const details = Object.entries(typeCounts)
+    .map(([label, count]) => `${label}${count}件`)
+    .join('、');
+
+  return `${details}をマスクしました`;
+}
+
+/**
+ * textarea内の[MASKED:*]トークン位置を収集する
+ */
+function collectMaskedPositions(text) {
+  const positions = [];
+  const regex = /\[MASKED:\w+\]/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    positions.push({ start: match.index, end: match.index + match[0].length });
+  }
+  return positions;
+}
+
+/**
+ * 指定インデックスのマスク箇所にtextareaをスクロール＋選択する
+ */
+function jumpToMaskedPosition(index) {
+  const previewContent = getPreviewContent();
+  if (!previewContent || maskedPositions.length === 0) return;
+
+  currentMaskedIndex = index;
+  const pos = maskedPositions[index];
+  previewContent.focus();
+  previewContent.setSelectionRange(pos.start, pos.end);
+
+  // ナビカウンター更新
+  const counter = document.getElementById('maskNavCounter');
+  if (counter) {
+    counter.textContent = `${index + 1}/${maskedPositions.length}`;
+  }
+}
+
+/**
+ * 次のマスク箇所へジャンプ
+ */
+export function jumpToNextMasked() {
+  if (maskedPositions.length === 0) return;
+  const next = (currentMaskedIndex + 1) % maskedPositions.length;
+  jumpToMaskedPosition(next);
+}
+
+/**
+ * 前のマスク箇所へジャンプ
+ */
+export function jumpToPrevMasked() {
+  if (maskedPositions.length === 0) return;
+  const prev = (currentMaskedIndex - 1 + maskedPositions.length) % maskedPositions.length;
+  jumpToMaskedPosition(prev);
+}
+
+/**
+ * マスクナビゲーションUIを構築・表示する
+ */
+function buildMaskNavigation(container) {
+  let nav = document.getElementById('maskNav');
+  if (!nav) {
+    nav = document.createElement('div');
+    nav.id = 'maskNav';
+    nav.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:6px;';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.id = 'maskNavPrev';
+    prevBtn.textContent = '▲';
+    prevBtn.title = '前のマスク箇所';
+    prevBtn.style.cssText = 'padding:2px 8px;font-size:11px;cursor:pointer;background:#f5f5f5;border:1px solid #ccc;border-radius:3px;';
+    prevBtn.addEventListener('click', jumpToPrevMasked);
+
+    const nextBtn = document.createElement('button');
+    nextBtn.id = 'maskNavNext';
+    nextBtn.textContent = '▼';
+    nextBtn.title = '次のマスク箇所';
+    nextBtn.style.cssText = 'padding:2px 8px;font-size:11px;cursor:pointer;background:#f5f5f5;border:1px solid #ccc;border-radius:3px;';
+    nextBtn.addEventListener('click', jumpToNextMasked);
+
+    const counter = document.createElement('span');
+    counter.id = 'maskNavCounter';
+    counter.style.cssText = 'font-size:11px;color:#666;';
+
+    nav.appendChild(prevBtn);
+    nav.appendChild(nextBtn);
+    nav.appendChild(counter);
+    container.appendChild(nav);
+  }
+
+  if (maskedPositions.length > 0) {
+    nav.style.display = 'flex';
+    const counter = document.getElementById('maskNavCounter');
+    if (counter) counter.textContent = `0/${maskedPositions.length}`;
+  } else {
+    nav.style.display = 'none';
+  }
 }
 
 // Events are initialized via initializeModalEvents() called from main.js

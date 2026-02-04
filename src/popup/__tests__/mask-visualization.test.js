@@ -42,7 +42,7 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
       const modal = document.getElementById('confirmationModal');
       const statusMessage = document.getElementById('maskStatusMessage');
 
-      expect(statusMessage.textContent).toBe("1件の個人情報をマスクしました");
+      expect(statusMessage.textContent).toBe("E-mail1件をマスクしました");
       expect(modal.style.display).toBe("flex");
     });
 
@@ -58,12 +58,12 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
 
       const statusMessage = document.getElementById('maskStatusMessage');
 
-      expect(statusMessage.textContent).toBe("2件の個人情報をマスクしました");
+      expect(statusMessage.textContent).toBe("銀行口座番号1件、電話番号1件をマスクしました");
     });
   });
 
   describe('正常系 - ハイライト表示', () => {
-    test('TC-MV-003: ハイライト箇所が正しく表示される', () => {
+    test('TC-MV-003: マスク箇所がプレーンテキストとして表示される', () => {
       const content = "メールアドレスは[MASKED:email]test@example.comです";
       const maskedItems = [{ type: "email", original: "test@example.com" }];
       const maskedCount = 1;
@@ -72,20 +72,20 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
 
       const previewContent = document.getElementById('previewContent');
 
-      expect(previewContent.value).toContain("masked-highlight");
+      expect(previewContent.value).toContain("[MASKED:email]");
+      expect(previewContent.value).not.toContain("<span");
     });
 
-    test('TC-MV-004: ツールチップでマスク理由が表示される', () => {
+    test('TC-MV-004: ナビゲーションUIが表示される', () => {
       const content = "連絡先:[MASKED:email]xxx@example.com";
       const maskedItems = [{ type: "email", original: "xxx@example.com" }];
       const maskedCount = 1;
 
       sanitizePreview.showPreview(content, maskedItems, maskedCount);
 
-      const previewContent = document.getElementById('previewContent');
-      const highlighted = previewContent.getAttribute('data-highlighted');
-
-      expect(highlighted).toContain('title="email"');
+      const nav = document.getElementById('maskNav');
+      expect(nav).not.toBeNull();
+      expect(nav.style.display).toBe('flex');
     });
   });
 
@@ -112,10 +112,11 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
       sanitizePreview.showPreview(content, maskedItems, maskedCount);
 
       const previewContent = document.getElementById('previewContent');
-      const processedContent = previewContent.getAttribute('data-highlighted');
+      expect(previewContent.value).toContain('[MASKED:creditCard]');
+      expect(previewContent.value).toContain('[MASKED:bankAccount]');
 
-      expect(processedContent).toContain('title="creditCard"');
-      expect(processedContent).toContain('title="bankAccount"');
+      const counter = document.getElementById('maskNavCounter');
+      expect(counter.textContent).toBe('1/2');
     });
   });
 
@@ -169,7 +170,8 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
       const modal = document.getElementById('confirmationModal');
       const statusMessage = document.getElementById('maskStatusMessage');
 
-      expect(statusMessage.textContent).toBe("0件の個人情報をマスクしました");
+      expect(statusMessage.textContent).toBe("");
+      expect(statusMessage.style.display).toBe("none");
       expect(modal.style.display).toBe("flex");
     });
 
@@ -186,7 +188,7 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
       expect(endTime - startTime).toBeLessThan(100);
 
       const statusMessage = document.getElementById('maskStatusMessage');
-      expect(statusMessage.textContent).toBe("100件の個人情報をマスクしました");
+      expect(statusMessage.textContent).toBe("E-mail100件をマスクしました");
     });
 
     test('TC-MV-203: 空文字のコンテンツ', () => {
@@ -202,7 +204,8 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
       const statusMessage = document.getElementById('maskStatusMessage');
 
       expect(modal.style.display).toBe("flex");
-      expect(statusMessage.textContent).toBe("0件の個人情報をマスクしました");
+      expect(statusMessage.textContent).toBe("");
+      expect(statusMessage.style.display).toBe("none");
     });
   });
 

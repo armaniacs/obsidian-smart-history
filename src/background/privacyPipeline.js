@@ -40,10 +40,12 @@ export class PrivacyPipeline {
     }
 
     // L2: PII Masking
+    let maskedItems = [];
     if (sanitizedSettings.useMasking) {
       const sanitizeResult = this.sanitizers.sanitizeRegex(processingText);
       processingText = sanitizeResult.text;
-      maskedCount = sanitizeResult.maskedItems.length;
+      maskedItems = sanitizeResult.maskedItems;
+      maskedCount = maskedItems.length;
 
       this._logMasking(sanitizeResult);
     }
@@ -54,7 +56,8 @@ export class PrivacyPipeline {
         preview: true,
         processedContent: processingText,
         mode: this.mode,
-        maskedCount
+        maskedCount,
+        maskedItems
       };
     }
 

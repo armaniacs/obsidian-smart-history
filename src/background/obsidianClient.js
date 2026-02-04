@@ -4,14 +4,8 @@ import { NoteSectionEditor } from './noteSectionEditor.js';
 import { addLog, LogType } from '../utils/logger.js';
 
 export class ObsidianClient {
-    constructor() {
-        this.baseUrl = null;
-        this.headers = null;
-    }
-
-    async init() {
+    async _getConfig() {
         const settings = await getSettings();
-        // Force HTTP to override any stale 'https' setting in local storage
         const protocol = settings[StorageKeys.OBSIDIAN_PROTOCOL] || 'http';
         const port = settings[StorageKeys.OBSIDIAN_PORT] || '27123';
         const apiKey = settings[StorageKeys.OBSIDIAN_API_KEY];
@@ -21,42 +15,44 @@ export class ObsidianClient {
             throw new Error('API Key missing');
         }
 
-        this.baseUrl = `${protocol}://127.0.0.1:${port}`;
-        this.headers = {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'text/markdown',
-            'Accept': 'application/json'
+        return {
+            baseUrl: `${protocol}://127.0.0.1:${port}`,
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'text/markdown',
+                'Accept': 'application/json'
+            },
+            settings
         };
     }
 
     async appendToDailyNote(content) {
-        await this.init();
+        const { baseUrl, headers, settings } = await this._getConfig();
 
-        const settings = await getSettings();
         const dailyPathRaw = settings[StorageKeys.OBSIDIAN_DAILY_PATH] || '';
         const dailyPath = buildDailyNotePath(dailyPathRaw);
         const pathSegment = dailyPath ? `${dailyPath}/` : '';
-        const targetUrl = `${this.baseUrl}/vault/${pathSegment}${buildDailyNotePath('')}.md`;
+        const targetUrl = `${baseUrl}/vault/${pathSegment}${buildDailyNotePath('')}.md`;
 
         try {
-            const existingContent = await this._fetchExistingContent(targetUrl);
+            const existingContent = await this._fetchExistingContent(targetUrl, headers);
             const newContent = NoteSectionEditor.insertIntoSection(
                 existingContent,
                 NoteSectionEditor.DEFAULT_SECTION_HEADER,
                 content
             );
 
-            await this._writeContent(targetUrl, newContent);
+            await this._writeContent(targetUrl, headers, newContent);
 
         } catch (error) {
             throw this._handleError(error, targetUrl);
         }
     }
 
-    async _fetchExistingContent(url) {
+    async _fetchExistingContent(url, headers) {
         const response = await fetch(url, {
             method: 'GET',
-            headers: this.headers
+            headers
         });
 
         if (response.ok) {
@@ -69,10 +65,10 @@ export class ObsidianClient {
         }
     }
 
-    async _writeContent(url, content) {
+    async _writeContent(url, headers, content) {
         const response = await fetch(url, {
             method: 'PUT',
-            headers: this.headers,
+            headers,
             body: content
         });
 
@@ -92,11 +88,10 @@ export class ObsidianClient {
 
     async testConnection() {
         try {
-            await this.init();
-            // Try to get status or list of files to verify auth
-            const response = await fetch(`${this.baseUrl}/`, {
+            const { baseUrl, headers } = await this._getConfig();
+            const response = await fetch(`${baseUrl}/`, {
                 method: 'GET',
-                headers: this.headers
+                headers
             });
             if (response.ok) {
                 return { success: true, message: 'Connected to Obsidian!' };

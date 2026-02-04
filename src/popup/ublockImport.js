@@ -6,6 +6,7 @@
 import { parseUblockFilterList, parseUblockFilterListWithErrors } from '../utils/ublockParser.js';
 import { StorageKeys, saveSettings, getSettings } from '../utils/storage.js';
 import { addLog, LogType } from '../utils/logger.js';
+import { showStatus } from './settingsUiHelper.js';
 
 let dropZoneActive = false;
 let currentSourceUrl = null;
@@ -146,7 +147,7 @@ async function handleDeleteSource(event) {
   });
 
   renderSourceList(sources);
-  showStatus('ソースを削除しました', 'success');
+  showStatus('domainStatus', 'ソースを削除しました', 'success');
 }
 
 /**
@@ -176,7 +177,7 @@ async function handleReloadSource(event) {
 
     if (result.errors.length > 0) {
       // エラーがあっても続行するか？ ここでは安全のため中止し、ユーザーに通知
-      showStatus(`${result.errors.length}個のエラーが見つかりました。更新を中止します。`, 'error');
+      showStatus('domainStatus',`${result.errors.length}個のエラーが見つかりました。更新を中止します。`, 'error');
       // renderSourceList(sources); // ボタン状態を戻すために再描画
       // return; 
       // ※ 元のコードではmanual入力時にエラーがあると保存しない方針なので、それに合わせる
@@ -190,7 +191,7 @@ async function handleReloadSource(event) {
     }
 
     if (result.rules.ruleCount === 0) {
-      showStatus('有効なルールが見つかりませんでした。更新を中止します。', 'error');
+      showStatus('domainStatus','有効なルールが見つかりませんでした。更新を中止します。', 'error');
       renderSourceList(sources);
       return;
     }
@@ -217,11 +218,11 @@ async function handleReloadSource(event) {
     });
 
     renderSourceList(sources);
-    showStatus(`ソースを更新しました（${result.rules.ruleCount}ルール）`, 'success');
+    showStatus('domainStatus',`ソースを更新しました（${result.rules.ruleCount}ルール）`, 'success');
 
   } catch (error) {
     addLog(LogType.ERROR, '更新エラー', { error: error.message });
-    showStatus(`更新エラー: ${error.message}`, 'error');
+    showStatus('domainStatus',`更新エラー: ${error.message}`, 'error');
     renderSourceList(sources); // ボタン状態リセット
   }
 }
@@ -377,12 +378,12 @@ export async function saveUblockSettings() {
   const result = parseUblockFilterListWithErrors(text);
 
   if (result.errors.length > 0) {
-    showStatus(`${result.errors.length}個のエラーが見つかりました。修正してください。`, 'error');
+    showStatus('domainStatus',`${result.errors.length}個のエラーが見つかりました。修正してください。`, 'error');
     return;
   }
 
   if (result.rules.ruleCount === 0) {
-    showStatus('有効なルールが見つかりませんでした', 'error');
+    showStatus('domainStatus','有効なルールが見つかりませんでした', 'error');
     return;
   }
 
@@ -426,10 +427,10 @@ export async function saveUblockSettings() {
     currentSourceUrl = null;
 
     const action = existingIndex >= 0 ? '更新' : '追加';
-    showStatus(`フィルターソースを${action}しました（${result.rules.ruleCount}ルール）`, 'success');
+    showStatus('domainStatus',`フィルターソースを${action}しました（${result.rules.ruleCount}ルール）`, 'success');
   } catch (error) {
     addLog(LogType.ERROR, '保存エラー', { error: error.message });
-    showStatus(`保存エラー: ${error.message}`, 'error');
+    showStatus('domainStatus',`保存エラー: ${error.message}`, 'error');
   }
 }
 
@@ -494,7 +495,7 @@ async function handleUrlImport() {
   const url = urlInput.value.trim();
 
   if (!url) {
-    showStatus('URLを入力してください', 'error');
+    showStatus('domainStatus','URLを入力してください', 'error');
     return;
   }
 
@@ -508,9 +509,9 @@ async function handleUrlImport() {
     currentSourceUrl = url;
     handleTextInputPreview();
 
-    showStatus(`"${url}" からフィルターを読み込みました`, 'success');
+    showStatus('domainStatus',`"${url}" からフィルターを読み込みました`, 'success');
   } catch (error) {
-    showStatus(error.message, 'error');
+    showStatus('domainStatus',error.message, 'error');
   } finally {
     const importBtn = document.getElementById('uBlockUrlImportBtn');
     importBtn.textContent = 'URLからインポート';
@@ -561,7 +562,7 @@ function handleDrop(event) {
   if (file && file.type === 'text/plain') {
     processFile(file);
   } else {
-    showStatus('テキストファイルのみ対応しています', 'error');
+    showStatus('domainStatus','テキストファイルのみ対応しています', 'error');
   }
 }
 
@@ -575,9 +576,9 @@ async function processFile(file) {
     document.getElementById('uBlockFilterInput').value = text;
     currentSourceUrl = null;
     handleTextInputPreview();
-    showStatus(`"${file.name}" を読み込みました`, 'success');
+    showStatus('domainStatus',`"${file.name}" を読み込みました`, 'success');
   } catch (error) {
-    showStatus(`ファイル読み込みエラー: ${error.message}`, 'error');
+    showStatus('domainStatus',`ファイル読み込みエラー: ${error.message}`, 'error');
   }
 }
 
@@ -594,23 +595,3 @@ function isElementInDropZone(element, dropZone) {
   return false;
 }
 
-/**
- * ステータス表示
- * @param {string} message
- * @param {string} type
- */
-function showStatus(message, type) {
-  const statusDiv = document.getElementById('domainStatus');
-  if (statusDiv) {
-    statusDiv.textContent = message;
-    statusDiv.className = type;
-
-    const timeout = type === 'error' ? 5000 : 3000;
-    setTimeout(() => {
-      if (statusDiv) {
-        statusDiv.textContent = '';
-        statusDiv.className = '';
-      }
-    }, timeout);
-  }
-}

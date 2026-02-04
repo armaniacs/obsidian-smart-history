@@ -96,11 +96,6 @@ export async function saveSettings(settings) {
     await chrome.storage.local.set(settings);
 }
 
-export async function getApiKey() {
-    const settings = await getSettings();
-    return settings[StorageKeys.OBSIDIAN_API_KEY];
-}
-
 /**
  * Get the list of saved URLs
  * @returns {Promise<Set<string>>} Set of saved URLs

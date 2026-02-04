@@ -139,17 +139,6 @@ function isValidString(value) {
   return value != null && typeof value === 'string';
 }
 
-/**
- * 正規表現の実行
- * 正規表現のテストは非常に高速なのでキャッシュを省略し、メモリオーバーヘッドを回避
- * @param {RegExp} regex - 正規表現
- * @param {string} str - 文字列
- * @returns {boolean} - マッチ結果
- */
-function cachedRegexTest(regex, str) {
-  return regex.test(str);
-}
-
 // LRUキャッシュのクリーンアップ間隔（ミリ秒）
 const CLEANUP_INTERVAL = 300000; // 5分
 
@@ -365,7 +354,7 @@ export function isCommentLine(line) {
     return false;
   }
   // 【パターンマッチング】: `!` で始まる行をコメント行と判定
-  return cachedRegexTest(PATTERNS.COMMENT_PREFIX, line);
+  return PATTERNS.COMMENT_PREFIX.test(line);
 }
 
 /**
@@ -405,8 +394,8 @@ export function isValidRulePattern(line) {
     return false;
   }
   // 【パターン検証】: `||` プレフィックスと `^` サフィックスの両方を検出
-  const hasPrefix = cachedRegexTest(PATTERNS.RULE_PREFIX, line);
-  const hasSuffix = cachedRegexTest(PATTERNS.RULE_SUFFIX, line);
+  const hasPrefix = PATTERNS.RULE_PREFIX.test(line);
+  const hasSuffix = PATTERNS.RULE_SUFFIX.test(line);
   return hasPrefix && hasSuffix;
 }
 
@@ -591,7 +580,7 @@ export function parseUblockFilterLine(line) {
   }
 
   // 【hosts形式コメントスキップ】: `#` で始まる行は無効（nullを返す）🟢
-  if (cachedRegexTest(PATTERNS.HOSTS_COMMENT_PREFIX, trimmedLine)) {
+  if (PATTERNS.HOSTS_COMMENT_PREFIX.test(trimmedLine)) {
     return null;
   }
 
@@ -602,7 +591,7 @@ export function parseUblockFilterLine(line) {
   }
 
   // 【hosts形式検出】: 0.0.0.0 または 127.0.0.1 で始まる行を処理 🟢
-  const hostsMatch = cachedRegexTest(PATTERNS.HOSTS_FORMAT, trimmedLine) ? PATTERNS.HOSTS_FORMAT.exec(trimmedLine) : null;
+  const hostsMatch = PATTERNS.HOSTS_FORMAT.exec(trimmedLine);
   if (hostsMatch) {
     return parseHostsLine(trimmedLine, hostsMatch[2]);
   }

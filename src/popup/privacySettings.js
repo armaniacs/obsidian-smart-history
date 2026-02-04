@@ -5,12 +5,11 @@
 
 import { StorageKeys, saveSettings, getSettings } from '../utils/storage.js';
 import { addLog, LogType } from '../utils/logger.js';
+import { showStatus } from './settingsUiHelper.js';
 
 // Elements
 const savePrivacySettingsBtn = document.getElementById('savePrivacySettings');
-const privacyStatusDiv = document.getElementById('privacyStatus');
 const confirmCheckbox = document.getElementById('piiConfirm');
-const radioInputs = document.querySelectorAll('input[name="privacyMode"]');
 
 export function init() {
     // Save settings
@@ -42,7 +41,7 @@ async function savePrivacySettings() {
     try {
         const selectedMode = document.querySelector('input[name="privacyMode"]:checked');
         if (!selectedMode) {
-            showStatus('モードを選択してください', 'error');
+            showStatus('privacyStatus', 'モードを選択してください', 'error');
             return;
         }
 
@@ -52,25 +51,11 @@ async function savePrivacySettings() {
         };
 
         await saveSettings(newSettings);
-        showStatus('プライバシー設定を保存しました', 'success');
+        showStatus('privacyStatus', 'プライバシー設定を保存しました', 'success');
 
     } catch (error) {
         addLog(LogType.ERROR, 'Error saving privacy settings', { error: error.message });
-        showStatus(`保存エラー: ${error.message}`, 'error');
+        showStatus('privacyStatus', `保存エラー: ${error.message}`, 'error');
     }
 }
 
-function showStatus(message, type) {
-    if (!privacyStatusDiv) return;
-
-    privacyStatusDiv.textContent = message;
-    privacyStatusDiv.className = type;
-
-    const timeout = type === 'error' ? 5000 : 3000;
-    setTimeout(() => {
-        if (privacyStatusDiv) {
-            privacyStatusDiv.textContent = '';
-            privacyStatusDiv.className = '';
-        }
-    }, timeout);
-}

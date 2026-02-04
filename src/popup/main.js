@@ -75,19 +75,19 @@ export async function recordCurrentPage(force = false) {
         throw new Error(previewResponse.error || '処理に失敗しました');
       }
 
-      // Mode C (masked_cloud) の場合は、マスクが行われた場合のみ確認画面を表示する
-      // Mode B などは基本表示する（要約内容の確認のため）
-      let shouldShowPreview = true;
-      if (previewResponse.mode === 'masked_cloud') {
-        shouldShowPreview = (previewResponse.maskedCount || 0) > 0;
-      }
+      // マスクが行われた場合のみ確認画面を表示する
+      const shouldShowPreview = (previewResponse.maskedCount || 0) > 0;
 
       let finalContent = previewResponse.processedContent;
 
       if (shouldShowPreview) {
         // 2. ユーザー確認（プレビュー表示前にスピナーを非表示）
         hideSpinner();
-        const confirmation = await showPreview(previewResponse.processedContent);
+        const confirmation = await showPreview(
+          previewResponse.processedContent,
+          previewResponse.maskedItems,
+          previewResponse.maskedCount || 0
+        );
 
         if (!confirmation.confirmed) {
           statusDiv.textContent = 'キャンセルしました';

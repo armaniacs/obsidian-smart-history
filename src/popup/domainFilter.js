@@ -8,6 +8,7 @@ import { extractDomain, parseDomainList, validateDomainList } from '../utils/dom
 import { init as initUblockImport, saveUblockSettings } from './ublockImport.js';
 import { addLog, LogType } from '../utils/logger.js';
 import { getCurrentTab, isRecordable } from './tabUtils.js';
+import { showStatus } from './settingsUiHelper.js';
 
 // Elements
 const generalTabBtn = document.getElementById('generalTab');
@@ -27,7 +28,6 @@ const domainListLabel = document.getElementById('domainListLabel');
 const domainListTextarea = document.getElementById('domainList');
 const addCurrentDomainBtn = document.getElementById('addCurrentDomain');
 const saveDomainSettingsBtn = document.getElementById('saveDomainSettings');
-const domainStatusDiv = document.getElementById('domainStatus');
 
 // uBlock形式要素
 const simpleFormatEnabledCheckbox = document.getElementById('simpleFormatEnabled');
@@ -180,18 +180,18 @@ async function addCurrentDomain() {
         const tab = await getCurrentTab();
 
         if (!tab) {
-            showDomainStatus('アクティブなタブが見つかりません', 'error');
+            showStatus('domainStatus','アクティブなタブが見つかりません', 'error');
             return;
         }
 
         if (!isRecordable(tab)) {
-            showDomainStatus('現在のページはHTTP/HTTPSページではありません', 'error');
+            showStatus('domainStatus','現在のページはHTTP/HTTPSページではありません', 'error');
             return;
         }
 
         const domain = extractDomain(tab.url);
         if (!domain) {
-            showDomainStatus('ドメインを抽出できませんでした', 'error');
+            showStatus('domainStatus','ドメインを抽出できませんでした', 'error');
             return;
         }
 
@@ -200,7 +200,7 @@ async function addCurrentDomain() {
 
         // Check for duplicates
         if (currentList.includes(domain)) {
-            showDomainStatus(`ドメイン "${domain}" は既にリストに存在します`, 'error');
+            showStatus('domainStatus',`ドメイン "${domain}" は既にリストに存在します`, 'error');
             return;
         }
 
@@ -208,10 +208,10 @@ async function addCurrentDomain() {
         currentList.push(domain);
         domainListTextarea.value = currentList.join('\n');
 
-        showDomainStatus(`ドメイン "${domain}" を追加しました`, 'success');
+        showStatus('domainStatus',`ドメイン "${domain}" を追加しました`, 'success');
     } catch (error) {
         addLog(LogType.ERROR, 'Error adding current domain', { error: error.message });
-        showDomainStatus(`エラーが発生しました: ${error.message}`, 'error');
+        showStatus('domainStatus',`エラーが発生しました: ${error.message}`, 'error');
     }
 }
 
@@ -229,7 +229,7 @@ export async function handleSaveDomainSettings() {
         }
     } catch (error) {
         addLog(LogType.ERROR, 'Error saving domain settings', { error: error.message });
-        showDomainStatus(`保存エラー: ${error.message}`, 'error');
+        showStatus('domainStatus',`保存エラー: ${error.message}`, 'error');
     }
 }
 
@@ -240,7 +240,7 @@ async function saveSimpleFormatSettings() {
     // Check if filter mode is selected
     const selectedMode = document.querySelector('input[name="domainFilter"]:checked');
     if (!selectedMode) {
-        showDomainStatus('フィルターモードを選択してください', 'error');
+        showStatus('domainStatus','フィルターモードを選択してください', 'error');
         return;
     }
 
@@ -252,7 +252,7 @@ async function saveSimpleFormatSettings() {
     if (mode !== 'disabled' && domainList.length > 0) {
         const errors = validateDomainList(domainList);
         if (errors.length > 0) {
-            showDomainStatus(`ドメインリストのエラー:\n${errors.join('\n')}`, 'error');
+            showStatus('domainStatus',`ドメインリストのエラー:\n${errors.join('\n')}`, 'error');
             return;
         }
     }
@@ -272,24 +272,6 @@ async function saveSimpleFormatSettings() {
     // Save settings
     await saveSettings(newSettings);
 
-    showDomainStatus('ドメインフィルター設定を保存しました', 'success');
+    showStatus('domainStatus','ドメインフィルター設定を保存しました', 'success');
 }
 
-function showDomainStatus(message, type) {
-    if (!domainStatusDiv) {
-        addLog(LogType.ERROR, 'Domain status div not found');
-        return;
-    }
-
-    domainStatusDiv.textContent = message;
-    domainStatusDiv.className = type;
-
-    // Clear status after 5 seconds for errors, 3 seconds for success
-    const timeout = type === 'error' ? 5000 : 3000;
-    setTimeout(() => {
-        if (domainStatusDiv) {
-            domainStatusDiv.textContent = '';
-            domainStatusDiv.className = '';
-        }
-    }, timeout);
-}
