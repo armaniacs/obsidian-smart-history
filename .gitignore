@@ -7,3 +7,5 @@ coverage/
 
 docs/blog-*
 docs/plans/
+
+.worktrees/
