@@ -47,10 +47,11 @@ export function migrateToLightweightFormat(oldRules) {
  * @returns {Promise<boolean>} - true if migration was performed, false otherwise
  */
 export async function migrateUblockSettings() {
-  const { StorageKeys } = await import('./storage.js');
+  // Use hardcoded key to avoid dynamic import in Service Worker context
+  const UBLOCK_RULES_KEY = 'ublock_rules';
 
-  const result = await chrome.storage.local.get([StorageKeys.UBLOCK_RULES]);
-  const ublockRules = result[StorageKeys.UBLOCK_RULES];
+  const result = await chrome.storage.local.get([UBLOCK_RULES_KEY]);
+  const ublockRules = result[UBLOCK_RULES_KEY];
 
   // If already in new format (and NOT in old format) or no data exists, nothing to do
   if (!ublockRules ||
@@ -60,7 +61,7 @@ export async function migrateUblockSettings() {
 
   // Perform migration
   const newRules = migrateToLightweightFormat(ublockRules);
-  await chrome.storage.local.set({ [StorageKeys.UBLOCK_RULES]: newRules });
+  await chrome.storage.local.set({ [UBLOCK_RULES_KEY]: newRules });
 
   return true;
 }

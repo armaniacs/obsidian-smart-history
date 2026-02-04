@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Obsidian Smart History",
-  "version": "2.2.6",
+  "version": "2.2.7",
   "description": "Smartly backup closed tabs to Obsidian with AI summaries and context linking.",
   "icons": {
     "16": "icons/icon16.png",

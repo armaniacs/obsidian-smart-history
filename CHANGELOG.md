@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.7] - 2026-02-05
+### Fixed
+- Service Worker内での動的インポートエラーを修正
+  - migration.jsで`await import('./storage.js')`を削除し、ハードコードされた定数 `'ublock_rules'` を使用
+  - HTML仕様によりServiceWorkerGlobalScopeで禁止されている動的インポートの使用を回避
+
 ## [2.2.6] - 2026-02-04
 ### Fixed
 - uBlockマッチャーのバグ修正: `buildIndex` 関数で元のルールを直接使用するように変更し、options情報を保持
