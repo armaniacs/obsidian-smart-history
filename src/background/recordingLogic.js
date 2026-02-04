@@ -13,7 +13,7 @@ export class RecordingLogic {
   }
 
   async record(data) {
-    const { title, url, content, force = false, skipDuplicateCheck = false, alreadyProcessed = false } = data;
+    const { title, url, content, force = false, skipDuplicateCheck = false, alreadyProcessed = false, previewOnly = false } = data;
 
     try {
       // 1. Check domain filter
@@ -38,11 +38,9 @@ export class RecordingLogic {
       // 3. Privacy Pipeline Processing
       const pipeline = new PrivacyPipeline(settings, this.aiClient, { sanitizeRegex });
       const pipelineResult = await pipeline.process(content, {
-        previewOnly: false,
+        previewOnly,
         alreadyProcessed
       });
-
-      const previewOnly = data.previewOnly || false;
 
       if (previewOnly) {
         return {
