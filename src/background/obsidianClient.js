@@ -1,4 +1,6 @@
 import { getSettings, StorageKeys } from '../utils/storage.js';
+import { buildDailyNotePath } from '../utils/dailyNotePathBuilder.js';
+import { NoteSectionEditor } from './noteSectionEditor.js';
 import { addLog, LogType } from '../utils/logger.js';
 
 export class ObsidianClient {
@@ -32,90 +34,60 @@ export class ObsidianClient {
 
         const settings = await getSettings();
         const dailyPathRaw = settings[StorageKeys.OBSIDIAN_DAILY_PATH] || '';
-
-        // Use local date for YYYY-MM-DD and placeholders
-        const now = new Date();
-        const year = String(now.getFullYear());
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const today = `${year}-${month}-${day}`;
-
-        // Replace placeholders in path: YYYY, MM, DD
-        const dailyPath = dailyPathRaw
-            .replace(/YYYY/g, year)
-            .replace(/MM/g, month)
-            .replace(/DD/g, day);
-
+        const dailyPath = buildDailyNotePath(dailyPathRaw);
         const pathSegment = dailyPath ? `${dailyPath}/` : '';
-        const targetUrl = `${this.baseUrl}/vault/${pathSegment}${today}.md`;
+        const targetUrl = `${this.baseUrl}/vault/${pathSegment}${buildDailyNotePath('')}.md`;
 
         try {
-            // 1. Read existing file content
-            let existingContent = '';
-            const getResponse = await fetch(targetUrl, {
-                method: 'GET',
-                headers: this.headers
-            });
+            const existingContent = await this._fetchExistingContent(targetUrl);
+            const newContent = NoteSectionEditor.insertIntoSection(
+                existingContent,
+                NoteSectionEditor.DEFAULT_SECTION_HEADER,
+                content
+            );
 
-            if (getResponse.ok) {
-                existingContent = await getResponse.text();
-            } else if (getResponse.status === 404) {
-                // File doesn't exist yet, will create it
-            } else {
-                const errorText = await getResponse.text();
-                throw new Error(`Failed to read daily note: ${getResponse.status} ${errorText}`);
-            }
-
-            // 2. Find or create the browser history section
-            const sectionHeader = '# 🌐 ブラウザ閲覧履歴';
-            let newContent;
-
-            if (existingContent.includes(sectionHeader)) {
-                // Section exists, append under it
-                const lines = existingContent.split('\n');
-                const sectionIndex = lines.findIndex(line => line.trim() === sectionHeader);
-
-                // Find the next section (next ## header) or end of file
-                let insertIndex = sectionIndex + 1;
-                for (let i = sectionIndex + 1; i < lines.length; i++) {
-                    if (lines[i].startsWith('# ')) {
-                        insertIndex = i;
-                        break;
-                    }
-                    insertIndex = i + 1;
-                }
-
-                // Insert the new content before the next section
-                lines.splice(insertIndex, 0, content);
-                newContent = lines.join('\n');
-            } else {
-                // Section doesn't exist, create it at the end
-                if (existingContent && !existingContent.endsWith('\n')) {
-                    existingContent += '\n';
-                }
-                newContent = existingContent + `\n${sectionHeader}\n${content}\n`;
-            }
-
-            // 3. Write back the entire file
-            const putResponse = await fetch(targetUrl, {
-                method: 'PUT',
-                headers: this.headers,
-                body: newContent
-            });
-
-            if (!putResponse.ok) {
-                const errorText = await putResponse.text();
-                throw new Error(`Obsidian API Error: ${putResponse.status} ${errorText}`);
-            }
+            await this._writeContent(targetUrl, newContent);
 
         } catch (error) {
-            let errorMessage = error.message;
-            if (errorMessage.includes('Failed to fetch') && targetUrl.startsWith('https')) {
-                errorMessage += ' (Self-signed certificate might not be trusted. Please visit the Obsidian URL in a new tab and accept the certificate.)';
-            }
-
-            throw new Error(`Failed to connect to Obsidian at ${targetUrl}. Cause: ${errorMessage}`);
+            throw this._handleError(error, targetUrl);
         }
+    }
+
+    async _fetchExistingContent(url) {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: this.headers
+        });
+
+        if (response.ok) {
+            return await response.text();
+        } else if (response.status === 404) {
+            return '';
+        } else {
+            const errorText = await response.text();
+            throw new Error(`Failed to read daily note: ${response.status} ${errorText}`);
+        }
+    }
+
+    async _writeContent(url, content) {
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: this.headers,
+            body: content
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Obsidian API Error: ${response.status} ${errorText}`);
+        }
+    }
+
+    _handleError(error, targetUrl) {
+        let errorMessage = error.message;
+        if (errorMessage.includes('Failed to fetch') && targetUrl.startsWith('https')) {
+            errorMessage += ' (Self-signed certificate might not be trusted. Please visit the Obsidian URL in a new tab and accept the certificate.)';
+        }
+        return new Error(`Failed to connect to Obsidian at ${targetUrl}. Cause: ${errorMessage}`);
     }
 
     async testConnection() {
