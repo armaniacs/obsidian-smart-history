@@ -24,6 +24,7 @@
 - 📱 **改良されたUI**: メイン画面と設定画面を分離し、ハンバーガーメニューから簡単にアクセスできます。
 - 🌐 **ドメインフィルター**: ホワイトリスト/ブラックリストで記録するドメインを制御できます。ワイルドカードパターンに対応。
 - 🚫 **uBlock Origin形式フィルター**: EasyListなどの既存のuBlockフィルターリストを直接インポートして使用できます。
+- 🔒 **プライバシー保護**: 4つのプライバシーモードを選択し、個人情報をマスクしてからAIに送信可能です。詳細は [PII_FEATURE_GUIDE.md](PII_FEATURE_GUIDE.md) を参照。
 
 ### 必要なもの
 - [Obsidian](https://obsidian.md/) と [Local REST API プラグイン](https://github.com/coddingtonbear/obsidian-local-rest-api)
@@ -121,6 +122,7 @@ A Chrome extension that automatically saves your browsing history to Obsidian wi
 - 📱 **Improved UI**: Separated main screen and settings with easy hamburger menu access.
 - 🌐 **Domain Filtering**: Control which domains to record with whitelist/blacklist support. Wildcard patterns supported.
 - 🚫 **uBlock Origin Format Filters**: Import and use existing uBlock filter lists like EasyList directly.
+- 🔒 **Privacy Protection**: Select from 4 privacy modes and mask PII before sending to AI. See [PII_FEATURE_GUIDE.md](PII_FEATURE_GUIDE.md) for details.
 
 ### Requirements
 - [Obsidian](https://obsidian.md/) with [Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api)

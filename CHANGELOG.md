@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-02-05
+### Added
+- マスク種別表示: ステータスメッセージに具体的なPII種別名を表示（例: 「電話番号3件をマスクしました」「E-mail1件、クレジットカード番号2件をマスクしました」）
+- マスク箇所ナビゲーション: ▲/▼ボタンでtextarea内の[MASKED:*]トークンにジャンプ＋選択する機能を追加
+- プレビューtextareaのリサイズ: 右下ハンドルで縦横自由にリサイズ可能、ResizeObserverでポップアップ幅が自動追従
+
+### Changed
+- コードシンプル化リファクタリング（5グループ）
+  - showStatus()の重複排除: 4ファイルに散在していたローカル関数を`settingsUiHelper.js`の共通関数に統合
+  - cachedRegexTest()ラッパー削除: `ublockParser.js`の無意味なラッパーを直接`.test()`呼び出しに置換
+  - sanitizePreview.js定数整理: 1回しか使われない定数オブジェクト（DISPLAY_VALUES, CSS_SELECTORS, MESSAGES）をインライン化
+  - ObsidianClient簡素化: `init()`パターンを`_getConfig()`に統合し、二重`getSettings()`呼び出しを排除
+  - isDomainAllowed()の二重シグネチャ排除: `arguments.length`による分岐を削除し、単一パラメータに統一
+- storage.jsから未使用の`getApiKey()`関数を削除
+- プレビューモーダルのHTMLハイライト生成を削除し、プレーンテキスト表示に変更（textareaでのHTMLタグ生テキスト表示バグを修正）
+- プレビューtextareaのデフォルト高さを200px→600pxに拡大
+
+### Fixed
+- privacyPipeline.jsのpreviewOnlyレスポンスにmaskedItems配列が含まれていなかった問題を修正（maskedCountのみで配列が欠落していた）
+- main.jsのshowPreview()呼び出しでmaskedItemsとmaskedCountが渡されていなかった問題を修正
+- マスク0件でも確認画面が表示されていた問題を修正（全モード共通でmaskedCount > 0の場合のみ表示）
+
 ## [2.2.9] - 2026-02-05
 ### Changed
 - コードシンプル化リファクタリング（5グループ）
