@@ -181,20 +181,6 @@ async function handleCopy() {
   }
 }
 
-// ============================================================================
-// URLインポート機能
-// ============================================================================
-
-/**
- * URLインポート機能の初期化
- */
-function setupUrlImport() {
-  const urlImportBtn = document.getElementById('uBlockUrlImportBtn');
-  if (urlImportBtn) {
-    urlImportBtn.addEventListener('click', handleUrlImport);
-  }
-}
-
 /**
  * URLインポートのイベントハンドラ
  */

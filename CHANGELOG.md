@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-02-07
+### Fixed
+- テスト状態漏洩問題を修正: sourceManager.test.jsのテスト間でストレージデータが共有される問題を解決
+  - jest.setup.jsのグローバルjest.fn()モックをmockImplementation()でオーバーライド
+  - 各テストで独立したtestStorageオブジェクトを使用するように修正
+
+### Changed
+- テストカバレッジを向上（12テスト追加）
+  - mask-visualization.test.js: ナビゲーション機能、モーダル操作、DOM要素動的作成のテストを追加
+  - ublockExport.test.js: init関数のエラーハンドリングテストを追加
+  - ublockParser-cache.test.js: クリーンアップタイマー設定テストを追加
+- 全体カバレッジ: 52.73% → 54.4%
+- sanitizePreview.js: 64.17% → 83.58% (+19.4%)
+- ublockExport.js: 48.14% → 55.55% (+7.4%)
+
 ## [2.3.0] - 2026-02-05
 ### Added
 - マスク種別表示: ステータスメッセージに具体的なPII種別名を表示（例: 「電話番号3件をマスクしました」「E-mail1件、クレジットカード番号2件をマスクしました」）

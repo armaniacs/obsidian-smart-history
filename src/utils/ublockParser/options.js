@@ -19,7 +19,12 @@ import { OPTION_TYPES, PREFIXES } from './constants.js';
  * @param {string} domainValue - `example.com|test.com` 形式のドメイン値
  * @returns {string[]} - クリーンなドメイン配列（空文字は除外）
  */
-function parseDomainList(domainValue) {
+export function parseDomainList(domainValue) {
+  // 【入力値検証】: null/undefinedの場合は空配列を返す 🟢
+  if (!isValidString(domainValue)) {
+    return [];
+  }
+
   // 【ドメイン分割】: | 区切りでドメイン配列に分割 🟢
   // 【フィルタリング】: 空文字を除外して有効なドメインのみ 🟢
   // 【処理効率化】: filterで確実な配列構築 🟢
@@ -44,7 +49,7 @@ function parseDomainList(domainValue) {
 export function parseOptions(optionsString) {
   // 【入力値検証】: null/undefined/空文字の場合は空オブジェクトを返す 🟢
   if (!isValidString(optionsString)) {
-    throw new Error('オプション文字列が無効です');
+    return {};
   }
 
   const trimmedOptions = optionsString.trim();

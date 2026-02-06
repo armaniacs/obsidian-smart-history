@@ -32,6 +32,11 @@ export {
   parseDomainList as transformParseDomainList
 } from './transform.js';
 
+// ドメインパース関数
+export {
+  parseDomainList
+} from './options.js';
+
 // オプションパース関数
 export {
   parseOptions,
@@ -42,6 +47,16 @@ export {
 export {
   parseUblockFilterLine
 } from './parsing.js';
+
+// キャッシュ関数
+export {
+  cleanupCache,
+  generateCacheKey,
+  updateLRUTracker,
+  saveToCache,
+  getFromCache,
+  hasCacheKey
+} from './cache.js';
 
 // ============================================================================
 // 複数行パース関数（エラーハンドリング対応）
@@ -143,6 +158,14 @@ export function parseUblockFilterListWithErrors(text) {
         } else if (rule.type === RULE_TYPES.EXCEPTION) {
           exceptionRules.push(rule);
         }
+      } else {
+        // 【無効なルールをエラーとして収集】🟢
+        // 空行やコメント行でないのにパースできない行はエラーとして扱う
+        errors.push({
+          lineNumber: i + 1,
+          line: line,
+          message: '無効なルール形式です'
+        });
       }
     } catch (error) {
       // 【エラー収集】: パースエラーを収集 🟢

@@ -8,6 +8,9 @@
 
 import { DEFAULT_METADATA, NULL_RULE_ID, RULE_TYPES } from './constants.js';
 import { validateDomain } from './validation.js';
+import { parseRuleOptions, parseDomainList } from './options.js';
+
+export { parseDomainList } from './options.js';
 
 // ============================================================================
 // ID生成
@@ -64,10 +67,9 @@ export function generateRuleId(rawLine) {
  * @param {string} trimmedLine - トリムされた元の行
  * @param {string} type - ルールタイプ
  * @param {string} domain - ドメイン
- * @param {Function} parseRuleOptions - オプションパース関数
  * @returns {Object} - UblockRuleオブジェクト
  */
-export function buildRuleObject(trimmedLine, type, domain, parseRuleOptions) {
+export function buildRuleObject(trimmedLine, type, domain) {
   // 【パターン生成】: マッチング用パターンを作成
   // 【注記】: Greenフェーズではドメインをそのまま使用、UF-103で正規表現処理予定 🟡
   const pattern = domain;

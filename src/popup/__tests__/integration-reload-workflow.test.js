@@ -52,7 +52,7 @@ describe('フローワーク: URLからインポートしてソースを再読�
     expect(new Set(merged.exceptionDomains)).toEqual(new Set(['safe.com']));
   });
 
-  test('無効な行がスキップされる（サフィックスなしのドメインルールは無効）', () => {
+  test('無効な行がエラーとして報告される（サフィックスなしのドメインルールは無効）', () => {
     const mixedFilterText = `
 ||example.com
 invalid line without caret
@@ -61,7 +61,7 @@ invalid line without caret
 
     const result = parseUblockFilterListWithErrors(mixedFilterText);
 
-    expect(result.errors.length).toBe(0);
+    expect(result.errors.length).toBeGreaterThan(0); // 無効なルールがエラーとして報告される
     expect(result.rules.blockRules.length).toBe(0); // ||example.comがないため（サフィックス^がない）
     expect(result.rules.exceptionRules.length).toBe(1); // @@||safe.com^は有効
   });

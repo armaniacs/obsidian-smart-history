@@ -21,7 +21,7 @@ import { PATTERNS } from './constants.js';
  * @returns {boolean} - 有効な文字列ならtrue
  */
 export function isValidString(value) {
-  return value != null && typeof value === 'string';
+  return value != null && typeof value === 'string' && value.length > 0;
 }
 
 // ============================================================================
@@ -40,6 +40,11 @@ export function isValidString(value) {
 export function validateDomain(domain) {
   // 【空ドメイン検証】: ドメインが空の場合は無効
   if (!domain) {
+    return false;
+  }
+
+  // 【連続ドット検証】: 連続するドットを含むドメインは無効
+  if (domain.includes('..')) {
     return false;
   }
 
@@ -82,7 +87,7 @@ export function isCommentLine(line) {
  * @returns {boolean} - 空行ならtrue
  */
 export function isEmptyLine(line) {
-  // 【入力値検証】: null/undefinedの場合はtrueを返して処理をスキップ 🟢
+  // 【入力値検証】: null/undefined/空文字列の場合はtrueを返して処理をスキップ 🟢
   if (!isValidString(line)) {
     return true;
   }
@@ -108,5 +113,12 @@ export function isValidRulePattern(line) {
   // 【パターン検証】: `||` プレフィックスと `^` サフィックスの両方を検出
   const hasPrefix = PATTERNS.RULE_PREFIX.test(line);
   const hasSuffix = PATTERNS.RULE_SUFFIX.test(line);
-  return hasPrefix && hasSuffix;
+
+  // 【空パターン検証】: `||^` のようにドメインが空のパターンは無効
+  // プレフィックスとサフィックスの間に少なくとも1文字必要
+  if (hasPrefix && hasSuffix && line.length > 3) {
+    return true;
+  }
+
+  return false;
 }

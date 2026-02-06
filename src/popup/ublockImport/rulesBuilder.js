@@ -15,19 +15,30 @@ export function rebuildRulesFromSources(sources) {
   const blockDomains = new Set();
   const exceptionDomains = new Set();
 
+  // null/undefined の場合、空の結果を返す
+  if (!sources || !Array.isArray(sources)) {
+    sources = [];
+  }
+
   for (const source of sources) {
-    if (source.blockDomains) {
+    if (source && source.blockDomains) {
       source.blockDomains.forEach(d => blockDomains.add(d));
     }
-    if (source.exceptionDomains) {
+    if (source && source.exceptionDomains) {
       source.exceptionDomains.forEach(d => exceptionDomains.add(d));
     }
   }
 
   // ストレージには配列のみ保存（オブジェクトは保存しない）
+  // 互換性のため blockRules/blockDomains 両方のプロパティを返す
+  const blockRules = Array.from(blockDomains);
+  const exceptionRules = Array.from(exceptionDomains);
+
   return {
-    blockDomains: Array.from(blockDomains),
-    exceptionDomains: Array.from(exceptionDomains),
+    blockRules,
+    exceptionRules,
+    blockDomains: blockRules,   // 互換性用
+    exceptionDomains: exceptionRules,  // 互換性用
     metadata: {
       importedAt: Date.now(),
       ruleCount: blockDomains.size + exceptionDomains.size

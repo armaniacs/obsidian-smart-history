@@ -3,7 +3,7 @@
  * uBlockインポートモジュール - ソース管理機能
  */
 
-import { parseUblockFilterListWithErrors } from '../../utils/ublockParser.js';
+import { parseUblockFilterListWithErrors, isValidString } from '../../utils/ublockParser.js';
 import { StorageKeys, saveSettings, getSettings } from '../../utils/storage.js';
 import { LogType, addLog } from '../../utils/logger.js';
 import { showStatus } from '../settingsUiHelper.js';
@@ -75,7 +75,8 @@ export async function reloadSource(index, fetchFromUrlCallback) {
     throw new Error(`${result.errors.length}個のエラーが見つかりました。更新を中止します。`);
   }
 
-  if (result.rules.ruleCount === 0) {
+  const ruleCount = result.rules?.metadata?.ruleCount ?? 0;
+  if (ruleCount === 0) {
     throw new Error('有効なルールが見つかりませんでした。更新を中止します。');
   }
 
@@ -87,7 +88,7 @@ export async function reloadSource(index, fetchFromUrlCallback) {
   sources[index] = {
     ...source,
     importedAt: Date.now(),
-    ruleCount: result.rules.ruleCount,
+    ruleCount: ruleCount,
     blockDomains,
     exceptionDomains
   };
@@ -102,7 +103,7 @@ export async function reloadSource(index, fetchFromUrlCallback) {
 
   return {
     sources,
-    ruleCount: result.rules.ruleCount
+    ruleCount: ruleCount
   };
 }
 
@@ -112,6 +113,11 @@ export async function reloadSource(index, fetchFromUrlCallback) {
  * @param {string|null} url - ソースURL（手動入力の場合はnull）
  */
 export async function saveUblockSettings(text, url = null) {
+  // 入力値検証: 空文字列は事前にチェック
+  if (!isValidString(text)) {
+    throw new Error('有効なルールが見つかりませんでした');
+  }
+
   const result = parseUblockFilterListWithErrors(text);
 
   if (result.errors.length > 0) {
@@ -119,7 +125,8 @@ export async function saveUblockSettings(text, url = null) {
     throw new Error(`${result.errors.length}個のエラーが見つかりました。`);
   }
 
-  if (result.rules.ruleCount === 0) {
+  const ruleCount = result.rules?.metadata?.ruleCount ?? 0;
+  if (ruleCount === 0) {
     showStatus('domainStatus', '有効なルールが見つかりませんでした', 'error');
     throw new Error('有効なルールが見つかりませんでした');
   }
@@ -137,7 +144,7 @@ export async function saveUblockSettings(text, url = null) {
   const newSource = {
     url: sourceUrl,
     importedAt: Date.now(),
-    ruleCount: result.rules.ruleCount,
+    ruleCount: ruleCount,
     blockDomains,
     exceptionDomains
   };
@@ -158,11 +165,11 @@ export async function saveUblockSettings(text, url = null) {
   });
 
   const action = existingIndex >= 0 ? '更新' : '追加';
-  showStatus('domainStatus', `フィルターソースを${action}しました（${result.rules.ruleCount}ルール）`, 'success');
+  showStatus('domainStatus', `フィルターソースを${action}しました（${ruleCount}ルール）`, 'success');
 
   return {
     sources,
     action,
-    ruleCount: result.rules.ruleCount
+    ruleCount: ruleCount
   };
 }

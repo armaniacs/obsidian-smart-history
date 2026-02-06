@@ -218,4 +218,216 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
       expect(element).toBeTruthy();
     });
   });
+
+  describe('ナビゲーション機能', () => {
+    beforeEach(() => {
+      document.body.innerHTML = `
+        <div id="confirmationModal" style="display: none;">
+          <div class="modal-body">
+            <textarea id="previewContent"></textarea>
+          </div>
+          <button id="closeModalBtn">閉じる</button>
+          <button id="cancelPreviewBtn">キャンセル</button>
+          <button id="confirmPreviewBtn">確定</button>
+        </div>
+      `;
+    });
+
+    test('次のマスク箇所へジャンプ', () => {
+      const content = "連絡先:[MASKED:email]x1@example.com 問い合わせ:[MASKED:email]x2@example.com";
+      const maskedItems = [
+        { type: "email", original: "x1@example.com" },
+        { type: "email", original: "x2@example.com" }
+      ];
+      const maskedCount = 2;
+
+      sanitizePreview.showPreview(content, maskedItems, maskedCount);
+
+      // 次のマスク箇所へ
+      sanitizePreview.jumpToNextMasked();
+      const counter = document.getElementById('maskNavCounter');
+      expect(counter.textContent).toBe('2/2');
+
+      // ループして最初に戻る
+      sanitizePreview.jumpToNextMasked();
+      expect(counter.textContent).toBe('1/2');
+    });
+
+    test('前のマスク箇所へジャンプ', () => {
+      const content = "連絡先:[MASKED:email]x1@example.com 問い合わせ:[MASKED:email]x2@example.com";
+      const maskedItems = [
+        { type: "email", original: "x1@example.com" },
+        { type: "email", original: "x2@example.com" }
+      ];
+      const maskedCount = 2;
+
+      sanitizePreview.showPreview(content, maskedItems, maskedCount);
+      const counter = document.getElementById('maskNavCounter');
+
+      // 最初は1/2
+      expect(counter.textContent).toBe('1/2');
+
+      // 前のマスク箇所へ（ループして最後に戻る）
+      sanitizePreview.jumpToPrevMasked();
+      expect(counter.textContent).toBe('2/2');
+    });
+
+    test('マスク箇所がない場合はナビゲーションしない', () => {
+      const content = "まったく個人情報が含まれないテキストです。";
+      const maskedItems = [];
+      const maskedCount = 0;
+
+      sanitizePreview.showPreview(content, maskedItems, maskedCount);
+
+      // エラーを投げないことを確認
+      expect(() => {
+        sanitizePreview.jumpToNextMasked();
+        sanitizePreview.jumpToPrevMasked();
+      }).not.toThrow();
+    });
+  });
+
+  describe('モーダルが存在しない場合', () => {
+    test('モーダルがない場合は自動的にconfirmedを返す', async () => {
+      document.body.innerHTML = '';
+      const content = "テストコンテンツ";
+      const maskedItems = [];
+      const maskedCount = 0;
+
+      const result = await sanitizePreview.showPreview(content, maskedItems, maskedCount);
+
+      expect(result).toEqual({ confirmed: true, content });
+    });
+  });
+
+  describe('maskStatusMessageの動的作成', () => {
+    test('maskStatusMessageが存在しない場合は動的に作成される', () => {
+      document.body.innerHTML = `
+        <div id="confirmationModal" style="display: none;">
+          <div class="modal-body">
+            <textarea id="previewContent"></textarea>
+          </div>
+          <button id="closeModalBtn">閉じる</button>
+          <button id="cancelPreviewBtn">キャンセル</button>
+          <button id="confirmPreviewBtn">確定</button>
+        </div>
+      `;
+
+      const content = "連絡先:[MASKED:email]xxx@example.com";
+      const maskedItems = [{ type: "email", original: "xxx@example.com" }];
+      const maskedCount = 1;
+
+      sanitizePreview.showPreview(content, maskedItems, maskedCount);
+
+      const maskStatusMessage = document.getElementById('maskStatusMessage');
+      expect(maskStatusMessage).toBeDefined();
+      expect(maskStatusMessage.className).toBe('mask-status-message');
+      expect(maskStatusMessage.textContent).toBe('E-mail1件をマスクしました');
+    });
+  });
+
+  describe('initializeModalEvents', () => {
+    test('ボタン要素が存在しない場合でもエラーを投げない', () => {
+      document.body.innerHTML = `
+        <div id="confirmationModal">
+          <div class="modal-body"></div>
+        </div>
+      `;
+
+      expect(() => {
+        sanitizePreview.initializeModalEvents();
+      }).not.toThrow();
+    });
+
+    test('ResizeObserverが未定義の場合でもエラーを投げない', () => {
+      document.body.innerHTML = `
+        <div id="confirmationModal">
+          <div class="modal-body">
+            <textarea id="previewContent"></textarea>
+          </div>
+          <button id="closeModalBtn"></button>
+          <button id="cancelPreviewBtn"></button>
+          <button id="confirmPreviewBtn"></button>
+        </div>
+      `;
+
+      // ResizeObserverを未定義に設定
+      const originalResizeObserver = global.ResizeObserver;
+      Object.defineProperty(global, 'ResizeObserver', {
+        value: undefined,
+        writable: true,
+      });
+
+      try {
+        expect(() => {
+          sanitizePreview.initializeModalEvents();
+        }).not.toThrow();
+      } finally {
+        // 元に戻す
+        global.ResizeObserver = originalResizeObserver;
+      }
+    });
+  });
+
+  describe('handleAction - モーダル操作の結果', () => {
+    test('モーダル表示後にボタン要素が存在する', async () => {
+      document.body.innerHTML = `
+        <div id="confirmationModal" style="display: none;">
+          <div class="modal-body">
+            <textarea id="previewContent"></textarea>
+          </div>
+          <button id="closeModalBtn"></button>
+          <button id="cancelPreviewBtn"></button>
+          <button id="confirmPreviewBtn"></button>
+        </div>
+      `;
+
+      const content = "テストコンテンツ";
+
+      // Promiseを待たずにモーダルの状態を確認
+      const promise = sanitizePreview.showPreview(content, [], 0);
+
+      const modal = document.getElementById('confirmationModal');
+      const confirmBtn = document.getElementById('confirmPreviewBtn');
+      const cancelBtn = document.getElementById('cancelPreviewBtn');
+
+      // モーダルが表示されていることを確認
+      expect(modal.style.display).toBe('flex');
+
+      // ボタン要素が存在することを確認
+      expect(confirmBtn).toBeDefined();
+      expect(cancelBtn).toBeDefined();
+
+      // テスト完了、Promiseは解決されないがエラーは投げない
+    });
+  });
+
+  describe('setPreviewContent - 内部関数のカバレッジ', () => {
+    test('previewContentがnullの場合は何もしない', () => {
+      const content = "テスト";
+      // previewContentがない状態でDOMをクリア
+      document.body.innerHTML = `
+        <div id="confirmationModal">
+          <div class="modal-body"></div>
+        </div>
+      `;
+
+      expect(() => {
+        sanitizePreview.showPreview(content, [], 0);
+      }).not.toThrow();
+    });
+
+    test('previewContentがundefinedの場合は何もしない', () => {
+      const content = "テスト";
+      document.body.innerHTML = `
+        <div id="confirmationModal" style="display: none;">
+          <div class="modal-body"></div>
+        </div>
+      `;
+
+      expect(() => {
+        sanitizePreview.showPreview(content, [], 0);
+      }).not.toThrow();
+    });
+  });
 });

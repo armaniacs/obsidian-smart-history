@@ -166,7 +166,7 @@ describe('ublockExport', () => {
       // エクスポートボタンクリック時の処理
       const exportBtn = document.getElementById('uBlockExportBtn');
       expect(exportBtn).toBeDefined();
-      
+
       // イベントハンドラが正しく設定されていることを確認
       // 実際のクリックイベントのテストはintegration testで実施すべき
       expect(true).toBe(true);
@@ -176,10 +176,26 @@ describe('ublockExport', () => {
       // コピーボタンクリック時の処理
       const copyBtn = document.getElementById('uBlockCopyBtn');
       expect(copyBtn).toBeDefined();
-      
+
       // イベントハンドラが正しく設定されていることを確認
       // 実際のクリックイベントのテストはintegration testで実施すべき
       expect(true).toBe(true);
+    });
+  });
+
+  describe('init', () => {
+    beforeEach(() => {
+      document.body.innerHTML = `
+        <div id="domainStatus"></div>
+        <button id="uBlockExportBtn"></button>
+        <button id="uBlockCopyBtn"></button>
+      `;
+    });
+
+    test('ボタン要素が存在しない場合でもエラーを投げない', () => {
+      document.body.innerHTML = '';
+      const { init } = require('../ublockExport.js');
+      expect(() => init()).not.toThrow();
     });
   });
 });

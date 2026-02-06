@@ -51,7 +51,7 @@ export const ErrorType = {
  * @returns {boolean} コネクションエラーの場合true
  */
 export function isConnectionError(error) {
-  return error?.message && error.message.includes('Receiving end does not exist');
+  return error?.message ? error.message.includes('Receiving end does not exist') : false;
 }
 
 /**
