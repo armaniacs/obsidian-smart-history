@@ -4,6 +4,7 @@ import { showPreview, initializeModalEvents } from './sanitizePreview.js';
 import { showSpinner, hideSpinner } from './spinner.js';
 import { startAutoCloseTimer } from './autoClose.js';
 import { getCurrentTab, isRecordable } from './tabUtils.js';
+import { showError, showSuccess, ErrorMessages, isDomainBlockedError, isConnectionError } from './errorUtils.js';
 
 // Export functions for testing
 export { getCurrentTab };
@@ -123,8 +124,7 @@ export async function recordCurrentPage(force = false) {
 
     if (result.success) {
       hideSpinner();
-      statusDiv.textContent = '✓ Obsidianに保存しました';
-      statusDiv.className = 'success';
+      showSuccess(statusDiv);
 
       // 【自動クローズ起動】: 記録成功後に自動クローズタイマーを起動 🟢
       // 【処理方針】: 画面状態が'main'なら2秒後にポップアップを閉じる
@@ -135,33 +135,7 @@ export async function recordCurrentPage(force = false) {
     }
   } catch (error) {
     hideSpinner();
-    statusDiv.className = 'error';
-
-    // Handle connection errors more gracefully
-    if (error.message && error.message.includes("Receiving end does not exist")) {
-      statusDiv.textContent = '✗ エラー: ページを再読み込みしてから再度お試しください';
-    }
-    // Check for the specific domain blocked error
-    else if (error.message === 'このドメインは記録が許可されていません') {
-      statusDiv.textContent = 'このドメインは記録が許可されていませんが特別に記録しますか？';
-
-      const forceBtn = document.createElement('button');
-      forceBtn.textContent = '強制記録';
-      forceBtn.className = 'secondary-btn'; // Use existing style
-      forceBtn.style.marginTop = '10px';
-      forceBtn.style.backgroundColor = '#d9534f'; // Reddish color for emphasis
-
-      forceBtn.onclick = () => {
-        // Remove the button to prevent multiple clicks
-        forceBtn.disabled = true;
-        forceBtn.textContent = '記録中...';
-        recordCurrentPage(true); // Call with force=true
-      };
-
-      statusDiv.appendChild(forceBtn);
-    } else {
-      statusDiv.textContent = `✗ エラー: ${error.message}`;
-    }
+    showError(statusDiv, error, () => recordCurrentPage(true));
   }
 }
 

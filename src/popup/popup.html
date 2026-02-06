@@ -4,480 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <title>Obsidian Smart History Settings</title>
-  <style>
-    body {
-      width: 320px;
-      padding: 15px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
-    h2 {
-      font-size: 18px;
-      margin-top: 0;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-
-    .icon-btn {
-      width: 32px;
-      height: 32px;
-      background: #f5f5f5;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .icon-btn:hover {
-      background: #e0e0e0;
-    }
-
-    #currentPage {
-      display: flex;
-      align-items: center;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 10px;
-      margin-bottom: 15px;
-    }
-
-    #favicon {
-      margin-right: 10px;
-    }
-
-    #pageTitle {
-      font-weight: bold;
-      font-size: 14px;
-      margin-bottom: 4px;
-    }
-
-    #pageUrl {
-      font-size: 12px;
-      color: #666;
-      word-break: break-all;
-    }
-
-    .primary-btn {
-      width: 100%;
-      padding: 12px;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 14px;
-      margin-bottom: 10px;
-    }
-
-    .primary-btn:hover {
-      background: #45a049;
-    }
-
-    .primary-btn:disabled {
-      background: #cccccc;
-      cursor: not-allowed;
-    }
-
-    #mainStatus {
-      margin-top: 10px;
-      font-size: 12px;
-      min-height: 1.2em;
-      color: #333;
-    }
-
-    .form-group {
-      margin-bottom: 12px;
-    }
-
-    label {
-      display: block;
-      font-size: 12px;
-      margin-bottom: 4px;
-      color: #555;
-    }
-
-    input[type="text"],
-    input[type="password"],
-    textarea {
-      width: 100%;
-      padding: 8px;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: 13px;
-      resize: vertical;
-    }
-
-    button:not(.icon-btn):not(.primary-btn) {
-      width: 100%;
-      padding: 10px;
-      background: #7b3cad;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    button:not(.icon-btn):not(.primary-btn):hover {
-      background: #602a8c;
-    }
-
-    #status {
-      margin-top: 10px;
-      font-size: 12px;
-      min-height: 1.2em;
-      color: #333;
-    }
-
-    .success {
-      color: green;
-    }
-
-    .error {
-      color: red;
-    }
-
-    /* Tab Navigation */
-    .tab-nav {
-      display: flex;
-      margin-bottom: 15px;
-      border-bottom: 1px solid #ccc;
-    }
-
-    .tab-btn {
-      flex: 1;
-      padding: 10px;
-      background: none;
-      border: none;
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: bold;
-    }
-
-    .tab-btn.active {
-      border-bottom-color: #7b3cad;
-      color: #7b3cad;
-    }
-
-    .tab-btn:hover {
-      background: #f5f5f5;
-    }
-
-    .tab-panel {
-      display: block;
-    }
-
-    .tab-panel:not(.active) {
-      display: none;
-    }
-
-    /* Radio Group */
-    .radio-group {
-      margin-bottom: 10px;
-    }
-
-    .radio-group div {
-      margin-bottom: 8px;
-    }
-
-    .radio-group input[type="radio"] {
-      margin-right: 8px;
-    }
-
-    .radio-group label {
-      display: inline;
-      font-size: 13px;
-    }
-
-    /* Secondary Button */
-    .secondary-btn {
-      width: 100%;
-      padding: 10px;
-      background: #6c757d;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .secondary-btn:hover {
-      background: #5a6268;
-    }
-
-    /* Help Text */
-    .help-text {
-      font-size: 11px;
-      color: #666;
-      margin-top: 5px;
-    }
-
-    /* Modal Styles */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    /* フォーマットセクション */
-    .format-section {
-      display: block;
-    }
-
-    .format-section[style*="display: none"] {
-      display: none;
-    }
-
-    /* ドロップゾーン */
-    .drop-zone {
-      border: 2px dashed #ccc;
-      border-radius: 4px;
-      padding: 20px;
-      text-align: center;
-      margin-bottom: 10px;
-    }
-
-    .drop-zone.active {
-      border-color: #4CAF50;
-      background-color: rgba(76, 175, 80, 0.1);
-    }
-
-    /* ソースリストセクション */
-    .source-list {
-      margin-top: 10px;
-    }
-
-    .source-list h4 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      font-size: 14px;
-    }
-
-    .source-item {
-      background-color: #e8f5e9;
-      padding: 10px;
-      border-radius: 4px;
-      margin-bottom: 8px;
-      border-left: 3px solid #4CAF50;
-      position: relative;
-    }
-
-    .source-item .source-url {
-      font-size: 12px;
-      color: #1976d2;
-      word-break: break-all;
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    .source-item .source-meta {
-      font-size: 11px;
-      color: #666;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .source-item .source-meta span {
-      margin-right: 10px;
-    }
-
-    .source-item .delete-btn {
-      background-color: #f44336;
-      color: white;
-      border: none;
-      padding: 3px 8px;
-      border-radius: 3px;
-      cursor: pointer;
-      font-size: 11px;
-    }
-
-    .source-item .delete-btn:hover {
-      background-color: #d32f2f;
-    }
-
-    .source-item .reload-btn {
-      background-color: #2196F3;
-      color: white;
-      border: none;
-      padding: 3px 8px;
-      border-radius: 3px;
-      cursor: pointer;
-      font-size: 11px;
-      margin-right: 5px;
-    }
-
-    .source-item .reload-btn:hover {
-      background-color: #1976D2;
-    }
-
-    .source-item .reload-btn:disabled {
-      background-color: #90CAF9;
-      cursor: wait;
-    }
-
-    .no-sources {
-      color: #999;
-      font-style: italic;
-      font-size: 12px;
-    }
-
-    /* プレビューセクション */
-    .preview-section {
-      background-color: #f5f5f5;
-      padding: 10px;
-      border-radius: 4px;
-      margin-top: 10px;
-    }
-
-    .preview-section h4 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      font-size: 14px;
-    }
-
-    .error {
-      color: red;
-    }
-
-    .error-text {
-      color: #d9534f;
-      max-height: 100px;
-      overflow-y: auto;
-    }
-
-    .modal-content {
-      background: white;
-      width: 90%;
-      min-width: 280px;
-      max-height: 90%;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .modal-header {
-      padding: 12px 15px;
-      border-bottom: 1px solid #eee;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .modal-header h3 {
-      margin: 0;
-      font-size: 16px;
-    }
-
-    .modal-body {
-      padding: 15px;
-      flex: 1;
-      overflow-y: auto;
-    }
-
-    .preview-textarea {
-      width: 100%;
-      min-width: 250px;
-      height: 600px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: 13px;
-      line-height: 1.5;
-      resize: both;
-      overflow: auto;
-    }
-
-    .modal-footer {
-      padding: 12px 15px;
-      border-top: 1px solid #eee;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-
-    .btn-cancel {
-      padding: 8px 16px;
-      background: #f5f5f5;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .btn-confirm {
-      padding: 8px 16px;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .masked-highlight {
-      background-color: #fff3cd;
-      color: #856404;
-      padding: 0 2px;
-      border-radius: 2px;
-    }
-
-    /* 🟢 UF-403 ローディングスピナーCSSアニメーション */
-    @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-
-    .spinner {
-      width: 24px;
-      height: 24px;
-      animation: spin 1s linear infinite;
-    }
-
-    .spinner-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .spinner-text {
-      font-size: 12px;
-      color: #666;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
   <!-- Main Screen -->
-  <div id="mainScreen" style="display: block;">
+  <div id="mainScreen">
     <div class="header">
       <h2>Smart History</h2>
       <button id="menuBtn" class="icon-btn">☰</button>
@@ -492,7 +24,7 @@
     </div>
 
     <button id="recordBtn" class="primary-btn">📝 今すぐ記録</button>
-    <div id="loadingSpinner" class="spinner-container" style="display: none;">
+    <div id="loadingSpinner" class="spinner-container">
       <svg class="spinner" viewBox="0 0 50 50">
         <circle class="spinner-path" cx="25" cy="25" r="20" fill="none" stroke="#4CAF50" stroke-width="4"
           stroke-linecap="round" />
@@ -503,7 +35,7 @@
   </div>
 
   <!-- Settings Screen -->
-  <div id="settingsScreen" style="display: none;">
+  <div id="settingsScreen">
     <div class="header">
       <button id="backBtn" class="icon-btn">←</button>
       <h2>Settings</h2>
@@ -517,7 +49,7 @@
     </div>
 
     <!-- General Settings Panel -->
-    <div id="generalPanel" class="tab-panel" style="display: none;">
+    <div id="generalPanel" class="tab-panel">
 
       <div class="form-group">
         <label>Obsidian API Key</label>
@@ -539,7 +71,7 @@
         <input type="text" id="dailyPath" placeholder="e.g. 092.Daily">
       </div>
 
-      <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
+      <hr class="settings-hr">
 
       <div class="form-group">
         <label>AI Provider</label>
@@ -564,7 +96,7 @@
       </div>
 
       <!-- OpenAI Settings -->
-      <div id="openaiSettings" style="display: none;">
+      <div id="openaiSettings" class="openai-settings">
         <div class="form-group">
           <label>Base URL</label>
           <input type="text" id="openaiBaseUrl" placeholder="https://api.openai.com/v1">
@@ -582,7 +114,7 @@
       </div>
 
       <!-- OpenAI 2 Settings -->
-      <div id="openai2Settings" style="display: none;">
+      <div id="openai2Settings" class="openai-settings">
         <div class="form-group">
           <label>Base URL</label>
           <input type="text" id="openai2BaseUrl" placeholder="http://127.0.0.1:11434/v1">
@@ -638,11 +170,11 @@
         <label>フィルター形式 (併用可能)</label>
         <div>
           <input type="checkbox" id="simpleFormatEnabled" checked>
-          <label for="simpleFormatEnabled" style="display:inline;">シンプル (1行1ドメイン)</label>
+          <label for="simpleFormatEnabled" class="inline-label">シンプル (1行1ドメイン)</label>
         </div>
-        <div style="margin-top: 5px;">
+        <div class="mt-5">
           <input type="checkbox" id="ublockFormatEnabled">
-          <label for="ublockFormatEnabled" style="display:inline;">uBlock Origin 形式</label>
+          <label for="ublockFormatEnabled" class="inline-label">uBlock Origin 形式</label>
         </div>
       </div>
 
@@ -664,7 +196,7 @@
       </div>
 
       <!-- uBlock形式用UI（新規） -->
-      <div id="uBlockFormatUI" class="format-section" style="display: none;">
+      <div id="uBlockFormatUI" class="format-section">
         <div class="form-group">
           <label>uBlockフィルター</label>
           <textarea id="uBlockFilterInput" rows="8"
@@ -678,12 +210,12 @@
 
         <div class="form-group">
           <label>ファイルから読み込み (.txt)</label>
-          <input type="file" id="uBlockFileInput" accept=".txt" style="display: none;">
+          <input type="file" id="uBlockFileInput" accept=".txt">
           <button id="uBlockFileSelectBtn" class="secondary-btn">ファイルを選択</button>
         </div>
 
         <!-- ドラッグ&ドロップエリア -->
-        <div id="uBlockDropZone" class="drop-zone" style="display: none;">
+        <div id="uBlockDropZone" class="drop-zone">
           <p>ファイルをここにドロップ</p>
         </div>
 
@@ -702,12 +234,12 @@
         </div>
 
         <!-- プレビューセクション -->
-        <div id="uBlockPreview" class="preview-section" style="display: none;">
+        <div id="uBlockPreview" class="preview-section">
           <h4>読み込みプレビュー</h4>
           <p>ルール数: <span id="uBlockRuleCount">0</span></p>
           <p>例外数: <span id="uBlockExceptionCount">0</span></p>
           <p>エラー: <span id="uBlockErrorCount" class="error">0</span></p>
-          <p id="uBlockErrorDetails" class="error-text" style="font-size: 11px;"></p>
+          <p id="uBlockErrorDetails" class="error-text text-sm"></p>
         </div>
 
         <!-- エクスポートボタン -->
@@ -731,34 +263,34 @@
           <div>
             <input type="radio" id="modeA" name="privacyMode" value="local_only">
             <label for="modeA"><strong>Mode A: Local Only</strong> (開発中)</label>
-            <div class="help-text" style="margin-left: 24px;">
+            <div class="help-text ml-24">
               ページ内容を外部送信せず、ローカルAIのみで要約します。<br>
               ※現在、多くのブラウザで動作しません。
             </div>
           </div>
 
-          <div style="margin-top: 10px;">
+          <div class="mt-10">
             <input type="radio" id="modeB" name="privacyMode" value="full_pipeline">
             <label for="modeB"><strong>Mode B: Full Pipeline</strong> (開発中)</label>
-            <div class="help-text" style="margin-left: 24px;">
+            <div class="help-text ml-24">
               ローカルAIで要約→PIIマスキング→クラウドAIで仕上げ。<br>
               ※現在、多くのブラウザで動作しません。
             </div>
           </div>
 
-          <div style="margin-top: 10px;">
+          <div class="mt-10">
             <input type="radio" id="modeC" name="privacyMode" value="masked_cloud">
             <label for="modeC"><strong>Mode C: Masked Cloud</strong> (推奨)</label>
-            <div class="help-text" style="margin-left: 24px;">
+            <div class="help-text ml-24">
               PIIのみマスクしてクラウドAIへ送信。<br>
               ローカルAIが使えない環境向け。
             </div>
           </div>
 
-          <div style="margin-top: 10px;">
+          <div class="mt-10">
             <input type="radio" id="modeD" name="privacyMode" value="cloud_only">
             <label for="modeD"><strong>Mode D: Cloud Only</strong></label>
-            <div class="help-text" style="margin-left: 24px;">
+            <div class="help-text ml-24">
               生のテキストをそのままクラウドAIへ送信。<br>
               速度優先。
             </div>
@@ -767,11 +299,11 @@
         </div>
       </div>
 
-      <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
+      <hr class="settings-hr">
 
       <div class="form-group">
         <label>確認設定</label>
-        <div style="margin-bottom: 8px;">
+        <div class="mb-8">
           <input type="checkbox" id="piiConfirm">
           <label for="piiConfirm">送信前にマスキング結果を確認する</label>
         </div>
@@ -788,12 +320,12 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>内容の確認</h3>
-        <button id="closeModalBtn" class="icon-btn" style="width:24px;height:24px;">×</button>
+        <button id="closeModalBtn" class="icon-btn modal-close">×</button>
       </div>
       <div class="modal-body">
-        <p style="margin-top:0;font-size:12px;color:#666;">
+        <p class="mt-0 text-xs text-gray">
           Obsidianに保存する内容を確認・編集できます。<br>
-          <span style="color:#d9534f;">※ マスキングされた箇所を確認してください。</span>
+          <span class="text-danger">※ マスキングされた箇所を確認してください。</span>
         </p>
         <div id="maskNavAnchor"></div>
         <textarea id="previewContent" class="preview-textarea"></textarea>
