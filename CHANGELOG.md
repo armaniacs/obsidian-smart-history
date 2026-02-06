@@ -4,7 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [2.3.1] - 2026-02-07
+## [2.3.2] - 2026-02-07
+### Fixed
+- テスト分離问题を修正: sourceManager.test.jsとublockParser-cache.test.jsのテスト間で状態が共有される問題を解決
+  - sourceManager.test.js: 脆弱なグローバルモックオーバーライドパターンをファクトリ関数`createStorageMocks()`に置き換え
+  - ublockParser-cache.test.js: キャッシュ状態永続化问题を解決するため`clearCache()`関数を追加
+  - 両テストで`beforeEach`/`afterEach`フックを使用し、テストごとに状態を初期化・復元
+
+### Changed
+- src/utils/ublockParser/cache.js: テスト用の`clearCache()`関数を追加・エクスポート
+- src/utils/ublockParser/index.js: `clearCache`関数をエクスポート
 ### Fixed
 - テスト状態漏洩問題を修正: sourceManager.test.jsのテスト間でストレージデータが共有される問題を解決
   - jest.setup.jsのグローバルjest.fn()モックをmockImplementation()でオーバーライド

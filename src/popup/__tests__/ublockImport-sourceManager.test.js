@@ -11,50 +11,79 @@ import {
   saveUblockSettings
 } from '../ublockImport/sourceManager.js';
 
-// ==============================================================================
-// テスト共通ヘルパー
-// ==============================================================================
+// =============================================================================
+// Test Utilities - Storage Mock Factory
+// =============================================================================
 
 /**
- * ストレージを初期化するヘルパー関数
- * jest.setup.jsのmock実装をオーバーライドする
+ * Create isolated storage mocks for testing.
+ * Each call creates fresh mocks with their own enclosed storage state,
+ * eliminating global mock override issues and ensuring test isolation.
+ *
+ * @returns {Object} An object containing:
+ *   - getMock: Mock for chrome.storage.local.get
+ *   - setMock: Mock for chrome.storage.local.set
+ *   - getStorageState: Function to read current storage state
+ *   - setStorageState: Function to set storage state directly
+ *   - restoreOriginal: Function to restore original chrome.storage mocks
  */
-function initializeStorage() {
-  // jest.fnの実装をオーバーライドして、テスト用のストレージを使用する
-  global.chrome.storage.local.get.mockImplementation((keys, callback) => {
-    if (callback) callback(testStorage);
-    return Promise.resolve(testStorage);
+function createStorageMocks() {
+  // Encapsulated storage state - private to this factory instance
+  let storage = {
+    ublock_sources: [],
+    ublock_rules: {},
+    ublock_format_enabled: false
+  };
+
+  // Store original mocks to allow cleanup
+  const originalGet = global.chrome.storage.local.get;
+  const originalSet = global.chrome.storage.local.set;
+
+  // Create fresh mock implementations
+  const getMock = jest.fn((keys, callback) => {
+    if (callback) callback({ ...storage });
+    return Promise.resolve({ ...storage });
   });
-  global.chrome.storage.local.set.mockImplementation((data, callback) => {
-    Object.assign(testStorage, data);
+
+  const setMock = jest.fn((data, callback) => {
+    Object.assign(storage, data);
     if (callback) callback();
     return Promise.resolve();
   });
+
+  // Helper functions for test control
+  const getStorageState = () => ({ ...storage });
+  const setStorageState = (newState) => { storage = { ...newState }; };
+
+  // Replace global mocks
+  global.chrome.storage.local.get = getMock;
+  global.chrome.storage.local.set = setMock;
+
+  return {
+    getMock,
+    setMock,
+    getStorageState,
+    setStorageState,
+    restoreOriginal: () => {
+      global.chrome.storage.local.get = originalGet;
+      global.chrome.storage.local.set = originalSet;
+    }
+  };
 }
 
-// テスト用ストレージ（各テストでリセットされる）
-let testStorage = {
-  ublock_sources: [],
-  ublock_rules: {},
-  ublock_format_enabled: false
-};
-
-// ==============================================================================
+// ============================================================================
 
 describe('ublockImport - SourceManager Module', () => {
+  let storageMocks;
+
   beforeEach(() => {
-    // 各テストの前にストレージをリセットして、mock実装を初期化
-    testStorage = {
-      ublock_sources: [],
-      ublock_rules: {},
-      ublock_format_enabled: false
-    };
-    initializeStorage();
+    // Create fresh isolated mocks for each test
+    storageMocks = createStorageMocks();
   });
 
   afterEach(() => {
-    // テスト後にmockの実装をリセット（コール履歴など）
-    // jest.clearAllMocks()はjest.setup.jsのbeforeEachで呼ばれる
+    // Restore original mocks after each test
+    storageMocks.restoreOriginal();
   });
 
   // ========================================================================
@@ -83,21 +112,31 @@ describe('ublockImport - SourceManager Module', () => {
 
   describe('deleteSource', () => {
     test('指定したインデックスのソースを削除', async () => {
-      testStorage[StorageKeys.UBLOCK_SOURCES] = [
-        { url: 'https://example.com/filters1.txt', ruleCount: 2, blockDomains: ['example.com'], exceptionDomains: [] },
-        { url: 'https://example.com/filters2.txt', ruleCount: 1, blockDomains: ['test.com'], exceptionDomains: [] }
-      ];
+      storageMocks.setStorageState({
+        ublock_sources: [
+          { url: 'https://example.com/filters1.txt', ruleCount: 2, blockDomains: ['example.com'], exceptionDomains: [] },
+          { url: 'https://example.com/filters2.txt', ruleCount: 1, blockDomains: ['test.com'], exceptionDomains: [] }
+        ],
+        ublock_rules: {},
+        ublock_format_enabled: false
+      });
 
       const renderCallback = jest.fn();
       await deleteSource(0, renderCallback);
 
       expect(renderCallback).toHaveBeenCalled();
-      expect(testStorage[StorageKeys.UBLOCK_SOURCES]).toHaveLength(1);
-      expect(testStorage[StorageKeys.UBLOCK_SOURCES][0].url).toBe('https://example.com/filters2.txt');
+
+      const state = storageMocks.getStorageState();
+      expect(state[StorageKeys.UBLOCK_SOURCES]).toHaveLength(1);
+      expect(state[StorageKeys.UBLOCK_SOURCES][0].url).toBe('https://example.com/filters2.txt');
     });
 
     test('無効なインデックスでは何もしない', async () => {
-      testStorage[StorageKeys.UBLOCK_SOURCES] = [];
+      storageMocks.setStorageState({
+        ublock_sources: [],
+        ublock_rules: {},
+        ublock_format_enabled: false
+      });
 
       const renderCallback = jest.fn();
       await deleteSource(-1, renderCallback);
@@ -112,12 +151,15 @@ describe('ublockImport - SourceManager Module', () => {
 
   describe('reloadSource', () => {
     test('ソースを再読み込みして更新', async () => {
-      testStorage[StorageKeys.UBLOCK_SOURCES] = [
-        { url: 'https://example.com/filters.txt', ruleCount: 2, blockDomains: ['example.com'], exceptionDomains: [] }
-      ];
+      storageMocks.setStorageState({
+        ublock_sources: [
+          { url: 'https://example.com/filters.txt', ruleCount: 2, blockDomains: ['example.com'], exceptionDomains: [] }
+        ],
+        ublock_rules: {},
+        ublock_format_enabled: false
+      });
 
-      const fetchFromUrlCallback = jest.fn().mockResolvedValue(`||example.com^
-||newdomain.com^`);
+      const fetchFromUrlCallback = jest.fn().mockResolvedValue(`||example.com^\n||newdomain.com^`);
 
       const result = await reloadSource(0, fetchFromUrlCallback);
 
@@ -127,7 +169,11 @@ describe('ublockImport - SourceManager Module', () => {
     });
 
     test('無効なインデックスではエラーを投げる', async () => {
-      testStorage[StorageKeys.UBLOCK_SOURCES] = [];
+      storageMocks.setStorageState({
+        ublock_sources: [],
+        ublock_rules: {},
+        ublock_format_enabled: false
+      });
 
       const fetchFromUrlCallback = jest.fn();
 
@@ -135,9 +181,13 @@ describe('ublockImport - SourceManager Module', () => {
     });
 
     test('手動入力のソースの再読み込みはエラー', async () => {
-      testStorage[StorageKeys.UBLOCK_SOURCES] = [
-        { url: 'manual', ruleCount: 1, blockDomains: ['test.com'], exceptionDomains: [] }
-      ];
+      storageMocks.setStorageState({
+        ublock_sources: [
+          { url: 'manual', ruleCount: 1, blockDomains: ['test.com'], exceptionDomains: [] }
+        ],
+        ublock_rules: {},
+        ublock_format_enabled: false
+      });
 
       const fetchFromUrlCallback = jest.fn();
 
@@ -145,9 +195,13 @@ describe('ublockImport - SourceManager Module', () => {
     });
 
     test('パースエラーがある場合はエラーを投げる', async () => {
-      testStorage[StorageKeys.UBLOCK_SOURCES] = [
-        { url: 'https://example.com/filters.txt', ruleCount: 2, blockDomains: ['example.com'], exceptionDomains: [] }
-      ];
+      storageMocks.setStorageState({
+        ublock_sources: [
+          { url: 'https://example.com/filters.txt', ruleCount: 2, blockDomains: ['example.com'], exceptionDomains: [] }
+        ],
+        ublock_rules: {},
+        ublock_format_enabled: false
+      });
 
       const fetchFromUrlCallback = jest.fn().mockResolvedValue('invalid line without caret');
 
@@ -155,9 +209,13 @@ describe('ublockImport - SourceManager Module', () => {
     });
 
     test('パース結果にルールがない場合はエラーを投げる', async () => {
-      testStorage[StorageKeys.UBLOCK_SOURCES] = [
-        { url: 'https://example.com/filters.txt', ruleCount: 2, blockDomains: ['example.com'], exceptionDomains: [] }
-      ];
+      storageMocks.setStorageState({
+        ublock_sources: [
+          { url: 'https://example.com/filters.txt', ruleCount: 2, blockDomains: ['example.com'], exceptionDomains: [] }
+        ],
+        ublock_rules: {},
+        ublock_format_enabled: false
+      });
 
       // 空または無効なフィルターテキストを返す
       const fetchFromUrlCallback = jest.fn().mockResolvedValue('');
@@ -172,8 +230,7 @@ describe('ublockImport - SourceManager Module', () => {
 
   describe('saveUblockSettings', () => {
     test('有効なフィルターテキストを保存', async () => {
-      const filterText = `||example.com^
-||test.com^`;
+      const filterText = `||example.com^\n||test.com^`;
 
       const result = await saveUblockSettings(filterText);
 
@@ -229,7 +286,8 @@ describe('ublockImport - SourceManager Module', () => {
 
       // 最初の保存
       await saveUblockSettings('||example.com^', url);
-      expect(testStorage[StorageKeys.UBLOCK_SOURCES]).toHaveLength(1);
+      const state1 = storageMocks.getStorageState();
+      expect(state1[StorageKeys.UBLOCK_SOURCES]).toHaveLength(1);
 
       // 同じURLで更新
       const updateResult = await saveUblockSettings('||updated.com^', url);
@@ -237,20 +295,25 @@ describe('ublockImport - SourceManager Module', () => {
       expect(updateResult.action).toBe('更新');
       expect(updateResult.sources).toHaveLength(1);
       expect(updateResult.sources[0].url).toBe(url);
-      expect(testStorage[StorageKeys.UBLOCK_SOURCES]).toHaveLength(1);
+
+      const state2 = storageMocks.getStorageState();
+      expect(state2[StorageKeys.UBLOCK_SOURCES]).toHaveLength(1);
     });
 
     test('手動入力を複数回保存しても1つのソースになる', async () => {
       // 最初の保存
       await saveUblockSettings('||example.com^');
-      expect(testStorage[StorageKeys.UBLOCK_SOURCES]).toHaveLength(1);
+      const state1 = storageMocks.getStorageState();
+      expect(state1[StorageKeys.UBLOCK_SOURCES]).toHaveLength(1);
 
       // 同じURL（manual）で更新
       const updateResult = await saveUblockSettings('||updated.com^');
 
       expect(updateResult.action).toBe('更新');
       expect(updateResult.sources).toHaveLength(1);
-      expect(testStorage[StorageKeys.UBLOCK_SOURCES]).toHaveLength(1);
+
+      const state2 = storageMocks.getStorageState();
+      expect(state2[StorageKeys.UBLOCK_SOURCES]).toHaveLength(1);
     });
   });
 });

@@ -99,3 +99,21 @@ export function saveToCache(key, value) {
 export function hasCacheKey(key) {
   return PARSER_CACHE.has(key);
 }
+
+/**
+ * キャッシュを完全にクリアする（テスト用）
+ *
+ * 【用途】:
+ *   - テスト実行間のキャッシュ状態リセット
+ *   - モジュールレベルの変数を初期化
+ *
+ * 【注意】:
+ *   - 本番コードでの使用は推奨しない
+ *   - cleanupCache()は時間ベースの条件付きクリア
+ *   - clearCache()は無条件で完全クリア
+ */
+export function clearCache() {
+  PARSER_CACHE.clear();
+  LRU_TRACKER.clear();
+  lastCleanupTime = Date.now();
+}

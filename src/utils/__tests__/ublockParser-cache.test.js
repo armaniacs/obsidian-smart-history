@@ -4,6 +4,7 @@
  */
 
 import {
+  clearCache,
   updateLRUTracker,
   cleanupCache,
   generateCacheKey,
@@ -13,6 +14,11 @@ import {
 } from '../ublockParser.js';
 
 describe('ublockParser - Cache Module', () => {
+  // 全テストの前にキャッシュをクリアして状態をリセット
+  beforeEach(() => {
+    clearCache();
+  });
+
   // ============================================================================
   // generateCacheKey
   // ============================================================================
@@ -52,12 +58,6 @@ describe('ublockParser - Cache Module', () => {
   // ============================================================================
 
   describe('saveToCache and getFromCache', () => {
-    beforeEach(() => {
-      // 各テストの開始前にキャッシュをクリア
-      // 注意: 内部実装のキャッシュを直接パージする方法がないため、
-      // このテストでは独立したキーを使用することで競合を回避します
-    });
-
     test('値を保存して取得できる', () => {
       const key = 'test_key_1';
       const value = { blockRules: ['example.com'], exceptionRules: [] };
@@ -164,12 +164,6 @@ describe('ublockParser - Cache Module', () => {
   // ============================================================================
 
   describe('cleanupCache', () => {
-    beforeEach(() => {
-      // クリーンアップタイマーをリセット（モジュールレベルの変数なので）
-      // 注意: 実際の実装では直接リセットできないため、
-      // このテストではクリーンアップ後の挙動を確認します
-    });
-
     test('クリーンアップを実行してもエラーを投げない', () => {
       expect(() => cleanupCache()).not.toThrow();
     });

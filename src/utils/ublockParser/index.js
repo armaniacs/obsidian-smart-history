@@ -51,6 +51,7 @@ export {
 // キャッシュ関数
 export {
   cleanupCache,
+  clearCache,
   generateCacheKey,
   updateLRUTracker,
   saveToCache,
