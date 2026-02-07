@@ -26,7 +26,7 @@ describe('ublockParser - Cache Module', () => {
   describe('generateCacheKey', () => {
     test('基本的なキーを生成', () => {
       const key = generateCacheKey('||example.com^');
-      expect(key).toBe('||example.com^_14');
+      expect(key).toMatch(/^[a-z0-9]+_\d+$/);
     });
 
     test('異なるテキストから異なるキーを生成', () => {
@@ -41,15 +41,59 @@ describe('ublockParser - Cache Module', () => {
       expect(key1).toBe(key2);
     });
 
-    test('長いテキストからキーを生成（100文字制限）', () => {
+    test('長いテキストからキーを生成', () => {
       const longText = 'a'.repeat(150);
       const key = generateCacheKey(longText);
-      expect(key).toBe('a'.repeat(100) + '_150');
+      expect(key).toMatch(/^[a-z0-9]+_150$/);
     });
 
     test('空文字列からキーを生成', () => {
       const key = generateCacheKey('');
-      expect(key).toBe('_0');
+      expect(key).toMatch(/^[a-z0-9]+_0$/);
+    });
+
+    // PERF-019テスト: 類似した異なるテキストから異なるキーを生成
+    test('PERF-019: 先頭が同じで後半が異なるテキストから異なるキーを生成', () => {
+      const text1 = '||example.com^';
+      const text2 = '||example.com^something-different';
+      const key1 = generateCacheKey(text1);
+      const key2 = generateCacheKey(text2);
+      expect(key1).not.toBe(key2);
+    });
+
+    // PERF-019テスト: 長さは同じだが内容が異なるテキストから異なるキーを生成
+    test('PERF-019: 同じ長さで異なる内容のテキストから異なるキーを生成', () => {
+      const text1 = '||example.com^';
+      const text2 = '||test-domain^'; // 同じ長さで異なる内容
+      const key1 = generateCacheKey(text1);
+      const key2 = generateCacheKey(text2);
+      expect(key1).not.toBe(key2);
+    });
+
+    // PERF-019テスト: ハッシュベースのキー生成による衝突防止
+    test('PERF-019: 100文字境界で内容が異なるテキストで衝突しない', () => {
+      // 先頭100文字が同じで、101文字目以降が異なる2つのテキスト
+      const baseText = 'a'.repeat(100);
+      const text1 = baseText + 'x';
+      const text2 = baseText + 'y';
+      const key1 = generateCacheKey(text1);
+      const key2 = generateCacheKey(text2);
+      expect(key1).not.toBe(key2);
+    });
+
+    // PERF-019テスト: 大量の異なるテキストで一意なキーが生成されることを確認
+    test('PERF-019: 多数の異なるテキストから一意なキーが生成される', () => {
+      const keys = new Set();
+      const count = 100;
+
+      for (let i = 0; i < count; i++) {
+        const text = `||domain${i}.com^`.repeat(10); // 十分に異なるテキスト
+        const key = generateCacheKey(text);
+        keys.add(key);
+      }
+
+      // 全てのキーが一意であることを確認
+      expect(keys.size).toBe(count);
     });
   });
 

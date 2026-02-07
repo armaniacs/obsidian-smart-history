@@ -125,8 +125,21 @@ saveBtn.addEventListener('click', async () => {
         statusDiv.className = 'error';
 
         if (result.message.includes('Failed to fetch') && protocolInput.value === 'https') {
-            const url = `https://127.0.0.1:${portInput.value}/`;
-            statusDiv.innerHTML += `<br><a href="${url}" target="_blank">${getMessage('acceptCertificate')}</a>`;
+            // SECURITY FIX (SECURITY-001): Use the validated 'port' variable, NOT portInput.value
+            // This prevents XSS when portInput.value contains malicious content like:
+            //   - 1234"><script>alert('XSS')</script>
+            //   - 1234"><img src=x onerror=alert('XSS')>
+            const url = `https://127.0.0.1:${port}/`;
+
+            // Use createElement instead of innerHTML to prevent XSS
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.textContent = getMessage('acceptCertificate');
+            link.rel = 'noopener noreferrer';
+
+            statusDiv.appendChild(document.createElement('br'));
+            statusDiv.appendChild(link);
         }
     }
 });

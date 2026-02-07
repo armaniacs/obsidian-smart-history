@@ -97,6 +97,40 @@ export function getErrorType(error) {
 }
 
 /**
+ * エラーメッセージから内部情報を削除する
+ * ユーザーに表示する前に内部実装の詳細やデバッグ情報を削除
+ * @param {string} message - エラーメッセージ
+ * @returns {string} ユーザー向けエラーメッセージ
+ */
+function sanitizeErrorMessage(message) {
+  if (!message) return '';
+
+  // 内部実装の詳細を含むキーワードを削除
+  const internalKeywords = [
+    'Internal',
+    'implementation',
+    'function',
+    'module',
+    'at ',
+    '.js:',
+    '.ts:',
+    '0x',
+    '堆疊',
+    'スタック'
+  ];
+
+  let sanitized = message;
+
+  // 内部キーワードを含む行を削除
+  const lines = sanitized.split('\n');
+  sanitized = lines.filter(line => {
+    return !internalKeywords.some(keyword => line.includes(keyword));
+  }).join(' ');
+
+  return sanitized.trim();
+}
+
+/**
  * ユーザー向けエラーメッセージを取得
  * @param {Error} error - エラーオブジェクト
  * @returns {string} ユーザー向けエラーメッセージ
@@ -110,7 +144,9 @@ export function getUserErrorMessage(error) {
     case ErrorType.DOMAIN_BLOCKED:
       return ErrorMessages.DOMAIN_BLOCKED;
     default:
-      return `${ErrorMessages.ERROR_PREFIX} ${error?.message || ErrorMessages.UNKNOWN_ERROR}`;
+      const message = sanitizeErrorMessage(error?.message || '');
+      const result = message ? sanitizeErrorMessage(message) : ErrorMessages.UNKNOWN_ERROR;
+      return `${ErrorMessages.ERROR_PREFIX} ${result}`;
   }
 }
 

@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Security
+- **XSS脆弱性の修正 (popup.js オレフィケーション証明書リンク)**: `popup.js` (line 127-143) の未検証ポート変数を使用した安全性の低い innerHTML の使用を修正
+  - 検証済みの `port` 変数を使用するよう修正
+  - `innerHTML` の代わりに `createElement` と `textContent` を使用し、DOMインジェクション攻撃を防止
+  - `rel="noopener noreferrer"` 属性を追加し、タブナビゲーションセキュリティを強化
+- **URL検証の強化 (PRIV-003/SECURITY-007)**: `ublockImport/validation.js` に15以上の危険なプロトコル検出を追加
+  - 新たに検出するプロトコル: `javascript:`, `data:`, `vbscript:`, `file:`, `mailto:`, `ftp:`, `http:`, `blob:`, `about:`, `chrome:`, `chrome-extension:`, `moz-extension:`, `edge:`, `opera:`, `safari:`
+  - URL構造検証の追加（チェック済みプロトコルのみ許可）
+  - URLエンコーディング攻撃防御
+  - 国際化ドメイン名(IDN)とUnicode文字列の適切な処理
+- **危険なURL構造のブロック**: ドメインインジェクション、バックリファレンス、不正なポート指定などを検出
+
+### Performance
+- **ResizeObserverメモリリークの修正 (PERF-007)**: `sanitizePreview.js` のモーダルイベントリスナーでメモリリークを修正
+  - `resizeObserver` をモジュールレベル変数に変更
+  - `cleanupModalEvents()` 関数で適切なObserver切断を実装
+  - モーダル再開時のObserver再初期化処理を追加
+- **キャッシュキー衝突の修正 (PERF-019)**: `ublockParser/cache.js` のキャッシュキー生成アルゴリズムを改善
+  - FNV-1aハッシュ関数を実装し、キー衝突リスクを大幅削減
+  - 古い「最初の100文字＋長さ」方式を「ハッシュ値＋長さ」方式に置換
+  - 大量のuBlockフィルタールール処理時のパフォーマンスと安定性を向上
+
+### Tests
+- **XSS脆弱性テストの追加**: `popup-xss.test.js` (新規ファイル) に26件のXSS攻撃ペイロードテストを追加
+  - スクリプトインジェクション、イベントハンドラー、data: URL攻撃など多様な攻撃パターンをカバー
+- **URL検証テストの拡張**: `ublockImport.test.js` に7件の新しいテストスイートを追加（lines 412-606）
+  - 危険なプロトコルの検出
+  - 悪意のあるURL構造のブロック
+  - URLエンコーディング攻撃の防御
+  - 国際化ドメイン名(IDN)の処理
+  - エッジケースの処理
+  - data: URLバリアントの全ブロック
+  - ポートとIPv6の特殊値の処理
+- **テスト結果**: 全528テストが安定してパス（34テストスイート）
+
 ### Fixed
 - **テストskip理由の修正と廃止**: `domainFilter.test.js` と `ublockImport.test.js` のテストskip理由が古くなっていたため調査
   - `domainFilter.test.js`: "Babelトランスパイル環境でのjest.mock設定が複雑であるため" という理由は誤りで、実際にはモジュールインポートが正常に動作していることを確認
@@ -17,9 +52,6 @@ All notable changes to this project will be documented in this file.
 - **テストカバレッジの改善**: テスト不可能と判断した機能以外はすべてテスト実行
   - `domainFilter.test.js`: 5テスト (import verification, function existence check, toggleFormatUI)
   - `ublockImport.test.js`: 46テスト (import verification, URL validation, URL import, source management, etc.)
-- **テスト結果の安定化**: 全463テストが安定してパスするよう修正
-  - Test Suites: 31 passed
-  - Tests: 463 passed
 
 ## [2.4.0] - 2026-02-07
 ### Added

@@ -408,6 +408,201 @@ describe('ublockImport.js - UI Component Tests', () => {
       expect(isValidUrl('not a url')).toBe(false);
       expect(isValidUrl('example.com')).toBe(false); // missing protocol
     });
+
+    // =============================================================================
+    // PRIV-003 / SECURITY-007: Extended dangerous protocols tests
+    // =============================================================================
+    test('PRIV-003/SECURITY-007: should reject additional dangerous protocols', async () => {
+      const { isValidUrl } = await import('../ublockImport.js');
+
+      // Browser-specific protocols
+      expect(isValidUrl('chrome://extensions')).toBe(false);
+      expect(isValidUrl('chrome-extension://abcdef/popup.html')).toBe(false);
+      expect(isValidUrl('chrome://settings')).toBe(false);
+      expect(isValidUrl('about:blank')).toBe(false);
+      expect(isValidUrl('about:config')).toBe(false);
+      expect(isValidUrl('about:preferences')).toBe(false);
+
+      // Communication protocols
+      expect(isValidUrl('mailto:test@example.com')).toBe(false);
+      expect(isValidUrl('tel:+1234567890')).toBe(false);
+      expect(isValidUrl('sms:+1234567890')).toBe(false);
+      expect(isValidUrl('fax:+1234567890')).toBe(false);
+
+      // Local protocols
+      expect(isValidUrl('file:///etc/passwd')).toBe(false);
+      expect(isValidUrl('file:///C:/Windows/System32')).toBe(false);
+      expect(isValidUrl('file:///tmp/secrets')).toBe(false);
+
+      // Blob and object protocols
+      expect(isValidUrl('blob:https://example.com/abc-123')).toBe(false);
+      expect(isValidUrl('content:script')).toBe(false);
+      expect(isValidUrl('resource:///identity.js')).toBe(false);
+
+      // Script protocols
+      expect(isValidUrl('eval:alert(1)')).toBe(false);
+      expect(isValidUrl('script:alert(1)')).toBe(false);
+      expect(isValidUrl('livescript:alert(1)')).toBe(false);
+      expect(isValidUrl('ecmascript:alert(1)')).toBe(false);
+      expect(isValidUrl('mocha:alert(1)')).toBe(false);
+
+      // Network protocols that shouldn't be allowed
+      expect(isValidUrl('ws://example.com/ws')).toBe(false);
+      expect(isValidUrl('wss://example.com/ws')).toBe(false);
+      expect(isValidUrl('rtsp://example.com/stream')).toBe(false);
+      expect(isValidUrl('rtp://example.com/stream')).toBe(false);
+
+      // Custom protocols
+      expect(isValidUrl('custom://example.com')).toBe(false);
+      expect(isValidUrl('myprotocol://data')).toBe(false);
+    });
+
+    // =============================================================================
+    // PRIV-003: Malicious URL structure tests
+    // =============================================================================
+    test('PRIV-003: should reject malicious URL structures', async () => {
+      const { isValidUrl } = await import('../ublockImport.js');
+
+      // Protocol-only URLs without domain
+      expect(isValidUrl('https://')).toBe(false);
+      expect(isValidUrl('http://')).toBe(false);
+      expect(isValidUrl('ftp://')).toBe(false);
+
+      // Multiple slashes
+      expect(isValidUrl('https:///example.com')).toBe(false);
+      expect(isValidUrl('https:////example.com')).toBe(false);
+
+      // Path traversal attempts
+      expect(isValidUrl('https://example.com/../../etc/passwd')).toBe(true); // This is technically valid URL struct
+      expect(isValidUrl('https://example.com/../')).toBe(true);
+
+      // Credentials in URL (may be phishing risk, but technically valid)
+      expect(isValidUrl('https://user:pass@example.com')).toBe(true);
+
+      // Auth bypass attempts
+      expect(isValidUrl('https://evil.com@trusted.com')).toBe(true); // Valid but httputils may misuse
+      expect(isValidUrl('https://trusted.com.evil.com')).toBe(true); // Valid subdomain
+
+      // Host abuse - IP addresses
+      expect(isValidUrl('https://127.0.0.1/admin')).toBe(true);
+      expect(isValidUrl('https://0.0.0.0/proxy')).toBe(true);
+      expect(isValidUrl('https://192.168.1.1/config')).toBe(true);
+      expect(isValidUrl('https://[::1]/admin')).toBe(true); // IPv6 localhost
+      expect(isValidUrl('http://169.254.169.254/latest/meta-data')).toBe(true); // Local cloud metadata
+
+      // Port abuse
+      expect(isValidUrl('https://example.com:22')).toBe(true); // SSH port
+      expect(isValidUrl('http://localhost:8080')).toBe(true);
+    });
+
+    // =============================================================================
+    // PRIV-003: URL encoding attacks tests
+    // =============================================================================
+    test('PRIV-003: should handle URL encoding attacks', async () => {
+      const { isValidUrl } = await import('../ublockImport.js');
+
+      // URL-encoded dangerous protocols
+      expect(isValidUrl('javascript%3Aalert(1)')).toBe(false);
+      expect(isValidUrl('data%3Atext/html,hello')).toBe(false);
+      expect(isValidUrl('%6A%61%76%61%73%63%72%69%70%74%3Aalert(1)')).toBe(false); // javascript:
+
+      // Double encoding
+      expect(isValidUrl('%25%36%41%25%37%35%25%37%32%25%36%43%25%33Aalert(1)')).toBe(false); // javascript:
+
+      // Unicode escape attempts - these are literal backslash characters in string
+      expect(isValidUrl('\\u006a\\u0061\\u0076\\u0061\\u0073\\u0063\\u0072\\u0069\\u0070\\u0074:alert(1)')).toBe(false); // Literal backslash - not valid URL
+      expect(isValidUrl('\\x6a\\x61\\x76\\x61\\x73\\x63\\x72\\x69\\x70\\x74:alert(1)')).toBe(false); // Literal backslash - not valid URL
+
+      // Percent encoding in URL parts (these are valid)
+      expect(isValidUrl('https://example.com/%2e%2e/%2e%2e')).toBe(true);
+      expect(isValidUrl('https://example.com/path%20with%20spaces')).toBe(true);
+    });
+
+    // =============================================================================
+    // PRIV-003: Internationalized Domain Name (IDN) tests
+    // =============================================================================
+    test('PRIV-003: should handle internationalized domains', async () => {
+      const { isValidUrl } = await import('../ublockImport.js');
+
+      // Non-ASCII domain names (valid but may be homograph attack vectors)
+      expect(isValidUrl('https://xn--e1afmkfd.xn--p1ai')).toBe(true); // Russian cyrillic domains
+      expect(isValidUrl('https://中国.cn')).toBe(true); // Chinese characters
+      expect(isValidUrl('https://日本.jp')).toBe(true); // Japanese characters
+      expect(isValidUrl('https://한국.kr')).toBe(true); // Korean characters
+      expect(isValidUrl('https://göogle.com')).toBe(true); // Swedish o with umlaut
+
+      // Punycode encoded IDN
+      expect(isValidUrl('https://xn--gogle-0ua.com')).toBe(true); // göogle.com in punycode
+
+      // Mixed ASCII and non-ASCII
+      expect(isValidUrl('https://xn--exmple-1wa.com/日本')).toBe(true);
+
+      // Lookalike domains (homograph attack candidates - valid structure)
+      expect(isValidUrl('https://gооg1e.com')).toBe(true); // Cyrillic о (o) о (o) 1 (l)
+      expect(isValidUrl('https://аpple.com')).toBe(true); // Cyrillic а (a)
+    });
+
+    // =============================================================================
+    // PRIV-003: Edge cases and boundary tests
+    // =============================================================================
+    test('PRIV-003: should handle edge cases', async () => {
+      const { isValidUrl } = await import('../ublockImport.js');
+
+      // Case sensitivity (allowed)
+      expect(isValidUrl('HTTPS://example.com')).toBe(true);
+      expect(isValidUrl('HTTP://example.com')).toBe(true);
+      expect(isValidUrl('HtTpS://example.com')).toBe(true);
+
+      // Extra whitespace (trim should handle)
+      expect(isValidUrl('  https://example.com  ')).toBe(true);
+      expect(isValidUrl('\nhttps://example.com\n')).toBe(true);
+      expect(isValidUrl('\thttps://example.com\t')).toBe(true);
+
+      // Null bytes (if they make it through)
+      expect(isValidUrl('https://example.com\x00')).toBe(true); // Not explicitly rejected
+      expect(isValidUrl('https://\x00example.com')).toBe(true);
+
+      // Very long URLs (DoS vectors - not screened)
+      const longDomain = 'a'.repeat(1000);
+      expect(isValidUrl(`https://${longDomain}.com`)).toBe(true);
+
+      // Strange but technically valid URLs
+      expect(isValidUrl('https://_localhost')).toBe(true);
+      expect(isValidUrl('https://-example.com')).toBe(true);
+      expect(isValidUrl('https://example.com-')).toBe(true);
+      expect(isValidUrl('https://127.1')).toBe(true); // Short IP notation
+    });
+
+    // =============================================================================
+    // PRIV-003: Data URL variants
+    // =============================================================================
+    test('PRIV-003: should reject all data URL variants', async () => {
+      const { isValidUrl } = await import('../ublockImport.js');
+
+      expect(isValidUrl('data::text/plain,hello')).toBe(false);
+      expect(isValidUrl('data:text/html,<script>alert(1)</script>')).toBe(false);
+      expect(isValidUrl('data:text/javascript,alert(1)')).toBe(false);
+      expect(isValidUrl('data:application/json,{}')).toBe(false);
+      expect(isValidUrl('data:image/png;base64,iVBORw0KGgo')).toBe(false);
+      expect(isValidUrl('data:;base64,SGVsbG8gV29ybGQ=')).toBe(false);
+    });
+
+    // =============================================================================
+    // Integer overflow and special values
+    // =============================================================================
+    test('PRIV-003: should handle port and IPv6 special values', async () => {
+      const { isValidUrl } = await import('../ublockImport.js');
+
+      // Edge case ports
+      expect(isValidUrl('https://example.com:0')).toBe(true);
+      expect(isValidUrl('https://example.com:65535')).toBe(true);
+      expect(isValidUrl('https://example.com:99999')).toBe(true); // Invalid port but valid URL struct
+
+      // IPv6 edge cases
+      expect(isValidUrl('https://[::]')).toBe(true);
+      expect(isValidUrl('https://[0:0:0:0:0:0:0:0]')).toBe(true);
+      expect(isValidUrl('https://[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]')).toBe(true);
+    });
   });
 
   // =============================================================================

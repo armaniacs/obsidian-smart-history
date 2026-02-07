@@ -12,7 +12,7 @@ export class ObsidianClient {
 
         if (!apiKey) {
             addLog(LogType.WARN, 'Obsidian API Key is missing');
-            throw new Error('API Key missing');
+            throw new Error('Error: API key is missing. Please check your Obsidian settings.');
         }
 
         return {
@@ -61,7 +61,8 @@ export class ObsidianClient {
             return '';
         } else {
             const errorText = await response.text();
-            throw new Error(`Failed to read daily note: ${response.status} ${errorText}`);
+            addLog(LogType.ERROR, `Failed to read daily note: ${response.status} ${errorText}`);
+            throw new Error('Error: Failed to read daily note. Please check your Obsidian connection.');
         }
     }
 
@@ -74,16 +75,19 @@ export class ObsidianClient {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Obsidian API Error: ${response.status} ${errorText}`);
+            addLog(LogType.ERROR, `Obsidian API Error: ${response.status} ${errorText}`);
+            throw new Error('Error: Failed to write to daily note. Please check your Obsidian connection.');
         }
     }
 
     _handleError(error, targetUrl) {
         let errorMessage = error.message;
         if (errorMessage.includes('Failed to fetch') && targetUrl.startsWith('https')) {
-            errorMessage += ' (Self-signed certificate might not be trusted. Please visit the Obsidian URL in a new tab and accept the certificate.)';
+            addLog(LogType.ERROR, `Failed to connect to Obsidian at ${targetUrl}`);
+            return new Error('Error: Failed to connect to Obsidian. Please visit the Obsidian URL in a new tab and accept the self-signed certificate.');
         }
-        return new Error(`Failed to connect to Obsidian at ${targetUrl}. Cause: ${errorMessage}`);
+        addLog(LogType.ERROR, `Failed to connect to Obsidian at ${targetUrl}. Cause: ${errorMessage}`);
+        return new Error('Error: Failed to connect to Obsidian. Please check your settings and connection.');
     }
 
     async testConnection() {
@@ -94,12 +98,14 @@ export class ObsidianClient {
                 headers
             });
             if (response.ok) {
-                return { success: true, message: 'Connected to Obsidian!' };
+                return { success: true, message: 'Success! Connected to Obsidian. Settings Saved.' };
             } else {
-                return { success: false, message: `Status: ${response.status}` };
+                addLog(LogType.ERROR, `Connection test failed with status: ${response.status}`);
+                return { success: false, message: 'Connection Failed. Please check your settings.' };
             }
         } catch (e) {
-            return { success: false, message: e.message };
+            addLog(LogType.ERROR, `Connection test failed: ${e.message}`);
+            return { success: false, message: 'Connection Failed. Please check your settings and connection.' };
         }
     }
 }

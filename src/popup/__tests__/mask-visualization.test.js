@@ -367,6 +367,92 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
         global.ResizeObserver = originalResizeObserver;
       }
     });
+
+    // PERF-007テスト: ResizeObserverのクリーンアップを確認
+    test('PERF-007: initializeModalEventsを複数回呼んでもResizeObserverがクリーンアップされる', () => {
+      document.body.innerHTML = `
+        <div id="confirmationModal">
+          <div class="modal-body">
+            <textarea id="previewContent"></textarea>
+          </div>
+          <button id="closeModalBtn"></button>
+          <button id="cancelPreviewBtn"></button>
+          <button id="confirmPreviewBtn"></button>
+        </div>
+      `;
+
+      // ResizeObserverのモックを作成して、disconnectが呼ばれることを確認
+      let disconnectCallCount = 0;
+      const mockObserver = {
+        observe: jest.fn(),
+        disconnect: jest.fn(() => {
+          disconnectCallCount++;
+        }),
+      };
+
+      let createCount = 0;
+      const originalResizeObserver = global.ResizeObserver;
+      global.ResizeObserver = jest.fn((callback) => {
+        createCount++;
+        return mockObserver;
+      });
+
+      try {
+        // 初期化を複数回呼び出す
+        sanitizePreview.initializeModalEvents();
+        expect(createCount).toBe(1);
+        expect(disconnectCallCount).toBe(0);
+
+        // 2回目の呼び出し（古いObserverがdisconnectされるはず）
+        sanitizePreview.initializeModalEvents();
+        expect(createCount).toBe(2);
+        expect(disconnectCallCount).toBe(1);
+
+        // 3回目の呼び出し
+        sanitizePreview.initializeModalEvents();
+        expect(createCount).toBe(3);
+        expect(disconnectCallCount).toBe(2);
+      } finally {
+        global.ResizeObserver = originalResizeObserver;
+      }
+    });
+
+    // PERF-007テスト: cleanupModalEvents関数の動作確認
+    test('PERF-007: cleanupModalEventsでResizeObserverが解放される', () => {
+      document.body.innerHTML = `
+        <div id="confirmationModal">
+          <div class="modal-body">
+            <textarea id="previewContent"></textarea>
+          </div>
+          <button id="closeModalBtn"></button>
+          <button id="cancelPreviewBtn"></button>
+          <button id="confirmPreviewBtn"></button>
+        </div>
+      `;
+
+      const disconnectMock = jest.fn();
+      const originalResizeObserver = global.ResizeObserver;
+      global.ResizeObserver = jest.fn(() => ({
+        observe: jest.fn(),
+        disconnect: disconnectMock,
+      }));
+
+      try {
+        // 初期化時にはdisconnectは呼ばれない
+        sanitizePreview.initializeModalEvents();
+        expect(disconnectMock).not.toHaveBeenCalled();
+
+        // クリーンアップ時にdisconnectが呼ばれる
+        sanitizePreview.cleanupModalEvents();
+        expect(disconnectMock).toHaveBeenCalledTimes(1);
+
+        // 2回目のクリーンアップでは何も起きない（既にnull）
+        sanitizePreview.cleanupModalEvents();
+        expect(disconnectMock).toHaveBeenCalledTimes(1);
+      } finally {
+        global.ResizeObserver = originalResizeObserver;
+      }
+    });
   });
 
   describe('handleAction - モーダル操作の結果', () => {

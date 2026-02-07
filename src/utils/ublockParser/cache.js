@@ -20,6 +20,31 @@ const LRU_TRACKER = new Set();
 // 最後にクリーンアップした時間
 let lastCleanupTime = Date.now();
 
+// ============================================================================
+// PERF-019修正: ハッシュ関数によるキャッシュキー衝突防止
+// ============================================================================
+
+/**
+ * 高速ハッシュ関数 - FNV-1a 32bit
+ * 小さな差異でも異なるハッシュ値を生成し、キャッシュキー衝突を防止
+ * @param {string} str - ハッシュ対象の文字列
+ * @returns {number} - 32bitハッシュ値（正整数に変換）
+ */
+function hashString(str) {
+  // FNV-1aハッシュ定数（32bit）
+  const FNV_OFFSET_BASIS = 0x811c9dc5;
+  const FNV_PRIME = 0x01000193;
+
+  let hash = FNV_OFFSET_BASIS;
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, FNV_PRIME);
+  }
+
+  // 正整数に変換して返す（安全性のため32bitにマスク）
+  return (hash >>> 0).toString(36);
+}
+
 /**
  * LRUキャッシュから最も古いエントリを削除
  */
@@ -61,11 +86,18 @@ export function cleanupCache() {
 
 /**
  * キャッシュキーを生成
+ *
+ * 【PERF-019修正】ハッシュベースのキー生成による衝突防止:
+ * - 元の実践は先頭100文字と長さのみを使用しており、衝突リスクがあった
+ * - FNV-1aハッシュ関数を使用して、テキスト全体を考慮した一意なキーを生成
+ * - 長さも含めることで、追加の安全性を確保
+ *
  * @param {string} text - キャッシュキーの元となるテキスト
- * @returns {string} - キャッシュキー
+ * @returns {string} - キャッシュキー（ハッシュ値と長さの組み合わせ）
  */
 export function generateCacheKey(text) {
-  return text.substring(0, 100) + '_' + text.length;
+  const hash = hashString(text);
+  return `${hash}_${text.length}`;
 }
 
 /**

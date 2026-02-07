@@ -31,7 +31,8 @@ export class AIClient {
         const providerConfig = this.getProviderConfig(provider, settings);
 
         if (!providerConfig) {
-            return `Unknown AI Provider: ${provider}`;
+            addLog(LogType.ERROR, `Unknown AI Provider: ${provider}`);
+            return "Error: AI provider configuration is missing. Please check your settings.";
         }
 
         // 【プロバイダーごとの処理】: 設定を使用して各プロバイダーの要約メソッドを呼び出す
@@ -91,8 +92,8 @@ export class AIClient {
     async generateGeminiSummary(content, apiKey, modelName) {
         // 【設定検証】: APIキーの存在チェック
         if (!apiKey) {
-            addLog(LogType.WARN, 'Gemini API Key not found');
-            return "No Gemini API Key provided.";
+            addLog(LogType.WARN, 'API Key not found');
+            return "Error: API key is missing. Please check your settings.";
         }
 
         // 【URL構築】: モデル名をサニタイズしてAPIエンドポイントを構築
@@ -122,12 +123,14 @@ export class AIClient {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                // 【404エラー処理】: モデルが見つからない場合は利用可能なモデル一覧を取得
+                // 【404エラー処理】: モデルが見つからない場合は利用可能なモデル一覧を取得してログに記録
                 if (response.status === 404) {
                     const availableModels = await this.listGeminiModels(apiKey);
-                    throw new Error(`Gemini API Error: 404 Model not found. Available models: ${availableModels}`);
+                    addLog(LogType.ERROR, `Model not found. Available models: ${availableModels}`);
+                    throw new Error("Error: Model not found. Please check your AI model settings.");
                 }
-                throw new Error(`Gemini API Error: ${response.status} ${errorText}`);
+                addLog(LogType.ERROR, `Gemini API Error: ${response.status} ${errorText}`);
+                throw new Error("Error: Failed to generate summary. Please check your API settings.");
             }
 
             const data = await response.json();
@@ -140,7 +143,7 @@ export class AIClient {
 
         } catch (error) {
             addLog(LogType.ERROR, 'Gemini Request Failed', { error: error.message });
-            return `Error generating summary: ${error.message}`;
+            return "Error: Failed to generate summary. Please try again or check your settings.";
         }
     }
 
@@ -202,7 +205,8 @@ export class AIClient {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(`OpenAI API Error: ${response.status} ${errorText}`);
+                addLog(LogType.ERROR, `OpenAI API Error: ${response.status} ${errorText}`);
+                throw new Error("Error: Failed to generate summary. Please check your API settings.");
             }
 
             const data = await response.json();
@@ -215,7 +219,7 @@ export class AIClient {
 
         } catch (error) {
             addLog(LogType.ERROR, 'OpenAI Request Failed', { error: error.message });
-            return `Error generating summary: ${error.message}`;
+            return "Error: Failed to generate summary. Please try again or check your settings.";
         }
     }
 

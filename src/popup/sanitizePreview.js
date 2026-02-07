@@ -32,6 +32,10 @@ let resolvePromise = null;
 let maskedPositions = [];
 let currentMaskedIndex = -1;
 
+// PERF-007修正: ResizeObserverをモジュールレベルで保持し、メモリリークを防止
+let resizeObserver = null;
+let modalEventListenersAttached = false;
+
 /**
  * DOM要素取得ヘルパー関数
  * 【機能概要】: 指定されたIDを持つDOM要素を取得する
@@ -53,28 +57,60 @@ function getMaskStatusMessage() {
 /**
  * イベントリスナー初期化関数
  * 【機能概要】: プレビューモーダルのイベントリスナーを設定する
+ *
+ * 【PERF-007修正】ResizeObserverのメモリリーク防止:
+ * - 既存のResizeObserverをdisconnectしてから再作成
+ * - イベントリスナーの二重登録を防止
  */
 export function initializeModalEvents() {
+  // PERF-007修正: 既存のResizeObserverをdisconnectしてメモリリークを防止
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
+
   const modal = getModal();
   const closeModalBtn = document.getElementById('closeModalBtn');
   const cancelBtn = document.getElementById('cancelPreviewBtn');
   const confirmBtn = document.getElementById('confirmPreviewBtn');
 
-  if (modal && closeModalBtn && cancelBtn && confirmBtn) {
+  // PERF-007修正: イベントリスナーの二重登録を防止
+  const shouldAttachListeners = !modalEventListenersAttached;
+
+  if (modal && closeModalBtn && cancelBtn && confirmBtn && shouldAttachListeners) {
     closeModalBtn.addEventListener('click', () => handleAction(false));
     cancelBtn.addEventListener('click', () => handleAction(false));
     confirmBtn.addEventListener('click', () => handleAction(true));
+    modalEventListenersAttached = true;
   }
 
-  // textareaのリサイズに合わせてポップアップ幅を追従させる
+  // PERF-007修正: textareaのリサイズに合わせてポップアップ幅を追従させる
+  // ResizeObserverをモジュール変数に保存して管理
   const previewContent = getPreviewContent();
   if (previewContent && typeof ResizeObserver !== 'undefined') {
-    new ResizeObserver(() => {
+    resizeObserver = new ResizeObserver(() => {
       const needed = previewContent.offsetWidth + 60; // padding + border分
       const minWidth = 320;
       document.body.style.width = Math.max(needed, minWidth) + 'px';
-    }).observe(previewContent);
+    });
+    resizeObserver.observe(previewContent);
   }
+}
+
+/**
+ * モーダルイベントリスナーをクリーンアップ
+ * 【機能概要】: 初期化されたイベントリスナーとResizeObserverを解放する
+ * 【PERF-007対応】メモリリーク防止のためのクリーンアップ関数
+ */
+export function cleanupModalEvents() {
+  // ResizeObserverを解放
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
+
+  // イベントリスナー管理フラグをリセット
+  modalEventListenersAttached = false;
 }
 
 const DEFAULT_WIDTH = '320px';

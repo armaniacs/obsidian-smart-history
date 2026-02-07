@@ -124,6 +124,40 @@ describe('getUserErrorMessage', () => {
     expect(getUserErrorMessage(error)).toContain('Error:');
     expect(getUserErrorMessage(error)).toContain('Unknown error');
   });
+
+  // FEATURE-001: 内部情報の漏洩を確認するテスト
+  test('スタックトレースがエラーメッセージに含まれないこと（内部情報保護）', () => {
+    const error = new Error('Some error');
+    error.stack = 'Error: Some error\n    at file.js:10:5\n    at file.js:20:10';
+
+    const message = getUserErrorMessage(error);
+
+    // エラーメッセージにはエラーの内容が含まれるが、スタックトレースは含まれない
+    expect(message).toContain('Some error');
+    expect(message).not.toContain('file.js'); // ファイルパスが含まれない
+    expect(message).not.toContain('at file.js'); // スタックトレースが含まれない
+  });
+
+  test('内部実装の詳細がエラーメッセージに含まれないこと（内部情報保護、改善後）', () => {
+    const error = new Error('Internal implementation error: function xyz failed');
+
+    const message = getUserErrorMessage(error);
+
+    // 改善: エラーメッセージから内部実装の詳細が削除される
+    expect(message).toContain('✗ Error:');
+    expect(message).not.toContain('Internal implementation error'); // 内部情報が含まれない
+    expect(message).not.toContain('function'); // 内部情報が含まれない
+  });
+
+  test('エラーメッセージが改行を含まないこと（内部情報保護）', () => {
+    const error = new Error('Error: Some error at file.js:10:5\n    at file.js:20:10');
+
+    const message = getUserErrorMessage(error);
+
+    // 改行が削除され、スタックトレースが含まれないことを確認
+    expect(message).not.toContain('\n');
+    expect(message).not.toContain('at file.js'); // スタックトレースが含まれない
+  });
 });
 
 describe('showError', () => {
