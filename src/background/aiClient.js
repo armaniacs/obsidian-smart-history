@@ -1,6 +1,10 @@
 import { getSettings, StorageKeys } from '../utils/storage.js';
 import { LocalAIClient } from './localAiClient.js';
 import { addLog, LogType } from '../utils/logger.js';
+import { fetchWithTimeout } from '../utils/fetch.js';
+
+// AI APIタイムアウト（30秒）
+const API_TIMEOUT_MS = 30000;
 
 /**
  * AI Client
@@ -112,14 +116,14 @@ export class AIClient {
         };
 
         try {
-            const response = await fetch(url, {
+            const response = await fetchWithTimeout(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'x-goog-api-key': apiKey
                 },
                 body: JSON.stringify(payload)
-            });
+            }, API_TIMEOUT_MS);
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -142,6 +146,10 @@ export class AIClient {
             }
 
         } catch (error) {
+            if (error.message.includes('timed out')) {
+                addLog(LogType.ERROR, 'Gemini API request timed out', { timeout: API_TIMEOUT_MS });
+                return "Error: AI request timed out. Please check your connection.";
+            }
             addLog(LogType.ERROR, 'Gemini Request Failed', { error: error.message });
             return "Error: Failed to generate summary. Please try again or check your settings.";
         }
@@ -197,11 +205,11 @@ export class AIClient {
         }
 
         try {
-            const response = await fetch(url, {
+            const response = await fetchWithTimeout(url, {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify(payload)
-            });
+            }, API_TIMEOUT_MS);
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -218,6 +226,10 @@ export class AIClient {
             }
 
         } catch (error) {
+            if (error.message.includes('timed out')) {
+                addLog(LogType.ERROR, 'OpenAI API request timed out', { timeout: API_TIMEOUT_MS });
+                return "Error: AI request timed out. Please check your connection.";
+            }
             addLog(LogType.ERROR, 'OpenAI Request Failed', { error: error.message });
             return "Error: Failed to generate summary. Please try again or check your settings.";
         }
