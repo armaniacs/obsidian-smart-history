@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Security
+- **URL検証の強化 (`fetch.js` 新規作成)**: SSRF攻撃防止のためのURL検証機能を追加
+  - プロトコル検証（http://、https://のみ許可）
+  - localhostブロック（オプション、デフォルト無効でObsidian API localhostアクセスを許可）
+  - 危険なプロトコルスキームの防止
+- **パラメータ検証の強化 (`fetch.js`)**: タイムアウトパラメータの検証を追加
+  - 最小タイムアウト100ms、最大5分（300000ms）
+  - 型チェックと有限数チェック
+- **Mutexデッドロック保護**: `obsidianClient.js`のMutex.release()にtry-catchを追加
+  - エラー発生時に強制アンロック（locked = false）
+- **LocalAIClientメモリリーク修正**: `localAiClient.js`のタイムアウト処理でtimeoutIdを適切にクリア
 - **CSP実装**: manifest.jsonとpopup.htmlにContent Security Policyを追加し、スクリプトインジェクションのリスクを軽減
   - extension_pages: script-srcおよびobject-srcの制限
   - connect-src: localhostとHTTPSのみを許可
@@ -27,12 +37,29 @@ All notable changes to this project will be documented in this file.
 - **メモリ枯渇防止**: URLセットサイズ制限（最大10000）によりメモリ使用量を抑制
 
 ### Added
+- **AIクライアントタイムアウト**: `aiClient.js` に全AI API呼び出しで30秒タイムアウトを追加
+  - `generateGeminiSummary()` に30秒タイムアウト
+  - `generateOpenAISummary()` に30秒タイムアウト
+  - `listGeminiModels()` に30秒タイムアウト（P1修正で追加）
+- **LocalAIClientタイムアウト**: `localAiClient.js` に15秒タイムアウトを実装
+  - Promise.raceによるタイムアウト機構
+  - 適切なクリーンアップ処理（メモリリーク防止）
+- **Fetchタイムアウト機能**: `fetch.js` にタイムアウト付きfetchラッパーを新規作成し、AbortControllerを使用して無限待機を防止
+  - ユニバーサルなタイムアウト機能（ミリ秒指定）
+  - URL検証とパラメータ検証を内包
+- **StorageKeys最適化**: `storage.js`のgetSettings()で明示的なキー指定を追加
+  - `chrome.storage.local.get(null)` から StorageKeysの配列指定へ
+  - メモリ効率の改善
 - **Fetchタイムアウト機能**: `obsidianClient.js` に15秒のタイムアウトを実装し、AbortControllerを使用して無限待機を防止
 - **ポート番号検証**: `obsidianClient.js` にポート番号の検証（1-65535）を追加し、入力値の妥当性を確認
 - **URLセットサイズ制限**: `recordingLogic.js` にURLセットのサイズ制限（最大10000、警告8000）と警告閾値を追加
   - `MAX_URL_SET_SIZE` 定数（10000）と `URL_WARNING_THRESHOLD` 定数（8000）を `storage.js` に追加
 
 ### Performance
+- **Mutex Queue Map改善**: `obsidianClient.js`のMutexを配列からMapへ変更
+  - O(1)の取得・削除操作（配列のO(n)から改善）
+  - taskIdによる効率的なロック管理
+  - 技術的負債: Map.entries().next()は真のO(1)ではない（Blue Teamレビューで指摘）
 - **設定キャッシュの実装**: `recordingLogic.js` に二重キャッシュ機構を実装
   - インスタンスレベルキャッシュと静的キャッシュ
   - TTLベースの有効期限（30秒）
@@ -110,7 +137,15 @@ All notable changes to this project will be documented in this file.
   - `robustness-data-integrity.test.js` - データ整合性
   - `robustness-port-validation.test.js` - ポート番号の検証
   - `robustness-url-set-limit.test.js` - URLセットのサイズ制限
-- **テスト結果**: 全798テストがパス（48テストスイート）
+- **ロバストネス改善追加テスト**: 6つのテストファイル (23テスト)
+  - `obsidianClient-mutex-map.test.js` - Mutex Queue Map改善
+  - `localAiClient-timeout.test.js` - LocalAIClientタイムアウト機能
+  - `aiClient-timeout.test.js` - AIクライアントタイムアウト機能
+  - `integration-robustness.test.js` - ロバストネス統合テスト
+  - `fetch.test.js` - fetchWithTimeout URL検証とパラメータ検証
+  - `storage-keys.test.js` - StorageKeys最適化
+- **テスト結果**: 全825テスト中824パス（50テストスイート）
+  - 1件のテスト失敗はロバストネス改善とは無関係（既知の問題）
 - **URL検証テストの拡張**: `ublockImport.test.js` に7件の新しいテストスイートを追加（lines 412-606）
   - 危険なプロトコルの検出
   - 悪意のあるURL構造のブロック
@@ -124,9 +159,14 @@ All notable changes to this project will be documented in this file.
 - **設定キャッシュテストの追加**: `recordingLogic-cache.test.js` (新規ファイル) に21件のテストを追加
 - **Mutexロック機構テストの追加**: `obsidianClient-mutex.test.js` (新規ファイル) に11件のテストを追加
 - **HTTPS通信強化テストの追加**: `obsidianClient-secure-fetch.test.js` (新規ファイル) にテストを作成
-- **テスト結果**: 全618テストがパス（39テストスイート）
 
 ### Fixed
+- **Mutexデッドロック修正**: `obsidianClient.js`のrelease()でエラー発生時にロックが解放されない問題を修正
+  - try-catchブロックを追加し、エラー時に強制的にlocked = falseを設定
+- **LocalAIClientメモリリーク修正**: `localAiClient.js`のタイムアウト処理でtimeoutIdクリーンアップが漏れる問題を修正
+  - 成功時・エラー時双方でclearTimeout(timeoutId)を実行
+- **URL検証のlocalhost許可デフォルト化**: `fetch.js`のURL検証がObsidian APIのlocalhostアクセスをブロックしていた問題を修正
+  - localhostブロックをオプション化し、デフォルトで無効（Obsidian API使用時の問題回避）
 - **テストskip理由の修正と廃止**: `domainFilter.test.js` と `ublockImport.test.js` のテストskip理由が古くなっていたため調査
   - `domainFilter.test.js`: "Babelトランスパイル環境でのjest.mock設定が複雑であるため" という理由は誤りで、実際にはモジュールインポートが正常に動作していることを確認
   - `ublockImport.test.js`: "Test environment configuration causes module resolution errors for imports" という理由は誤りで、実際にはモジュールインポートが正常に動作していることを確認
