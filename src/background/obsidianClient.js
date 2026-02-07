@@ -18,6 +18,13 @@ const BASE_HEADERS = {
 const FETCH_TIMEOUT_MS = 15000; // 15秒
 
 /**
+ * Problem #2: ポート番号検証定数
+ */
+const MIN_PORT = 1;
+const MAX_PORT = 65535;
+const DEFAULT_PORT = '27123';
+
+/**
  * Problem #6: Mutexキューサイズ制限とタイムアウト設定
  */
 const MAX_QUEUE_SIZE = 50;
@@ -179,7 +186,8 @@ export class ObsidianClient {
     async _getConfig() {
         const settings = await getSettings();
         const protocol = settings[StorageKeys.OBSIDIAN_PROTOCOL] || 'http';
-        const port = settings[StorageKeys.OBSIDIAN_PORT] || '27123';
+        const rawPort = settings[StorageKeys.OBSIDIAN_PORT] || DEFAULT_PORT;
+        const port = this._validatePort(rawPort);
         const apiKey = settings[StorageKeys.OBSIDIAN_API_KEY];
 
         if (!apiKey) {
@@ -195,6 +203,39 @@ export class ObsidianClient {
             },
             settings
         };
+    }
+
+    /**
+     * ポート番号の検証
+     * @param {string|number|undefined} port - ポート番号
+     * @returns {string} 有効なポート番号（文字列）
+     * @throws {Error} ポート番号が無効な場合
+     */
+    _validatePort(port) {
+        // 未指定、空文字列の場合はデフォルト値を使用
+        if (port === undefined || port === null || port === '') {
+            return DEFAULT_PORT;
+        }
+
+        // 数値変換
+        const portNum = Number(port);
+
+        // 非数値チェック
+        if (isNaN(portNum)) {
+            throw new Error('Invalid port number. Port must be a valid number.');
+        }
+
+        // 整数チェック
+        if (!Number.isInteger(portNum)) {
+            throw new Error('Invalid port number. Port must be an integer.');
+        }
+
+        // 範囲チェック
+        if (portNum < MIN_PORT || portNum > MAX_PORT) {
+            throw new Error(`Invalid port number. Port must be between ${MIN_PORT} and ${MAX_PORT}.`);
+        }
+
+        return String(portNum);
     }
 
     async appendToDailyNote(content) {
