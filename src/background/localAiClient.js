@@ -7,6 +7,7 @@
 import { addLog, LogType } from '../utils/logger.js';
 
 const OFFSCREEN_DOCUMENT_PATH = 'src/offscreen/offscreen.html';
+const MESSAGE_TIMEOUT_MS = 30000; // 30秒
 
 export class LocalAIClient {
     constructor() {
@@ -90,14 +91,24 @@ export class LocalAIClient {
         }
 
         try {
-            const response = await this.msgOffscreen('SUMMARIZE', { content });
+            const response = await Promise.race([
+                this.msgOffscreen('SUMMARIZE', { content }),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error(`Message timed out after ${MESSAGE_TIMEOUT_MS}ms`)), MESSAGE_TIMEOUT_MS)
+                )
+            ]);
+
             if (response.success) {
                 return { success: true, summary: response.summary };
             } else {
                 return { success: false, error: response.error };
             }
         } catch (error) {
-            addLog(LogType.ERROR, 'LocalAIClient: Summarization failed via offscreen', { error: error.message });
+            if (error.message.includes('timed')) {
+                addLog(LogType.ERROR, 'LocalAIClient: Summarization timed out', { timeout: MESSAGE_TIMEOUT_MS });
+            } else {
+                addLog(LogType.ERROR, 'LocalAIClient: Summarization failed', { error: error.message });
+            }
             return { success: false, error: error.message };
         }
     }
