@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; object-src 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; object-src 'none'; frame-ancestors 'none';">
   <title>Obsidian Smart History Settings</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -32,7 +32,7 @@
       </svg>
       <span class="spinner-text" data-i18n="processing">Processing...</span>
     </div>
-    <div id="mainStatus"></div>
+    <div id="mainStatus" aria-live="polite"></div>
   </div>
 
   <!-- Settings Screen -->
@@ -43,14 +43,14 @@
     </div>
 
     <!-- Tab Navigation -->
-    <div class="tab-nav">
-      <button id="generalTab" class="tab-btn" data-i18n="mainTab">General</button>
-      <button id="domainTab" class="tab-btn active" data-i18n="domainTab">Domain Filter</button>
-      <button id="privacyTab" class="tab-btn" data-i18n="privacyTab">Privacy</button>
+    <div class="tab-nav" role="tablist">
+      <button id="generalTab" class="tab-btn" role="tab" aria-selected="false" aria-controls="generalPanel" data-i18n="mainTab">General</button>
+      <button id="domainTab" class="tab-btn active" role="tab" aria-selected="true" aria-controls="domainPanel" data-i18n="domainTab">Domain Filter</button>
+      <button id="privacyTab" class="tab-btn" role="tab" aria-selected="false" aria-controls="privacyPanel" data-i18n="privacyTab">Privacy</button>
     </div>
 
     <!-- General Settings Panel -->
-    <div id="generalPanel" class="tab-panel">
+    <div id="generalPanel" class="tab-panel" role="tabpanel" aria-labelledby="generalTab">
 
       <div class="form-group">
         <label data-i18n="obsidianApiKey">Obsidian API Key</label>
@@ -143,11 +143,11 @@
       </div>
 
       <button id="save" data-i18n="saveAndTest">Save & Test Connection</button>
-      <div id="status"></div>
+      <div id="status" aria-live="polite"></div>
     </div>
 
     <!-- Domain Filter Panel -->
-    <div id="domainPanel" class="tab-panel active">
+    <div id="domainPanel" class="tab-panel active" role="tabpanel" aria-labelledby="domainTab">
       <div class="form-group">
         <label data-i18n="domainFilterMode">Domain Filter Mode</label>
         <div class="radio-group">
@@ -252,11 +252,11 @@
       </div>
 
       <button id="saveDomainSettings" data-i18n="saveDomainSettings">Save</button>
-      <div id="domainStatus"></div>
+      <div id="domainStatus" aria-live="polite"></div>
     </div>
 
     <!-- Privacy Settings Panel -->
-    <div id="privacyPanel" class="tab-panel">
+    <div id="privacyPanel" class="tab-panel" role="tabpanel" aria-labelledby="privacyTab">
 
       <div class="form-group">
         <label data-i18n="privacyMode">Privacy Mode</label>
@@ -315,7 +315,7 @@
       </div>
 
       <button id="savePrivacySettings" data-i18n="savePrivacySettings">Save</button>
-      <div id="privacyStatus"></div>
+      <div id="privacyStatus" aria-live="polite"></div>
 
     </div>
   </div>
