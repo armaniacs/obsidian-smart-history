@@ -90,13 +90,21 @@ export class LocalAIClient {
             return { success: false, error: 'Invalid content' };
         }
 
+        let timeoutId;
         try {
             const response = await Promise.race([
                 this.msgOffscreen('SUMMARIZE', { content }),
-                new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error(`Message timed out after ${MESSAGE_TIMEOUT_MS}ms`)), MESSAGE_TIMEOUT_MS)
-                )
+                new Promise((_, reject) => {
+                    timeoutId = setTimeout(() => {
+                        reject(new Error('Error: Local AI request timed out. Please try again.'));
+                    }, MESSAGE_TIMEOUT_MS);
+                })
             ]);
+
+            // 成功またはエラー応答をクリアする
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
 
             if (response.success) {
                 return { success: true, summary: response.summary };
@@ -104,6 +112,11 @@ export class LocalAIClient {
                 return { success: false, error: response.error };
             }
         } catch (error) {
+            // タイムアウトやその他のエラー時にクリアする
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+
             if (error.message.includes('timed')) {
                 addLog(LogType.ERROR, 'LocalAIClient: Summarization timed out', { timeout: MESSAGE_TIMEOUT_MS });
             } else {

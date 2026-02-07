@@ -97,6 +97,10 @@ export class Mutex {
   /**
    * ロックを解放する
    * 待機中のキューがある場合は次のタスクを実行
+   *
+   * 注意: このメソッドは例外をスローしないよう設計されています。
+   * release()内で例外が発生した場合、デッドロックを防ぐために
+   * 必ずロック状態をリセットしてからエラーをログに記録します。
    */
   release() {
     if (!this.locked) {
@@ -104,30 +108,38 @@ export class Mutex {
       return;
     }
 
-    if (this.queue.size > 0) {
-      // Mapの最初のエントリを取得（O(1)操作）
-      const [taskId, task] = this.queue.entries().next().value;
+    try {
+      if (this.queue.size > 0) {
+        // Mapの最初のエントリを取得（O(1)操作）
+        const [taskId, task] = this.queue.entries().next().value;
 
-      // Mapからエントリを削除（O(1)操作）
-      this.queue.delete(taskId);
+        // Mapからエントリを削除（O(1)操作）- 例外発生前に実行
+        this.queue.delete(taskId);
 
-      // タイムアウトをキャンセルしてresolveを呼ぶ
-      if (task && task.timeoutId) {
-        clearTimeout(task.timeoutId);
+        // タイムアウトをキャンセルしてresolveを呼ぶ
+        if (task && task.timeoutId) {
+          clearTimeout(task.timeoutId);
+        }
+
+        // 次のタスクのためにロック状態を維持（ロックの転送）
+        this.lockedAt = Date.now();
+
+        if (task && task.resolve) {
+          task.resolve();
+        }
+
+        addLog(LogType.DEBUG, 'Mutex: Lock transferred to waiting task', { remainingQueue: this.queue.size });
+      } else {
+        this.locked = false;
+        this.lockedAt = null;
+        addLog(LogType.DEBUG, 'Mutex: Lock released');
       }
-
-      // 次のタスクのためにロック状態を維持（ロックの転送）
-      this.lockedAt = Date.now();
-
-      if (task && task.resolve) {
-        task.resolve();
-      }
-
-      addLog(LogType.DEBUG, 'Mutex: Lock transferred to waiting task', { remainingQueue: this.queue.size });
-    } else {
+    } catch (error) {
+      // CRITICAL: 例外が発生した場合でもロックを解放する
+      addLog(LogType.ERROR, 'Mutex: Error during release, forcing unlock', { error: error.message });
       this.locked = false;
       this.lockedAt = null;
-      addLog(LogType.DEBUG, 'Mutex: Lock released');
+      // 再スローしない - 呼び出し元のcatchブロックがロックを解放できるようにする
     }
   }
 
