@@ -12,9 +12,62 @@ All notable changes to this project will be documented in this file.
   - APIキー、Bearerトークン、localhost URLなどの機密情報をマスク
 - **メッセージ検証強化**: Service Workerのメッセージパッシング検証を強化（テスト追加）
   - XSS攻撃パターン、JSプロトコル、data URL等の検出
+- **URLパスサニタイズ機能追加**: `pathSanitizer.js` にパスセグメントのサニタイズを実装
+  - パストラバーサル攻撃 (`../`, `../../`) の検出とブロック
+  - プロトコルスキーム注入 (`https://`, `ftp://`, `file://`) の防止
+  - ヌルバイト、改行文字、制御文字のフィルタリング
+  - 過度なパス長（500文字制限）およびセグメント数（10個制限）の実装
+- **HTMLエスケープ関数追加**: `errorUtils.js` に `escapeHtml()` 関数を実装
+  - `&`, `<`, `>`, `"`, `'`, `/` を適切なHTMLエンティティにエスケープ
+- **ReDoSリスク調査**: `piiSanitizer-redos.test.js` で正規表現のパフォーマンス特性を分析
+  - 大規模入力（〜100KB）に対する処理時間の測定
+  - 入力サイズ制限とタイムアウト機能の改善提案
+- **クリックジャッキング対策**: CSP `frame-ancestors 'none'` ディレクティブによりiframe埋め込み攻撃を防止
+- **入力検証の強化**: ポート番号の検証（1-65535）により不正な入力値を拒否
+- **メモリ枯渇防止**: URLセットサイズ制限（最大10000）によりメモリ使用量を抑制
+
+### Added
+- **Fetchタイムアウト機能**: `obsidianClient.js` に15秒のタイムアウトを実装し、AbortControllerを使用して無限待機を防止
+- **ポート番号検証**: `obsidianClient.js` にポート番号の検証（1-65535）を追加し、入力値の妥当性を確認
+- **URLセットサイズ制限**: `recordingLogic.js` にURLセットのサイズ制限（最大10000、警告8000）と警告閾値を追加
+  - `MAX_URL_SET_SIZE` 定数（10000）と `URL_WARNING_THRESHOLD` 定数（8000）を `storage.js` に追加
 
 ### Performance
 - **設定キャッシュの実装**: `recordingLogic.js` に二重キャッシュ機構を実装
+  - インスタンスレベルキャッシュと静的キャッシュ
+  - TTLベースの有効期限（30秒）
+  - Storage APIアクセス回数の削減によるパフォーマンス向上
+- **Obsidian APIの競合回避**: `obsidianClient.js` にMutexクラスを実装
+  - 複数プロセスからの同時アクセス時の排他制御
+  - URLごとの書き込みロックによるデータ競合防止
+  - 検証済みの `port` 変数を使用するよう修正
+  - `innerHTML` の代わりに `createElement` と `textContent` を使用し、DOMインジェクション攻撃を防止
+  - `rel="noopener noreferrer"` 属性を追加し、タブナビゲーションセキュリティを強化
+- **設定オブジェクト作成の最適化**: `obsidianClient.js` に `BASE_HEADERS` 定数を追加
+  - `Content-Type` と `Accept` の値をモジュールレベル定数化
+- **2重キャッシュ構造の簡素化**: `recordingLogic.js` のキャッシュを1段階に統合
+  - インスタンスキャッシュを削除し、staticキャッシュのみを使用
+- **定数のモジュールスコープ移動**: `errorUtils.js` の `INTERNAL_KEYWORDS` を関数内からモジュールスコープへ移動
+  - 関数呼び出しごとの配列作成コストを削減
+- **i18nメッセージキャッシュ**: `errorUtils.js` に `getMsgWithCache()` 関数を実装
+  - `ErrorMessages` getterからキャッシュされたメッセージを取得
+- **URLセットキャッシュ追加**: `recordingLogic.js` に `getSavedUrlsWithCache()` と `invalidateUrlCache()` を実装
+  - Chrome Storage I/O回数の削減
+- **エラーサニタイゼーションの重複呼び出し削除**: `getUserErrorMessage()` 内の不要な `sanitizeErrorMessage()` 呼び出しを削除
+
+### UI/UX
+- **エラー/成功メッセージの視覚的強化**: `styles.css` にスタイル定義を追加
+  - `.error` クラスに背景色 (`#f8d7da`) とボーダー (`#f5c6cb`) を追加
+  - `.success` クラスに背景色 (`#d4edda`) とボーダー (`#c3e6cb`) を追加
+- **アクセシビリティ対応**: `popup.html` にARIA属性を追加
+  - タブボタンに `role="tab"` と `aria-selected` 属性を追加
+  - タブパネルに `role="tabpanel"` と `aria-labelledby` 属性を追加
+  - ステータス要素に `aria-live="polite"` 属性を追加
+- **強制記録ボタンのスタイル正規化**: `styles.css` に `.alert-btn` クラスを追加
+  - インラインスタイルをCSSクラス化し、保守性を向上
+- **ヘルプテキストの視覚的強化**: `styles.css` の `.help-text` クラスに背景色とパディングを追加
+- **ボタンの操作エリア確保**: `.icon-btn` のサイズを 32×32px → 44×44px に拡大
+  - WCAG推奨の最小タッチ領域を確保
   - インスタンスレベルキャッシュと静的キャッシュ
   - TTLベースの有効期限（30秒）
   - Storage APIアクセス回数の削減によるパフォーマンス向上
@@ -44,6 +97,20 @@ All notable changes to this project will be documented in this file.
 ### Tests
 - **XSS脆弱性テストの追加**: `popup-xss.test.js` (新規ファイル) に26件のXSS攻撃ペイロードテストを追加
   - スクリプトインジェクション、イベントハンドラー、data: URL攻撃など多様な攻撃パターンをカバー
+- **URLパスサニタイズテスト追加**: `pathSanitizer.test.js` (新規ファイル) に42件のテストを追加
+  - パストラバーサル攻撃、プロトコルスキーム注入、制御文字の検出
+- **日付パス構築セキュリティテスト追加**: `dailyNotePathBuilder-security.test.js` (新規ファイル) に18件のテストを追加
+- **HTMLエスケープテスト追加**: `errorUtils.test.js` に12件のテストを追加
+- **ReDoSリスクテスト追加**: `piiSanitizer-redos.test.js` (新規ファイル) に20件のテストを追加
+  - 小規模〜大規模入力に対する処理時間の測定
+- **UI/UX改善テスト追加**: `ui-ux-improvements.test.js` (新規ファイル) に20件のテストを追加
+- **堅牢性テスト追加**: ロブストネスに関する5つのテストファイル (60テスト)
+  - `robustness-fetch-timeout.test.js` - Fetchタイムアウト機能
+  - `robustness-mutex-queue-limit.test.js` - Mutexキューサイズ制限
+  - `robustness-data-integrity.test.js` - データ整合性
+  - `robustness-port-validation.test.js` - ポート番号の検証
+  - `robustness-url-set-limit.test.js` - URLセットのサイズ制限
+- **テスト結果**: 全798テストがパス（48テストスイート）
 - **URL検証テストの拡張**: `ublockImport.test.js` に7件の新しいテストスイートを追加（lines 412-606）
   - 危険なプロトコルの検出
   - 悪意のあるURL構造のブロック
