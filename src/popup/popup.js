@@ -4,6 +4,7 @@ import { init as initNavigation } from './navigation.js';
 import { init as initDomainFilter } from './domainFilter.js';
 import { init as initPrivacySettings } from './privacySettings.js';
 import { loadSettingsToInputs, extractSettingsFromInputs } from './settingsUiHelper.js';
+import { getMessage } from './i18n.js';
 
 // Elements
 const apiKeyInput = document.getElementById('apiKey');
@@ -77,34 +78,34 @@ async function load() {
 
 // Save and Test
 saveBtn.addEventListener('click', async () => {
-    statusDiv.textContent = 'Testing connection...';
+    statusDiv.textContent = getMessage('testingConnection');
     statusDiv.className = '';
 
     // Input validation
     const protocol = protocolInput.value.trim().toLowerCase();
     if (protocol !== 'http' && protocol !== 'https') {
-        statusDiv.textContent = 'Error: Protocol must be "http" or "https".';
+        statusDiv.textContent = getMessage('errorProtocol');
         statusDiv.className = 'error';
         return;
     }
 
     const port = parseInt(portInput.value.trim(), 10);
     if (isNaN(port) || port < 1 || port > 65535) {
-        statusDiv.textContent = 'Error: Port must be a number between 1 and 65535.';
+        statusDiv.textContent = getMessage('errorPort');
         statusDiv.className = 'error';
         return;
     }
 
     const minVisitDuration = parseInt(minVisitDurationInput.value, 10);
     if (isNaN(minVisitDuration) || minVisitDuration < 0) {
-        statusDiv.textContent = 'Error: Minimum visit duration must be a non-negative number.';
+        statusDiv.textContent = getMessage('errorDuration');
         statusDiv.className = 'error';
         return;
     }
 
     const minScrollDepth = parseInt(minScrollDepthInput.value, 10);
     if (isNaN(minScrollDepth) || minScrollDepth < 0 || minScrollDepth > 100) {
-        statusDiv.textContent = 'Error: Minimum scroll depth must be a number between 0 and 100.';
+        statusDiv.textContent = getMessage('errorScrollDepth');
         statusDiv.className = 'error';
         return;
     }
@@ -117,15 +118,15 @@ saveBtn.addEventListener('click', async () => {
     const result = await client.testConnection();
 
     if (result.success) {
-        statusDiv.textContent = 'Success! Connected to Obsidian. Settings Saved.';
+        statusDiv.textContent = getMessage('successConnected');
         statusDiv.className = 'success';
     } else {
-        statusDiv.textContent = `Connection Failed: ${result.message}`;
+        statusDiv.textContent = getMessage('connectionFailed', { message: result.message });
         statusDiv.className = 'error';
 
         if (result.message.includes('Failed to fetch') && protocolInput.value === 'https') {
             const url = `https://127.0.0.1:${portInput.value}/`;
-            statusDiv.innerHTML += `<br><a href="${url}" target="_blank">Click here to accept self-signed certificate</a>`;
+            statusDiv.innerHTML += `<br><a href="${url}" target="_blank">${getMessage('acceptCertificate')}</a>`;
         }
     }
 });

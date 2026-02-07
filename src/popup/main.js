@@ -5,6 +5,7 @@ import { showSpinner, hideSpinner } from './spinner.js';
 import { startAutoCloseTimer } from './autoClose.js';
 import { getCurrentTab, isRecordable } from './tabUtils.js';
 import { showError, showSuccess, ErrorMessages, isDomainBlockedError, isConnectionError } from './errorUtils.js';
+import { getMessage } from './i18n.js';
 
 // Export functions for testing
 export { getCurrentTab };
@@ -18,7 +19,7 @@ export async function loadCurrentTab() {
   document.getElementById('favicon').src = tab.favIconUrl || '';
 
   // タイトル・URL表示
-  document.getElementById('pageTitle').textContent = tab.title || 'No title';
+  document.getElementById('pageTitle').textContent = tab.title || getMessage('noTitle');
   const url = tab.url || '';
   document.getElementById('pageUrl').textContent =
     url.length > 50 ? url.substring(0, 50) + '...' : url;
@@ -27,10 +28,10 @@ export async function loadCurrentTab() {
   const recordBtn = document.getElementById('recordBtn');
   if (!isRecordable(tab)) {
     recordBtn.disabled = true;
-    recordBtn.textContent = '記録できないページです';
+    recordBtn.textContent = getMessage('cannotRecordPage');
   } else {
     recordBtn.disabled = false;
-    recordBtn.textContent = '📝 今すぐ記録';
+    recordBtn.textContent = getMessage('recordNow');
   }
 }
 
@@ -45,7 +46,7 @@ export async function recordCurrentPage(force = false) {
     const tab = await getCurrentTab();
 
     if (!isRecordable(tab)) {
-      throw new Error('記録できないページです');
+      throw new Error(getMessage('cannotRecordPage'));
     }
 
     // 設定確認
@@ -53,14 +54,14 @@ export async function recordCurrentPage(force = false) {
     const usePreview = settings[StorageKeys.PII_CONFIRMATION_UI] !== false; // Default true
 
     // Content Scriptにコンテンツ取得を要求
-    showSpinner('コンテンツ取得中...');
+    showSpinner(getMessage('fetchingContent'));
     const contentResponse = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CONTENT' });
 
     // Background Workerに記録を要求
     let result;
 
     if (usePreview) {
-      showSpinner('ローカルAI処理中...');
+      showSpinner(getMessage('localAiProcessing'));
       // 1. プレビュー用データ取得 (L1/L2 processing)
       const previewResponse = await chrome.runtime.sendMessage({
         type: 'PREVIEW_RECORD',
@@ -73,7 +74,7 @@ export async function recordCurrentPage(force = false) {
       });
 
       if (!previewResponse.success) {
-        throw new Error(previewResponse.error || '処理に失敗しました');
+        throw new Error(previewResponse.error || 'Processing failed');
       }
 
       // マスクが行われた場合のみ確認画面を表示する
@@ -91,14 +92,14 @@ export async function recordCurrentPage(force = false) {
         );
 
         if (!confirmation.confirmed) {
-          statusDiv.textContent = 'キャンセルしました';
+          statusDiv.textContent = getMessage('cancelled');
           return;
         }
         finalContent = confirmation.content;
       }
 
       // 3. 確定データ送信 (L3 processing & Save)
-      showSpinner('保存中...');
+      showSpinner(getMessage('saving'));
       result = await chrome.runtime.sendMessage({
         type: 'SAVE_RECORD',
         payload: {
@@ -131,7 +132,7 @@ export async function recordCurrentPage(force = false) {
       // 【テスト対応】: テストケース「startAutoCloseTimerでタイマーが起動し、2000ms後にwindow.closeが呼ばれる」
       startAutoCloseTimer();
     } else {
-      throw new Error(result.error || '保存に失敗しました');
+      throw new Error(result.error || 'Save failed');
     }
   } catch (error) {
     hideSpinner();

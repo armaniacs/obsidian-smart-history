@@ -9,6 +9,7 @@ import { init as initUblockImport, saveUblockSettings } from './ublockImport.js'
 import { addLog, LogType } from '../utils/logger.js';
 import { getCurrentTab, isRecordable } from './tabUtils.js';
 import { showStatus } from './settingsUiHelper.js';
+import { getMessage } from './i18n.js';
 
 // Elements
 const generalTabBtn = document.getElementById('generalTab');
@@ -110,7 +111,7 @@ function showTab(tabName) {
 function updateDomainListVisibility() {
     const checkedRadio = document.querySelector('input[name="domainFilter"]:checked');
     if (!checkedRadio) return;
-    
+
     const mode = checkedRadio.value;
 
     if (domainListSection && domainListLabel) {
@@ -120,9 +121,9 @@ function updateDomainListVisibility() {
             domainListSection.style.display = 'block';
 
             if (mode === 'whitelist') {
-                domainListLabel.textContent = 'ホワイトリスト (1行に1ドメイン)';
+                domainListLabel.textContent = getMessage('domainList');
             } else if (mode === 'blacklist') {
-                domainListLabel.textContent = 'ブラックリスト (1行に1ドメイン)';
+                domainListLabel.textContent = getMessage('domainList');
             }
         }
     }
@@ -180,18 +181,18 @@ async function addCurrentDomain() {
         const tab = await getCurrentTab();
 
         if (!tab) {
-            showStatus('domainStatus','アクティブなタブが見つかりません', 'error');
+            showStatus('domainStatus', getMessage('noActiveTab'), 'error');
             return;
         }
 
         if (!isRecordable(tab)) {
-            showStatus('domainStatus','現在のページはHTTP/HTTPSページではありません', 'error');
+            showStatus('domainStatus', getMessage('cannotRecordHttpHttps'), 'error');
             return;
         }
 
         const domain = extractDomain(tab.url);
         if (!domain) {
-            showStatus('domainStatus','ドメインを抽出できませんでした', 'error');
+            showStatus('domainStatus', getMessage('failedToExtractDomain'), 'error');
             return;
         }
 
@@ -200,7 +201,7 @@ async function addCurrentDomain() {
 
         // Check for duplicates
         if (currentList.includes(domain)) {
-            showStatus('domainStatus',`ドメイン "${domain}" は既にリストに存在します`, 'error');
+            showStatus('domainStatus', getMessage('domainAlreadyExists', { domain }), 'error');
             return;
         }
 
@@ -208,10 +209,10 @@ async function addCurrentDomain() {
         currentList.push(domain);
         domainListTextarea.value = currentList.join('\n');
 
-        showStatus('domainStatus',`ドメイン "${domain}" を追加しました`, 'success');
+        showStatus('domainStatus', getMessage('domainAdded', { domain }), 'success');
     } catch (error) {
         addLog(LogType.ERROR, 'Error adding current domain', { error: error.message });
-        showStatus('domainStatus',`エラーが発生しました: ${error.message}`, 'error');
+        showStatus('domainStatus', `${getMessage('errorColon')} ${error.message}`, 'error');
     }
 }
 
@@ -240,7 +241,7 @@ async function saveSimpleFormatSettings() {
     // Check if filter mode is selected
     const selectedMode = document.querySelector('input[name="domainFilter"]:checked');
     if (!selectedMode) {
-        showStatus('domainStatus','フィルターモードを選択してください', 'error');
+        showStatus('domainStatus', getMessage('filterModeRequired'), 'error');
         return;
     }
 
@@ -252,7 +253,7 @@ async function saveSimpleFormatSettings() {
     if (mode !== 'disabled' && domainList.length > 0) {
         const errors = validateDomainList(domainList);
         if (errors.length > 0) {
-            showStatus('domainStatus',`ドメインリストのエラー:\n${errors.join('\n')}`, 'error');
+            showStatus('domainStatus', `${getMessage('domainListError')}\n${errors.join('\n')}`, 'error');
             return;
         }
     }
@@ -272,6 +273,6 @@ async function saveSimpleFormatSettings() {
     // Save settings
     await saveSettings(newSettings);
 
-    showStatus('domainStatus','ドメインフィルター設定を保存しました', 'success');
+    showStatus('domainStatus', getMessage('domainFilterSaved'), 'success');
 }
 

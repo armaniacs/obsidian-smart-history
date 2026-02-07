@@ -135,8 +135,11 @@ export async function isDomainAllowed(url) {
 
     if (ublockEnabled) {
         const ublockRules = settings[StorageKeys.UBLOCK_RULES];
+
+
         if (ublockRules && hasUblockRules(ublockRules)) {
             ublockBlocked = await isUrlBlocked(url, ublockRules, {});
+
         }
     }
 

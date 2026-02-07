@@ -4,33 +4,45 @@
  */
 
 /**
+ * 翻訳メッセージ取得ヘルパー
+ */
+function getMsg(key, substitutions) {
+  return chrome.i18n.getMessage(key, substitutions);
+}
+
+/**
  * エラーメッセージ定数
  */
 export const ErrorMessages = {
   /**
    * コネクションエラー（Content Scriptとの通信失敗）
    */
-  CONNECTION_ERROR: 'ページを再読み込みしてから再度お試しください',
+  get CONNECTION_ERROR() { return getMsg('connectionError'); },
 
   /**
    * ドメインブロックエラー
    */
-  DOMAIN_BLOCKED: 'このドメインは記録が許可されていませんが特別に記録しますか？',
+  get DOMAIN_BLOCKED() { return getMsg('domainBlockedError'); },
 
   /**
    * 一般エラープレフィックス
    */
-  ERROR_PREFIX: '✗ エラー:',
+  get ERROR_PREFIX() { return getMsg('errorPrefix'); },
 
   /**
    * 成功メッセージ
    */
-  SUCCESS: '✓ Obsidianに保存しました',
+  get SUCCESS() { return getMsg('success'); },
 
   /**
    * キャンセルメッセージ
    */
-  CANCELLED: 'キャンセルしました'
+  get CANCELLED() { return getMsg('cancelled'); },
+
+  /**
+   * 不明なエラー
+   */
+  get UNKNOWN_ERROR() { return getMsg('unknownError'); }
 };
 
 /**
@@ -60,7 +72,7 @@ export function isConnectionError(error) {
  * @returns {boolean} ドメインブロックエラーの場合true
  */
 export function isDomainBlockedError(error) {
-  return error?.message === 'このドメインは記録が許可されていません';
+  return error?.message === getMsg('domainBlockedError');
 }
 
 /**
@@ -92,7 +104,7 @@ export function getUserErrorMessage(error) {
     case ErrorType.DOMAIN_BLOCKED:
       return ErrorMessages.DOMAIN_BLOCKED;
     default:
-      return `${ErrorMessages.ERROR_PREFIX} ${error?.message || '不明なエラーが発生しました'}`;
+      return `${ErrorMessages.ERROR_PREFIX} ${error?.message || ErrorMessages.UNKNOWN_ERROR}`;
   }
 }
 
@@ -138,14 +150,14 @@ export function showSuccess(statusElement, message = ErrorMessages.SUCCESS) {
  */
 function createForceRecordButton(parentElement, onClick) {
   const forceBtn = document.createElement('button');
-  forceBtn.textContent = '強制記録';
+  forceBtn.textContent = getMsg('forceRecord');
   forceBtn.className = 'secondary-btn';
   forceBtn.style.marginTop = '10px';
   forceBtn.style.backgroundColor = '#d9534f';
 
   forceBtn.onclick = () => {
     forceBtn.disabled = true;
-    forceBtn.textContent = '記録中...';
+    forceBtn.textContent = getMsg('recording');
     onClick();
   };
 

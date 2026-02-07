@@ -166,8 +166,8 @@ describe('ublockImport - UIRenderer Module', () => {
 
       expect(document.getElementById('uBlockErrorCount').textContent).toBe('2');
       const errorText = document.getElementById('uBlockErrorDetails').textContent;
-      expect(errorText).toContain('1行: Invalid format');
-      expect(errorText).toContain('5行: Missing domain');
+      expect(errorText).toContain('1: Invalid format');
+      expect(errorText).toContain('5: Missing domain');
     });
 
     test('文字列配列のエラー詳細も処理', () => {

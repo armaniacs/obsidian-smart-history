@@ -14,12 +14,40 @@ import {
   parseDomainList,
   validateDomainList
 } from '../domainUtils.js';
+import { isUrlBlocked } from '../ublockMatcher.js';
+import { getSettings } from '../storage.js';
+
+// Mock ublockMatcher.js
+jest.mock('../ublockMatcher.js', () => ({
+  __esModule: true,
+  isUrlBlocked: jest.fn()
+}));
+
+// Mock storage.js
+jest.mock('../storage.js', () => ({
+  __esModule: true,
+  StorageKeys: {
+    DOMAIN_FILTER_MODE: 'domain_filter_mode',
+    DOMAIN_WHITELIST: 'domain_whitelist',
+    DOMAIN_BLACKLIST: 'domain_blacklist',
+    UBLOCK_RULES: 'ublock_rules',
+    UBLOCK_FORMAT_ENABLED: 'ublock_format_enabled',
+    SIMPLE_FORMAT_ENABLED: 'simple_format_enabled'
+  },
+  getSettings: jest.fn()
+}));
 
 describe('domainUtils', () => {
   // 【テスト前準備】: 各テスト実行前にChrome APIのモックをクリア
   // 【環境初期化】: 前のテストの影響を受けないよう、モックの呼び出し履歴をリセット
+  // 【テスト前準備】: 各テスト実行前にChrome APIのモックをクリア
+  // 【環境初期化】: 前のテストの影響を受けないよう、モックの呼び出し履歴をリセット
   beforeEach(() => {
     jest.clearAllMocks();
+    isUrlBlocked.mockReset();
+    isUrlBlocked.mockResolvedValue(false);
+    getSettings.mockReset();
+    getSettings.mockResolvedValue({});
   });
 
   describe('extractDomain', () => {
@@ -248,7 +276,7 @@ describe('domainUtils', () => {
 
       // 【テストデータ準備】: フィルター機能を使用しないケースのモックデータを用意
       // 【初期条件設定】: chrome.storage.localのgetメソッドをモック
-      global.chrome.storage.local.get.mockResolvedValue({ domain_filter_mode: 'disabled' });
+      getSettings.mockResolvedValue({ domain_filter_mode: 'disabled' });
 
       const url = 'https://any-domain.com';
 
@@ -268,7 +296,7 @@ describe('domainUtils', () => {
       // 🟢 信頼性レベル: 既存実装（domainUtils.js 103-105行目）を直接参照、chrome.storage.localのmock化が必要
 
       // 【テストデータ準備】: ホワイトリストモードの設定をモック
-      global.chrome.storage.local.get.mockResolvedValue({
+      getSettings.mockResolvedValue({
         domain_filter_mode: 'whitelist',
         domain_whitelist: ['allowed.com']
       });
@@ -289,7 +317,7 @@ describe('domainUtils', () => {
       // 🟢 信頼性レベル: 既存実装（domainUtils.js 106-108行目）を直接参照、chrome.storage.localのmock化が必要
 
       // 【テストデータ準備】: ブラックリストモードの設定をモック
-      global.chrome.storage.local.get.mockResolvedValue({
+      getSettings.mockResolvedValue({
         domain_filter_mode: 'blacklist',
         domain_blacklist: ['blocked.com']
       });
@@ -310,7 +338,7 @@ describe('domainUtils', () => {
       // 🟢 信頼性レベル: 既存実装（domainUtils.js 95-98行目）を直接参照
 
       // 【テストデータ準備】: フィルター設定をモック（モード問わず）
-      global.chrome.storage.local.get.mockResolvedValue({ domain_filter_mode: 'whitelist' });
+      getSettings.mockResolvedValue({ domain_filter_mode: 'whitelist' });
 
       const invalidUrl = 'invalid-url';
 
@@ -323,7 +351,9 @@ describe('domainUtils', () => {
 
     test('シンプル形式とuBlock形式の両方が有効な場合の併用動作を確認', async () => {
       // both enabled, blacklisted in simple
-      global.chrome.storage.local.get.mockResolvedValue({
+      isUrlBlocked.mockResolvedValue(true); // Default to blocked for mocked ublock check
+
+      getSettings.mockResolvedValue({
         domain_filter_mode: 'blacklist',
         simple_format_enabled: true,
         domain_blacklist: ['blocked-simple.com'],
@@ -335,6 +365,12 @@ describe('domainUtils', () => {
         }
       });
 
+      // Override isUrlBlocked behavior for specific test cases
+      isUrlBlocked.mockImplementation(async (url) => {
+        if (url.includes('blocked-ublock.com')) return true;
+        return false;
+      });
+
       // cases
       expect(await isDomainAllowed('https://allowed.com')).toBe(true);
       expect(await isDomainAllowed('https://blocked-simple.com')).toBe(false);
@@ -343,13 +379,16 @@ describe('domainUtils', () => {
 
     test('片方のみ有効な場合の動作を確認', async () => {
       // simple enabled, ublock disabled
-      global.chrome.storage.local.get.mockResolvedValue({
+      // uBlock mocked to block generally to prove it's ignored
+      isUrlBlocked.mockResolvedValue(true);
+
+      getSettings.mockResolvedValue({
         domain_filter_mode: 'blacklist',
         simple_format_enabled: true,
         domain_blacklist: ['blocked.com'],
         ublock_format_enabled: false,
         ublock_rules: {
-          blockRules: [{ type: 'hostname', pattern: 'allowed-because-disabled.com' }],
+          blockRules: [{ type: 'hostname', domain: 'allowed-because-disabled.com' }],
           exceptionRules: [],
           ruleCount: 1
         }
@@ -361,24 +400,21 @@ describe('domainUtils', () => {
   });
 
   // UF-501: Additional tests for simultaneous Simple and uBlock filtering
-  // Note: These tests require isUrlBlocked to be mocked. Since the actual implementation
-  // uses isUrlBlocked from ublockMatcher.js, we need to mock it at the module level.
-  // For now, we'll skip these tests as they require more complex mocking setup.
-  describe.skip('LOG-006: uBlock block rule - blocked', () => {
+  describe('LOG-006: uBlock block rule - blocked', () => {
     test('Verify uBlock block rule blocks URL', async () => {
       // 【テスト目的】: uBlockブロックルールがURLをブロックすることを確認
       // 【テスト内容】: uBlock形式のブロックルールが正しく動作することを確認
       // 【期待される動作】: uBlockルールに一致するURLがブロックされる
 
       // 【テストデータ準備】: isUrlBlockedをモックしてブロックを返す
-      // Note: This requires proper mocking of ublockMatcher.js
+      isUrlBlocked.mockResolvedValue(true);
 
-      global.chrome.storage.local.get.mockResolvedValue({
-        domain_filter_mode: 'disabled',
+      getSettings.mockResolvedValue({
+        domain_filter_mode: 'blacklist',
         simple_format_enabled: false,
         ublock_format_enabled: true,
         ublock_rules: {
-          blockRules: [{ type: 'hostname', pattern: 'blocked.com' }],
+          blockRules: [{ type: 'hostname', domain: 'blocked.com' }],
           exceptionRules: [],
           ruleCount: 1
         }
@@ -395,13 +431,15 @@ describe('domainUtils', () => {
       // 【テスト内容】: uBlock形式の例外ルールが正しく動作することを確認
       // 【期待される動作】: uBlock例外ルールに一致するURLが許可される
 
-      global.chrome.storage.local.get.mockResolvedValue({
-        domain_filter_mode: 'disabled',
+      isUrlBlocked.mockResolvedValue(false); // Exception rule means NOT blocked
+
+      getSettings.mockResolvedValue({
+        domain_filter_mode: 'blacklist',
         simple_format_enabled: false,
         ublock_format_enabled: true,
         ublock_rules: {
           blockRules: [{ type: 'hostname', pattern: '*.com' }],
-          exceptionRules: [{ type: 'hostname', pattern: 'allowed.com' }],
+          exceptionRules: [{ type: 'hostname', domain: 'allowed.com' }],
           ruleCount: 2
         }
       });
@@ -417,7 +455,9 @@ describe('domainUtils', () => {
       // 【テスト内容】: Simpleブラックリストに含まれるドメインがブロックされることを確認
       // 【期待される動作】: Simpleルールが優先され、URLがブロックされる
 
-      global.chrome.storage.local.get.mockResolvedValue({
+      isUrlBlocked.mockResolvedValue(false); // uBlock allows
+
+      getSettings.mockResolvedValue({
         domain_filter_mode: 'blacklist',
         simple_format_enabled: true,
         domain_blacklist: ['blocked-simple.com'],
@@ -434,22 +474,22 @@ describe('domainUtils', () => {
     });
   });
 
-  describe.skip('LOG-009: Both enabled - uBlock blocks', () => {
+  describe('LOG-009: Both enabled - uBlock blocks', () => {
     test('Verify uBlock blocks when both enabled', async () => {
       // 【テスト目的】: 両方有効時、uBlockがブロックすることを確認
       // 【テスト内容】: uBlockルールに一致するURLがブロックされることを確認
       // 【期待される動作】: uBlockルールが評価され、URLがブロックされる
 
       // 【テストデータ準備】: isUrlBlockedをモックしてブロックを返す
-      // Note: This requires proper mocking of ublockMatcher.js
+      isUrlBlocked.mockResolvedValue(true);
 
-      global.chrome.storage.local.get.mockResolvedValue({
-        domain_filter_mode: 'disabled',
+      getSettings.mockResolvedValue({
+        domain_filter_mode: 'blacklist', // Simple filter disabled or empty
         simple_format_enabled: true,
         domain_blacklist: [],
         ublock_format_enabled: true,
         ublock_rules: {
-          blockRules: [{ type: 'hostname', pattern: 'blocked-ublock.com' }],
+          blockRules: [{ type: 'hostname', domain: 'blocked-ublock.com' }],
           exceptionRules: [],
           ruleCount: 1
         }
@@ -466,13 +506,15 @@ describe('domainUtils', () => {
       // 【テスト内容】: SimpleとuBlockの両方に一致するURLがブロックされることを確認
       // 【期待される動作】: 両方のルールが評価され、URLがブロックされる
 
-      global.chrome.storage.local.get.mockResolvedValue({
+      isUrlBlocked.mockResolvedValue(true);
+
+      getSettings.mockResolvedValue({
         domain_filter_mode: 'blacklist',
         simple_format_enabled: true,
         domain_blacklist: ['blocked-both.com'],
         ublock_format_enabled: true,
         ublock_rules: {
-          blockRules: [{ type: 'hostname', pattern: 'blocked-both.com' }],
+          blockRules: [{ type: 'hostname', domain: 'blocked-both.com' }],
           exceptionRules: [],
           ruleCount: 1
         }
@@ -489,8 +531,10 @@ describe('domainUtils', () => {
       // 【テスト内容】: どちらのルールにも一致しないURLが許可されることを確認
       // 【期待される動作】: 両方のルールが評価され、URLが許可される
 
-      global.chrome.storage.local.get.mockResolvedValue({
-        domain_filter_mode: 'disabled',
+      isUrlBlocked.mockResolvedValue(false);
+
+      getSettings.mockResolvedValue({
+        domain_filter_mode: 'blacklist',
         simple_format_enabled: true,
         domain_blacklist: [],
         ublock_format_enabled: true,
@@ -512,13 +556,15 @@ describe('domainUtils', () => {
       // 【テスト内容】: uBlockルールが存在しても評価されないことを確認
       // 【期待される動作】: uBlockルールが無視され、Simpleルールのみが評価される
 
-      global.chrome.storage.local.get.mockResolvedValue({
-        domain_filter_mode: 'disabled',
+      isUrlBlocked.mockResolvedValue(true); // Should be ignored
+
+      getSettings.mockResolvedValue({
+        domain_filter_mode: 'blacklist',
         simple_format_enabled: true,
         domain_blacklist: [],
         ublock_format_enabled: false,
         ublock_rules: {
-          blockRules: [{ type: 'hostname', pattern: 'blocked-by-ublock.com' }],
+          blockRules: [{ type: 'hostname', domain: 'blocked-by-ublock.com' }],
           exceptionRules: [],
           ruleCount: 1
         }
@@ -535,7 +581,9 @@ describe('domainUtils', () => {
       // 【テスト内容】: Simpleルールが存在しても評価されないことを確認
       // 【期待される動作】: Simpleルールが無視され、uBlockルールのみが評価される
 
-      global.chrome.storage.local.get.mockResolvedValue({
+      isUrlBlocked.mockResolvedValue(false); // uBlock allows
+
+      getSettings.mockResolvedValue({
         domain_filter_mode: 'blacklist',
         simple_format_enabled: false,
         domain_blacklist: ['blocked-by-simple.com'],
@@ -558,8 +606,8 @@ describe('domainUtils', () => {
       // 【テスト内容】: 両方のルールが空の場合、すべてのURLが許可されることを確認
       // 【期待される動作】: 空のルールでtrueが返される
 
-      global.chrome.storage.local.get.mockResolvedValue({
-        domain_filter_mode: 'disabled',
+      getSettings.mockResolvedValue({
+        domain_filter_mode: 'blacklist',
         simple_format_enabled: true,
         domain_blacklist: [],
         ublock_format_enabled: true,
@@ -581,7 +629,7 @@ describe('domainUtils', () => {
       // 【テスト内容】: *.example.comパターンがサブドメインにマッチすることを確認
       // 【期待される動作】: ワイルドカードパターンが正しくマッチする
 
-      global.chrome.storage.local.get.mockResolvedValue({
+      getSettings.mockResolvedValue({
         domain_filter_mode: 'blacklist',
         simple_format_enabled: true,
         domain_blacklist: ['*.example.com'],
@@ -604,13 +652,13 @@ describe('domainUtils', () => {
       // 【テスト内容】: ブロックルールと例外ルールが両方存在する場合、例外が優先されることを確認
       // 【期待される動作】: 例外ルールが優先され、URLが許可される
 
-      global.chrome.storage.local.get.mockResolvedValue({
-        domain_filter_mode: 'disabled',
+      getSettings.mockResolvedValue({
+        domain_filter_mode: 'blacklist',
         simple_format_enabled: false,
         ublock_format_enabled: true,
         ublock_rules: {
-          blockRules: [{ type: 'hostname', pattern: 'example.com' }],
-          exceptionRules: [{ type: 'hostname', pattern: 'example.com' }],
+          blockRules: [{ type: 'hostname', domain: 'example.com' }],
+          exceptionRules: [{ type: 'hostname', domain: 'example.com' }],
           ruleCount: 2
         }
       });

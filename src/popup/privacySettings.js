@@ -6,6 +6,7 @@
 import { StorageKeys, saveSettings, getSettings } from '../utils/storage.js';
 import { addLog, LogType } from '../utils/logger.js';
 import { showStatus } from './settingsUiHelper.js';
+import { getMessage } from './i18n.js';
 
 // Elements
 const savePrivacySettingsBtn = document.getElementById('savePrivacySettings');
@@ -41,7 +42,7 @@ async function savePrivacySettings() {
     try {
         const selectedMode = document.querySelector('input[name="privacyMode"]:checked');
         if (!selectedMode) {
-            showStatus('privacyStatus', 'モードを選択してください', 'error');
+            showStatus('privacyStatus', getMessage('modeRequired'), 'error');
             return;
         }
 
@@ -51,11 +52,11 @@ async function savePrivacySettings() {
         };
 
         await saveSettings(newSettings);
-        showStatus('privacyStatus', 'プライバシー設定を保存しました', 'success');
+        showStatus('privacyStatus', getMessage('privacySaved'), 'success');
 
     } catch (error) {
         addLog(LogType.ERROR, 'Error saving privacy settings', { error: error.message });
-        showStatus('privacyStatus', `保存エラー: ${error.message}`, 'error');
+        showStatus('privacyStatus', `${getMessage('saveError')}: ${error.message}`, 'error');
     }
 }
 

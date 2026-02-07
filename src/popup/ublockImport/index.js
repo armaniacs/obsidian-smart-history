@@ -13,6 +13,7 @@ import { showStatus } from '../settingsUiHelper.js';
 import { LogType, addLog } from '../../utils/logger.js';
 import { StorageKeys } from '../../utils/storage.js';
 import { getSettings } from '../../utils/storage.js';
+import { getMessage } from '../i18n.js';
 
 // グローバル状態
 let dropZoneActive = false;
@@ -93,9 +94,9 @@ async function handleFileSelect(event) {
     document.getElementById('uBlockFilterInput').value = text;
     currentSourceUrl = null;
     handleTextInputPreview();
-    showStatus('domainStatus', `"${file.name}" を読み込みました`, 'success');
+    showStatus('domainStatus', getMessage('fileLoaded', { filename: file.name }), 'success');
   } catch (error) {
-    showStatus('domainStatus', `ファイル読み込みエラー: ${error.message}`, 'error');
+    showStatus('domainStatus', `${getMessage('fileReadError')}: ${error.message}`, 'error');
   }
 }
 
@@ -142,7 +143,7 @@ async function handleExport() {
     const sources = settings[StorageKeys.UBLOCK_SOURCES] || [];
 
     if (sources.length === 0) {
-      showStatus('domainStatus', 'エクスポートするデータがありません', 'error');
+      showStatus('domainStatus', getMessage('nothingToExport'), 'error');
       return;
     }
 
@@ -156,9 +157,9 @@ async function handleExport() {
     a.click();
 
     URL.revokeObjectURL(url);
-    showStatus('domainStatus', 'ファイルをエクスポートしました', 'success');
+    showStatus('domainStatus', getMessage('fileExported'), 'success');
   } catch (error) {
-    showStatus('domainStatus', `エクスポートエラー: ${error.message}`, 'error');
+    showStatus('domainStatus', `${getMessage('exportError')}: ${error.message}`, 'error');
   }
 }
 
@@ -170,14 +171,14 @@ async function handleCopy() {
     const text = document.getElementById('uBlockFilterInput').value;
 
     if (!text.trim()) {
-      showStatus('domainStatus', 'コピーするテキストがありません', 'error');
+      showStatus('domainStatus', getMessage('noTextToCopy'), 'error');
       return;
     }
 
     await copyToClipboard(text);
-    showStatus('domainStatus', 'クリップボードにコピーしました', 'success');
+    showStatus('domainStatus', getMessage('copiedToClipboard'), 'success');
   } catch (error) {
-    showStatus('domainStatus', `コピーエラー: ${error.message}`, 'error');
+    showStatus('domainStatus', `${getMessage('copyError')}: ${error.message}`, 'error');
   }
 }
 
@@ -191,13 +192,13 @@ async function handleUrlImport() {
   const url = urlInput.value.trim();
 
   if (!url) {
-    showStatus('domainStatus', 'URLを入力してください', 'error');
+    showStatus('domainStatus', getMessage('loadEmptyUrl'), 'error');
     return;
   }
 
   const importBtn = document.getElementById('uBlockUrlImportBtn');
   if (importBtn) {
-    importBtn.textContent = '読み込み中...';
+    importBtn.textContent = getMessage('loadingUrl');
     importBtn.disabled = true;
   }
 
@@ -207,12 +208,12 @@ async function handleUrlImport() {
     currentSourceUrl = url;
     handleTextInputPreview();
 
-    showStatus('domainStatus', `"${url}" からフィルターを読み込みました`, 'success');
+    showStatus('domainStatus', getMessage('loadedFromUrl', { url }), 'success');
   } catch (error) {
     showStatus('domainStatus', error.message, 'error');
   } finally {
     if (importBtn) {
-      importBtn.textContent = 'URLからインポート';
+      importBtn.textContent = getMessage('importFromUrl');
       importBtn.disabled = false;
     }
   }
@@ -235,7 +236,7 @@ async function handleDeleteSource(index) {
       );
     });
   } catch (error) {
-    showStatus('domainStatus', `削除エラー: ${error.message}`, 'error');
+    showStatus('domainStatus', `${getMessage('deleteError')}: ${error.message}`, 'error');
   }
 }
 
@@ -258,10 +259,10 @@ async function handleReloadSource(index) {
       handleReloadSource
     );
 
-    showStatus('domainStatus', `ソースを更新しました（${ruleCount}ルール）`, 'success');
+    showStatus('domainStatus', getMessage('sourceUpdated', { ruleCount }), 'success');
   } catch (error) {
-    addLog(LogType.ERROR, '更新エラー', { error: error.message });
-    showStatus('domainStatus', `更新エラー: ${error.message}`, 'error');
+    addLog(LogType.ERROR, getMessage('reloadError'), { error: error.message });
+    showStatus('domainStatus', `${getMessage('reloadError')}: ${error.message}`, 'error');
 
     // ボタン状態リセットのために再描画
     const settings = await chrome.storage.sync.get();
@@ -346,7 +347,7 @@ function handleDrop(event) {
   if (file && file.type === 'text/plain') {
     processFile(file);
   } else {
-    showStatus('domainStatus', 'テキストファイルのみ対応しています', 'error');
+    showStatus('domainStatus', getMessage('textFileOnly'), 'error');
   }
 }
 
@@ -359,9 +360,9 @@ async function processFile(file) {
     document.getElementById('uBlockFilterInput').value = text;
     currentSourceUrl = null;
     handleTextInputPreview();
-    showStatus('domainStatus', `"${file.name}" を読み込みました`, 'success');
+    showStatus('domainStatus', getMessage('fileLoaded', { filename: file.name }), 'success');
   } catch (error) {
-    showStatus('domainStatus', `ファイル読み込みエラー: ${error.message}`, 'error');
+    showStatus('domainStatus', `${getMessage('fileReadError')}: ${error.message}`, 'error');
   }
 }
 

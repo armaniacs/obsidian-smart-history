@@ -4,11 +4,6 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { loadCurrentTab, recordCurrentPage } from 'src/popup/main.js';
-
-// 【修正】: 手動のDOMモックを削除
-// 【理由】: beforeEachでjsdom環境にDOM要素を作成するため、手動モックが競合する
-// 🟢 信頼性レベル: テスト失敗によるバグ分析
 
 // Mock all dependencies (must be defined before imports)
 jest.mock('src/popup/sanitizePreview.js', () => ({
@@ -42,14 +37,60 @@ import { showPreview } from 'src/popup/sanitizePreview.js';
 import { startAutoCloseTimer } from 'src/popup/autoClose.js';
 import { getCurrentTab, isRecordable } from 'src/popup/tabUtils.js';
 import { getSettings, StorageKeys } from 'src/utils/storage.js';
+import { loadCurrentTab, recordCurrentPage } from 'src/popup/main.js';
 
-// Mock chrome API
+// Mock chrome API with i18n support
 const mockChrome = {
+  storage: {
+    local: {
+      get: jest.fn(),
+      set: jest.fn()
+    },
+    sync: {
+      get: jest.fn(),
+      set: jest.fn()
+    }
+  },
   tabs: {
-    sendMessage: jest.fn()
+    query: jest.fn(),
+    sendMessage: jest.fn(),
+    onUpdated: {
+      addListener: jest.fn()
+    }
   },
   runtime: {
-    sendMessage: jest.fn()
+    lastError: null,
+    sendMessage: jest.fn(),
+    onMessage: {
+      addListener: jest.fn()
+    }
+  },
+  i18n: {
+    getMessage: jest.fn((key, substitutions) => {
+      // Test mock messages (matching messages.json structure)
+      const messages = {
+        'cannotRecordPage': 'Cannot record this page',
+        'errorPrefix': '✗ Error:',
+        'connectionError': 'Please refresh the page and try again',
+        'domainBlockedError': 'This domain is not allowed to be recorded. Do you want to record it anyway?',
+        'forceRecord': 'Force Record',
+        'success': '✓ Saved to Obsidian',
+        'cancelled': 'Cancelled',
+        'recordNow': '📝 Record Now',
+      };
+
+      let message = messages[key] || key;
+
+      // Handle substitutions
+      if (substitutions && typeof substitutions === 'object') {
+        Object.keys(substitutions).forEach((placeholder) => {
+          message = message.replace(`{${placeholder}}`, substitutions[placeholder]);
+        });
+      }
+
+      return message;
+    }),
+    getUILanguage: jest.fn(() => 'en'),
   }
 };
 
@@ -66,7 +107,7 @@ describe('main', () => {
         <img id="favicon" src="" alt="Favicon">
         <h2 id="pageTitle">Loading...</h2>
         <p id="pageUrl">Loading...</p>
-        <button id="recordBtn" disabled="false">📝 今すぐ記録</button>
+        <button id="recordBtn" disabled="false">📝 Record Now</button>
         <div id="mainStatus"></div>
       </div>
     `;
@@ -101,7 +142,7 @@ describe('main', () => {
       expect(pageTitle.textContent).toBe('Example Page');
       expect(pageUrl.textContent).toBe('https://example.com');
       expect(recordBtn.disabled).toBe(false);
-      expect(recordBtn.textContent).toBe('📝 今すぐ記録');
+      expect(recordBtn.textContent).toBe('📝 Record Now');
     });
 
     it('should handle recordable page correctly', async () => {
@@ -111,16 +152,16 @@ describe('main', () => {
         title: 'Non-recordable Page',
         url: 'chrome://extensions'
       };
-      
+
       getCurrentTab.mockImplementation(() => Promise.resolve(mockTab));
       isRecordable.mockReturnValue(false);
-      
+
       await loadCurrentTab();
-      
+
       // Check if record button is disabled
       const recordBtn = document.getElementById('recordBtn');
       expect(recordBtn.disabled).toBe(true);
-      expect(recordBtn.textContent).toBe('記録できないページです');
+      expect(recordBtn.textContent).toBe('Cannot record this page');
     });
 
     it('should handle null tab', async () => {
@@ -149,9 +190,8 @@ describe('main', () => {
 
       // Check if error message is displayed
       const statusDiv = document.getElementById('mainStatus');
-      // 【修正】: 実装では '✗ エラー: 'プレフィックスが付くため期待値を修正
       expect(statusDiv.className).toBe('error');
-      expect(statusDiv.textContent).toBe('✗ エラー: 記録できないページです');
+      expect(statusDiv.textContent).toBe('✗ Error: Cannot record this page');
     });
 
     it('should handle connection error', async () => {
@@ -173,10 +213,10 @@ describe('main', () => {
       const statusDiv = document.getElementById('mainStatus');
       
       await recordCurrentPage();
-      
+
       // Check if error message is displayed
       expect(statusDiv.className).toBe('error');
-      expect(statusDiv.textContent).toBe('✗ エラー: ページを再読み込みしてから再度お試しください');
+      expect(statusDiv.textContent).toBe('✗ Error: Please refresh the page and try again');
     });
 
     it('should handle domain blocked error with force record', async () => {
@@ -193,9 +233,9 @@ describe('main', () => {
       
       // Mock chrome API to return domain blocked error
       mockChrome.tabs.sendMessage.mockResolvedValue({ content: 'Page content' });
-      mockChrome.runtime.sendMessage.mockResolvedValue({ 
-        success: false, 
-        error: 'このドメインは記録が許可されていません' 
+      mockChrome.runtime.sendMessage.mockResolvedValue({
+        success: false,
+        error: 'This domain is not allowed to be recorded. Do you want to record it anyway?'
       });
       
       // Mock DOM elements
@@ -207,9 +247,9 @@ describe('main', () => {
       // 【修正】: textContent は子要素のテキストも含むため、最初のテキストノードのみをチェック
       // or querySelector('button').textContent を使用してボタンを検証
       expect(statusDiv.querySelector('button')).toBeTruthy();
-      expect(statusDiv.querySelector('button').textContent).toBe('強制記録');
+      expect(statusDiv.querySelector('button').textContent).toBe('Force Record');
       // statusDiv の最初のテキストノードを確認
-      const expectedText = 'このドメインは記録が許可されていませんが特別に記録しますか？';
+      const expectedText = 'This domain is not allowed to be recorded. Do you want to record it anyway?';
       expect(statusDiv.childNodes[0].textContent).toBe(expectedText);
     });
 
@@ -246,7 +286,7 @@ describe('main', () => {
       
       // Check if success message is displayed
       expect(statusDiv.className).toBe('success');
-      expect(statusDiv.textContent).toBe('✓ Obsidianに保存しました');
+      expect(statusDiv.textContent).toBe('✓ Saved to Obsidian');
       expect(startAutoCloseTimer).toHaveBeenCalled();
     });
 
@@ -273,7 +313,7 @@ describe('main', () => {
       
       // Check if success message is displayed
       expect(statusDiv.className).toBe('success');
-      expect(statusDiv.textContent).toBe('✓ Obsidianに保存しました');
+      expect(statusDiv.textContent).toBe('✓ Saved to Obsidian');
       expect(startAutoCloseTimer).toHaveBeenCalled();
     });
 
@@ -305,9 +345,9 @@ describe('main', () => {
       const statusDiv = document.getElementById('mainStatus');
       
       await recordCurrentPage();
-      
+
       // Check if cancellation message is displayed
-      expect(statusDiv.textContent).toBe('キャンセルしました');
+      expect(statusDiv.textContent).toBe('Cancelled');
     });
   });
 });

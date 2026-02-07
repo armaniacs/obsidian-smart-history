@@ -42,7 +42,7 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
       const modal = document.getElementById('confirmationModal');
       const statusMessage = document.getElementById('maskStatusMessage');
 
-      expect(statusMessage.textContent).toBe("E-mail1件をマスクしました");
+      expect(statusMessage.textContent).toBe("Masked E-mail1 items");
       expect(modal.style.display).toBe("flex");
     });
 
@@ -58,7 +58,7 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
 
       const statusMessage = document.getElementById('maskStatusMessage');
 
-      expect(statusMessage.textContent).toBe("銀行口座番号1件、電話番号1件をマスクしました");
+      expect(statusMessage.textContent).toBe("Masked Bank Account Number1 items, Phone Number1 items");
     });
   });
 
@@ -188,7 +188,7 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
       expect(endTime - startTime).toBeLessThan(100);
 
       const statusMessage = document.getElementById('maskStatusMessage');
-      expect(statusMessage.textContent).toBe("E-mail100件をマスクしました");
+      expect(statusMessage.textContent).toBe("Masked E-mail100 items");
     });
 
     test('TC-MV-203: 空文字のコンテンツ', () => {
@@ -322,7 +322,7 @@ describe('Masked Information Visualization - プレビュー画面のマスク�
       const maskStatusMessage = document.getElementById('maskStatusMessage');
       expect(maskStatusMessage).toBeDefined();
       expect(maskStatusMessage.className).toBe('mask-status-message');
-      expect(maskStatusMessage.textContent).toBe('E-mail1件をマスクしました');
+      expect(maskStatusMessage.textContent).toBe('Masked E-mail1 items');
     });
   });
 

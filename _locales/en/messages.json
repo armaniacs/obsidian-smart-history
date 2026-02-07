@@ -1,0 +1,473 @@
+{
+    "extensionName": {
+        "message": "Obsidian Smart History"
+    },
+    "extensionShortName": {
+        "message": "Smart History"
+    },
+    "extensionDescription": {
+        "message": "Smartly backup closed tabs to Obsidian with AI summaries and context linking."
+    },
+    "appTitle": {
+        "message": "Smart History"
+    },
+    "settings": {
+        "message": "Settings"
+    },
+    "save": {
+        "message": "Save"
+    },
+    "cancel": {
+        "message": "Cancel"
+    },
+    "close": {
+        "message": "Close"
+    },
+    "saveAndTest": {
+        "message": "Save & Test Connection"
+    },
+    "loading": {
+        "message": "Loading..."
+    },
+    "processing": {
+        "message": "Processing..."
+    },
+    "recordNow": {
+        "message": "📝 Record Now"
+    },
+    "cannotRecordPage": {
+        "message": "Cannot record this page"
+    },
+    "pageInfo": {
+        "message": "Page Info"
+    },
+    "noTitle": {
+        "message": "No title"
+    },
+    "mainTab": {
+        "message": "General"
+    },
+    "domainTab": {
+        "message": "Domain Filter"
+    },
+    "privacyTab": {
+        "message": "Privacy"
+    },
+    "back": {
+        "message": "←"
+    },
+    "obsidianApiKey": {
+        "message": "Obsidian API Key"
+    },
+    "aiApiKey": {
+        "message": "OpenAI API Key"
+    },
+    "apiKeyPlaceholder": {
+        "message": "Paste your key here..."
+    },
+    "protocol": {
+        "message": "Protocol (http/https)"
+    },
+    "port": {
+        "message": "Port"
+    },
+    "dailyNotePath": {
+        "message": "Daily Note Path"
+    },
+    "dailyNotePathPlaceholder": {
+        "message": "e.g. 092.Daily"
+    },
+    "aiProvider": {
+        "message": "AI Provider"
+    },
+    "googleGemini": {
+        "message": "Google Gemini"
+    },
+    "openaiCompatible": {
+        "message": "OpenAI Compatible (Groq, etc.)"
+    },
+    "openaiCompatible2": {
+        "message": "OpenAI Compatible 2 (Local, etc.)"
+    },
+    "geminiApiKey": {
+        "message": "Gemini API Key"
+    },
+    "geminiApiKeyPlaceholder": {
+        "message": "Paste your Gemini key here..."
+    },
+    "modelName": {
+        "message": "Model Name"
+    },
+    "geminiModelPlaceholder": {
+        "message": "gemini-1.5-flash"
+    },
+    "baseUrl": {
+        "message": "Base URL"
+    },
+    "openaiBaseUrlPlaceholder": {
+        "message": "https://api.openai.com/v1"
+    },
+    "openaiApiKeyPlaceholder": {
+        "message": "sk-..."
+    },
+    "openaiModelPlaceholder": {
+        "message": "gpt-3.5-turbo"
+    },
+    "openai2BaseUrlPlaceholder": {
+        "message": "http://127.0.0.1:11434/v1"
+    },
+    "openai2ApiKeyPlaceholder": {
+        "message": "Optional for some local LLMs"
+    },
+    "openai2ModelPlaceholder": {
+        "message": "llama3"
+    },
+    "minVisitDuration": {
+        "message": "Min Visit Duration (seconds)"
+    },
+    "minScrollDepth": {
+        "message": "Min Scroll Depth (%)"
+    },
+    "domainFilterMode": {
+        "message": "Domain Filter Mode"
+    },
+    "filterDisabled": {
+        "message": "Disabled (record all)"
+    },
+    "filterWhitelist": {
+        "message": "Whitelist (record only specified domains)"
+    },
+    "filterBlacklist": {
+        "message": "Blacklist (exclude specified domains)"
+    },
+    "filterFormat": {
+        "message": "Filter Format (can be combined)"
+    },
+    "simpleFormat": {
+        "message": "Simple (1 domain per line)"
+    },
+    "ublockFormat": {
+        "message": "uBlock Origin Format"
+    },
+    "domainList": {
+        "message": "Domain List (1 domain per line)"
+    },
+    "domainListPlaceholder": {
+        "message": "example.com\n*.example.org\ncompany.net"
+    },
+    "wildcardHelp": {
+        "message": "Wildcards are supported (e.g. *.example.com)"
+    },
+    "addCurrentDomain": {
+        "message": "Add Current Page Domain"
+    },
+    "saveDomainSettings": {
+        "message": "Save"
+    },
+    "ublockFilter": {
+        "message": "uBlock Filter"
+    },
+    "ublockFilterPlaceholder": {
+        "message": "||example.com^\n@@||trusted.com^\n0.0.0.0 ads.example.com\n! Comment line"
+    },
+    "ublockHelp": {
+        "message": "Paste uBlock Origin or hosts format filters\nuBlock: ||hostname^, @@||hostname^, *, !Comments\nhosts: 0.0.0.0/127.0.0.1 hostname (#comments supported)"
+    },
+    "loadFromFile": {
+        "message": "Load from file (.txt)"
+    },
+    "selectFile": {
+        "message": "Select File"
+    },
+    "dropFileHere": {
+        "message": "Drop file here"
+    },
+    "loadFromUrl": {
+        "message": "Load from URL"
+    },
+    "importFromUrl": {
+        "message": "Import from URL"
+    },
+    "urlPlaceholder": {
+        "message": "https://example.com/filters.txt"
+    },
+    "registeredFilterSources": {
+        "message": "Registered Filter Sources"
+    },
+    "noSourcesRegistered": {
+        "message": "No sources registered"
+    },
+    "loadPreview": {
+        "message": "Load Preview"
+    },
+    "ruleCount": {
+        "message": "Rules: {count}"
+    },
+    "exceptionCount": {
+        "message": "Exceptions: {count}"
+    },
+    "errorCount": {
+        "message": "Errors: {count}"
+    },
+    "export": {
+        "message": "Export"
+    },
+    "copyToClipboard": {
+        "message": "Copy to Clipboard"
+    },
+    "manualInput": {
+        "message": "Manual Input"
+    },
+    "rulesLabel": {
+        "message": "Rules"
+    },
+    "reload": {
+        "message": "Reload"
+    },
+    "delete": {
+        "message": "Delete"
+    },
+    "privacyMode": {
+        "message": "Privacy Mode"
+    },
+    "modeA": {
+        "message": "Mode A: Local Only"
+    },
+    "modeADesc": {
+        "message": "Summarize page content using only local AI, without sending data externally.\nCurrently not supported on most browsers."
+    },
+    "modeADetail": {
+        "message": "(Under development)"
+    },
+    "modeB": {
+        "message": "Mode B: Full Pipeline"
+    },
+    "modeBDesc": {
+        "message": "Local AI summary → PII masking → Cloud AI refinement.\nCurrently not supported on most browsers."
+    },
+    "modeBCurrently": {
+        "message": "(Under development)"
+    },
+    "modeC": {
+        "message": "Mode C: Masked Cloud"
+    },
+    "modeCDesc": {
+        "message": "Send only masked data to cloud AI.\nFor environments where local AI is not available."
+    },
+    "modeCRecommended": {
+        "message": "(Recommended)"
+    },
+    "modeD": {
+        "message": "Mode D: Cloud Only"
+    },
+    "modeDDesc": {
+        "message": "Send raw text directly to cloud AI.\nPrioritize speed."
+    },
+    "confirmSettings": {
+        "message": "Confirmation Settings"
+    },
+    "confirmBeforeSending": {
+        "message": "Confirm masking result before sending"
+    },
+    "savePrivacySettings": {
+        "message": "Save"
+    },
+    "confirmContent": {
+        "message": "Review Content"
+    },
+    "confirmContentDesc": {
+        "message": "You can review and edit the content to be saved to Obsidian.<br><span class=\"text-danger\">Note: Check masked items.</span>"
+    },
+    "cancelPreviewBtn": {
+        "message": "Cancel"
+    },
+    "sendBtn": {
+        "message": "Send"
+    },
+    "closeModalBtn": {
+        "message": "×"
+    },
+    "fetchingContent": {
+        "message": "Fetching content..."
+    },
+    "localAiProcessing": {
+        "message": "Local AI processing..."
+    },
+    "saving": {
+        "message": "Saving..."
+    },
+    "recording": {
+        "message": "Recording..."
+    },
+    "forceRecord": {
+        "message": "Force Record"
+    },
+    "cannotRecordHttpHttps": {
+        "message": "Current page is not an HTTP/HTTPS page"
+    },
+    "failedToExtractDomain": {
+        "message": "Failed to extract domain"
+    },
+    "domainAlreadyExists": {
+        "message": "Domain \"{domain}\" already exists in the list"
+    },
+    "domainAdded": {
+        "message": "Added domain \"{domain}\""
+    },
+    "filterModeRequired": {
+        "message": "Please select a filter mode"
+    },
+    "domainFilterSaved": {
+        "message": "Domain filter settings saved"
+    },
+    "modeRequired": {
+        "message": "Please select a mode"
+    },
+    "privacySaved": {
+        "message": "Privacy settings saved"
+    },
+    "noTextToCopy": {
+        "message": "No text to copy"
+    },
+    "copiedToClipboard": {
+        "message": "Copied to clipboard"
+    },
+    "nothingToExport": {
+        "message": "Nothing to export"
+    },
+    "fileExported": {
+        "message": "File exported"
+    },
+    "textFileOnly": {
+        "message": "Only text files are supported"
+    },
+    "loadEmptyUrl": {
+        "message": "Please enter a URL"
+    },
+    "loadingUrl": {
+        "message": "Loading..."
+    },
+    "loadedFromUrl": {
+        "message": "Loaded filters from \"{url}\""
+    },
+    "fileLoaded": {
+        "message": "Loaded \"{filename}\""
+    },
+    "fileReadError": {
+        "message": "File read error"
+    },
+    "exportError": {
+        "message": "Export error"
+    },
+    "copyError": {
+        "message": "Copy error"
+    },
+    "deleteError": {
+        "message": "Delete error"
+    },
+    "reloadError": {
+        "message": "Reload error"
+    },
+    "updateError": {
+        "message": "Update error"
+    },
+    "saveError": {
+        "message": "Save error"
+    },
+    "clipboardCopyFailed": {
+        "message": "Failed to copy to clipboard"
+    },
+    "connectionError": {
+        "message": "Please refresh the page and try again"
+    },
+    "domainBlockedError": {
+        "message": "This domain is not allowed to be recorded. Do you want to record it anyway?"
+    },
+    "errorPrefix": {
+        "message": "✗ Error:"
+    },
+    "success": {
+        "message": "✓ Saved to Obsidian"
+    },
+    "cancelled": {
+        "message": "Cancelled"
+    },
+    "unknownError": {
+        "message": "Unknown error occurred"
+    },
+    "sourceUpdated": {
+        "message": "Source updated ({ruleCount} rules)"
+    },
+    "autoCloseError": {
+        "message": "Auto-close failed"
+    },
+    "testingConnection": {
+        "message": "Testing connection..."
+    },
+    "successConnected": {
+        "message": "Success! Connected to Obsidian. Settings Saved."
+    },
+    "connectionFailed": {
+        "message": "Connection Failed: {message}"
+    },
+    "acceptCertificate": {
+        "message": "Click here to accept self-signed certificate"
+    },
+    "errorProtocol": {
+        "message": "Error: Protocol must be \"http\" or \"https\"."
+    },
+    "errorPort": {
+        "message": "Error: Port must be a number between 1 and 65535."
+    },
+    "errorDuration": {
+        "message": "Error: Minimum visit duration must be a non-negative number."
+    },
+    "errorScrollDepth": {
+        "message": "Error: Minimum scroll depth must be a number between 0 and 100."
+    },
+    "domainListError": {
+        "message": "Domain list errors:"
+    },
+    "noActiveTab": {
+        "message": "No active tab found"
+    },
+    "errorColon": {
+        "message": "Error:"
+    },
+    "maskStatusCount": {
+        "message": "Masked {count} items of personal information"
+    },
+    "maskStatusDetails": {
+        "message": "Masked {details}"
+    },
+    "itemsCount": {
+        "message": "{count} items"
+    },
+    "items": {
+        "message": "items"
+    },
+    "previousMaskedItem": {
+        "message": "Previous masked item"
+    },
+    "nextMaskedItem": {
+        "message": "Next masked item"
+    },
+    "generatedBy": {
+        "message": "! Generated by Obsidian Smart History"
+    },
+    "piiCreditCard": {
+        "message": "Credit Card Number"
+    },
+    "piiMyNumber": {
+        "message": "My Number"
+    },
+    "piiBankAccount": {
+        "message": "Bank Account Number"
+    },
+    "piiEmail": {
+        "message": "E-mail"
+    },
+    "piiPhoneJp": {
+        "message": "Phone Number"
+    }
+}

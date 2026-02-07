@@ -1,0 +1,470 @@
+{
+    "extensionName": {
+        "message": "Obsidian Smart History"
+    },
+    "extensionShortName": {
+        "message": "Smart History"
+    },
+    "extensionDescription": {
+        "message": "スマートに閉じたタブをAI要約・コンテキストリンクと共にObsidianにバックアップします。"
+    },
+    "appTitle": {
+        "message": "Smart History"
+    },
+    "settings": {
+        "message": "設定"
+    },
+    "save": {
+        "message": "保存"
+    },
+    "cancel": {
+        "message": "キャンセル"
+    },
+    "close": {
+        "message": "閉じる"
+    },
+    "saveAndTest": {
+        "message": "保存 & 接続テスト"
+    },
+    "loading": {
+        "message": "読み込み中..."
+    },
+    "processing": {
+        "message": "処理中..."
+    },
+    "recordNow": {
+        "message": "📝 今すぐ記録"
+    },
+    "cannotRecordPage": {
+        "message": "記録できないページです"
+    },
+    "pageInfo": {
+        "message": "ページ情報"
+    },
+    "noTitle": {
+        "message": "タイトルなし"
+    },
+    "mainTab": {
+        "message": "一般"
+    },
+    "domainTab": {
+        "message": "ドメインフィルター"
+    },
+    "privacyTab": {
+        "message": "プライバシー"
+    },
+    "back": {
+        "message": "←"
+    },
+    "obsidianApiKey": {
+        "message": "Obsidian API Key"
+    },
+    "aiApiKey": {
+        "message": "OpenAI API Key"
+    },
+    "apiKeyPlaceholder": {
+        "message": "キーをここに貼り付けてください..."
+    },
+    "protocol": {
+        "message": "プロトコル (http/https)"
+    },
+    "port": {
+        "message": "ポート"
+    },
+    "dailyNotePath": {
+        "message": "デイリーノートのパス"
+    },
+    "dailyNotePathPlaceholder": {
+        "message": "例: 092.Daily"
+    },
+    "aiProvider": {
+        "message": "AIプロバイダー"
+    },
+    "googleGemini": {
+        "message": "Google Gemini"
+    },
+    "openaiCompatible": {
+        "message": "OpenAI互換 (Groq, etc.)"
+    },
+    "openaiCompatible2": {
+        "message": "OpenAI互換 2 (Local, etc.)"
+    },
+    "geminiApiKey": {
+        "message": "Gemini API Key"
+    },
+    "geminiApiKeyPlaceholder": {
+        "message": "Geminiキーをここに貼り付けてください..."
+    },
+    "modelName": {
+        "message": "モデル名"
+    },
+    "geminiModelPlaceholder": {
+        "message": "gemini-1.5-flash"
+    },
+    "baseUrl": {
+        "message": "Base URL"
+    },
+    "openaiBaseUrlPlaceholder": {
+        "message": "https://api.openai.com/v1"
+    },
+    "openaiApiKeyPlaceholder": {
+        "message": "sk-..."
+    },
+    "openaiModelPlaceholder": {
+        "message": "gpt-3.5-turbo"
+    },
+    "openai2BaseUrlPlaceholder": {
+        "message": "http://127.0.0.1:11434/v1"
+    },
+    "openai2ApiKeyPlaceholder": {
+        "message": "一部のローカルLLMでは省略可能"
+    },
+    "openai2ModelPlaceholder": {
+        "message": "llama3"
+    },
+    "minVisitDuration": {
+        "message": "最小滞在時間（秒）"
+    },
+    "minScrollDepth": {
+        "message": "最小スクロール深度（%）"
+    },
+    "domainFilterMode": {
+        "message": "ドメインフィルターモード"
+    },
+    "filterDisabled": {
+        "message": "無効（すべて記録）"
+    },
+    "filterWhitelist": {
+        "message": "ホワイトリスト（指定ドメインのみ記録）"
+    },
+    "filterBlacklist": {
+        "message": "ブラックリスト（指定ドメインを除外）"
+    },
+    "filterFormat": {
+        "message": "フィルター形式（併用可能）"
+    },
+    "simpleFormat": {
+        "message": "シンプル（1行1ドメイン）"
+    },
+    "ublockFormat": {
+        "message": "uBlock Origin 形式"
+    },
+    "domainList": {
+        "message": "ドメインリスト（1行1ドメイン）"
+    },
+    "domainListPlaceholder": {
+        "message": "example.com\n*.example.org\ncompany.net"
+    },
+    "wildcardHelp": {
+        "message": "ワイルドカードも使用できます（例: *.example.com）"
+    },
+    "addCurrentDomain": {
+        "message": "現在のページドメインを追加"
+    },
+    "saveDomainSettings": {
+        "message": "保存"
+    },
+    "ublockFilter": {
+        "message": "uBlockフィルター"
+    },
+    "ublockFilterPlaceholder": {
+        "message": "||example.com^\n@@||trusted.com^\n0.0.0.0 ads.example.com\n! コメント行"
+    },
+    "ublockHelp": {
+        "message": "uBlock Origin形式 または hosts形式のフィルターを貼り付け\nuBlock: ||hostname^, @@||hostname^, *, !Comments\nhosts: 0.0.0.0/127.0.0.1 hostname (#コメント対応)"
+    },
+    "loadFromFile": {
+        "message": "ファイルから読み込み (.txt)"
+    },
+    "selectFile": {
+        "message": "ファイルを選択"
+    },
+    "dropFileHere": {
+        "message": "ファイルをここにドロップ"
+    },
+    "loadFromUrl": {
+        "message": "URLから読み込み"
+    },
+    "importFromUrl": {
+        "message": "URLからインポート"
+    },
+    "urlPlaceholder": {
+        "message": "https://example.com/filters.txt"
+    },
+    "registeredFilterSources": {
+        "message": "登録済みフィルターソース"
+    },
+    "noSourcesRegistered": {
+        "message": "ソースが登録されていません"
+    },
+    "loadPreview": {
+        "message": "読み込みプレビュー"
+    },
+    "ruleCount": {
+        "message": "ルール数: {count}"
+    },
+    "exceptionCount": {
+        "message": "例外数: {count}"
+    },
+    "errorCount": {
+        "message": "エラー: {count}"
+    },
+    "export": {
+        "message": "エクスポート"
+    },
+    "copyToClipboard": {
+        "message": "クリップボードにコピー"
+    },
+    "manualInput": {
+        "message": "手動入力"
+    },
+    "rulesLabel": {
+        "message": "ルール"
+    },
+    "reload": {
+        "message": "再読込"
+    },
+    "delete": {
+        "message": "削除"
+    },
+    "privacyMode": {
+        "message": "動作モード"
+    },
+    "modeA": {
+        "message": "Mode A: Local Only"
+    },
+    "modeADesc": {
+        "message": "ページ内容を外部送信せず、ローカルAIのみで要約します。\n現在、多くのブラウザで動作しません。"
+    },
+    "modeADetail": {
+        "message": "（開発中）"
+    },
+    "modeB": {
+        "message": "Mode B: Full Pipeline"
+    },
+    "modeBDesc": {
+        "message": "ローカルAIで要約→PIIマスキング→クラウドAIで仕上げ。\n現在、多くのブラウザで動作しません。"
+    },
+    "modeBCurrently": {
+        "message": "（開発中）"
+    },
+    "modeC": {
+        "message": "Mode C: Masked Cloud"
+    },
+    "modeCDesc": {
+        "message": "PIIのみマスクしてクラウドAIへ送信。\nローカルAIが使えない環境向け。"
+    },
+    "modeCRecommended": {
+        "message": "（推奨）"
+    },
+    "modeD": {
+        "message": "Mode D: Cloud Only"
+    },
+    "modeDDesc": {
+        "message": "生のテキストをそのままクラウドAIへ送信。\n速度優先。"
+    },
+    "confirmSettings": {
+        "message": "確認設定"
+    },
+    "confirmBeforeSending": {
+        "message": "送信前にマスキング結果を確認する"
+    },
+    "savePrivacySettings": {
+        "message": "保存"
+    },
+    "confirmContent": {
+        "message": "内容の確認"
+    },
+    "confirmContentDesc": {
+        "message": "Obsidianに保存する内容を確認・編集できます。<br><span class=\"text-danger\">※ マスキングされた箇所を確認してください。</span>"
+    },
+    "cancelPreviewBtn": {
+        "message": "キャンセル"
+    },
+    "sendBtn": {
+        "message": "送信する"
+    },
+    "closeModalBtn": {
+        "message": "×"
+    },
+    "fetchingContent": {
+        "message": "コンテンツ取得中..."
+    },
+    "localAiProcessing": {
+        "message": "ローカルAI処理中..."
+    },
+    "saving": {
+        "message": "保存中..."
+    },
+    "recording": {
+        "message": "記録中..."
+    },
+    "forceRecord": {
+        "message": "強制記録"
+    },
+    "cannotRecordHttpHttps": {
+        "message": "現在のページはHTTP/HTTPSページではありません"
+    },
+    "failedToExtractDomain": {
+        "message": "ドメインを抽出できませんでした"
+    },
+    "domainAlreadyExists": {
+        "message": "ドメイン \"{domain}\" は既にリストに存在します"
+    },
+    "domainAdded": {
+        "message": "ドメイン \"{domain}\" を追加しました"
+    },
+    "filterModeRequired": {
+        "message": "フィルターモードを選択してください"
+    },
+    "domainFilterSaved": {
+        "message": "ドメインフィルター設定を保存しました"
+    },
+    "modeRequired": {
+        "message": "モードを選択してください"
+    },
+    "privacySaved": {
+        "message": "プライバシー設定を保存しました"
+    },
+    "noTextToCopy": {
+        "message": "コピーするテキストがありません"
+    },
+    "copiedToClipboard": {
+        "message": "クリップボードにコピーしました"
+    },
+    "nothingToExport": {
+        "message": "エクスポートするデータがありません"
+    },
+    "fileExported": {
+        "message": "ファイルをエクスポートしました"
+    },
+    "textFileOnly": {
+        "message": "テキストファイルのみ対応しています"
+    },
+    "loadEmptyUrl": {
+        "message": "URLを入力してください"
+    },
+    "loadingUrl": {
+        "message": "読み込み中..."
+    },
+    "loadedFromUrl": {
+        "message": "\"{url}\" からフィルターを読み込みました"
+    },
+    "fileLoaded": {
+        "message": "\"{filename}\" を読み込みました"
+    },
+    "fileReadError": {
+        "message": "ファイル読み込みエラー"
+    },
+    "exportError": {
+        "message": "エクスポートエラー"
+    },
+    "copyError": {
+        "message": "コピーエラー"
+    },
+    "deleteError": {
+        "message": "削除エラー"
+    },
+    "reloadError": {
+        "message": "更新エラー"
+    },
+    "saveError": {
+        "message": "保存エラー"
+    },
+    "clipboardCopyFailed": {
+        "message": "クリップボードへのコピーに失敗しました"
+    },
+    "connectionError": {
+        "message": "ページを再読み込みしてから再度お試しください"
+    },
+    "domainBlockedError": {
+        "message": "このドメインは記録が許可されていませんが特別に記録しますか？"
+    },
+    "errorPrefix": {
+        "message": "✗ エラー:"
+    },
+    "success": {
+        "message": "✓ Obsidianに保存しました"
+    },
+    "cancelled": {
+        "message": "キャンセルしました"
+    },
+    "unknownError": {
+        "message": "不明なエラーが発生しました"
+    },
+    "sourceUpdated": {
+        "message": "ソースを更新しました（{ruleCount}ルール）"
+    },
+    "autoCloseError": {
+        "message": "自動クローズに失敗しました"
+    },
+    "testingConnection": {
+        "message": "接続テスト中..."
+    },
+    "successConnected": {
+        "message": "成功！Obsidianに接続しました。設定を保存しました。"
+    },
+    "connectionFailed": {
+        "message": "接続失敗: {message}"
+    },
+    "acceptCertificate": {
+        "message": "ここをクリックして自己署名証明書を承認"
+    },
+    "errorProtocol": {
+        "message": "エラー: プロトコルは\"http\"または\"https\"である必要があります。"
+    },
+    "errorPort": {
+        "message": "エラー: ポートは1から65535の間の数値である必要があります。"
+    },
+    "errorDuration": {
+        "message": "エラー: 最小滞在時間は0以上の数値である必要があります。"
+    },
+    "errorScrollDepth": {
+        "message": "エラー: 最小スクロール深度は0から100の間の数値である必要があります。"
+    },
+    "domainListError": {
+        "message": "ドメインリストのエラー:"
+    },
+    "noActiveTab": {
+        "message": "アクティブなタブが見つかりません"
+    },
+    "errorColon": {
+        "message": "エラー:"
+    },
+    "maskStatusCount": {
+        "message": "{count}件の個人情報をマスクしました"
+    },
+    "maskStatusDetails": {
+        "message": "{details}をマスクしました"
+    },
+    "itemsCount": {
+        "message": "{count}件"
+    },
+    "items": {
+        "message": "件"
+    },
+    "previousMaskedItem": {
+        "message": "前のマスク箇所"
+    },
+    "nextMaskedItem": {
+        "message": "次のマスク箇所"
+    },
+    "generatedBy": {
+        "message": "! Generated by Obsidian Smart History"
+    },
+    "piiCreditCard": {
+        "message": "クレジットカード番号"
+    },
+    "piiMyNumber": {
+        "message": "マイナンバー"
+    },
+    "piiBankAccount": {
+        "message": "銀行口座番号"
+    },
+    "piiEmail": {
+        "message": "Eメール"
+    },
+    "piiPhoneJp": {
+        "message": "電話番号"
+    }
+}

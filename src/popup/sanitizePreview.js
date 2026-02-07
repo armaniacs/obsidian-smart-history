@@ -8,6 +8,8 @@
  * 🟢 青信号: Refactorフェーズ対応 - 定数化・JSDoc充実化・関数分割実装
  */
 
+import { getMessage } from './i18n.js';
+
 const DOM_IDS = {
   MODAL: 'confirmationModal',
   PREVIEW_CONTENT: 'previewContent',
@@ -19,11 +21,11 @@ const CLASS_NAMES = {
 };
 
 const PII_TYPE_LABELS = {
-  creditCard: 'クレジットカード番号',
-  myNumber: 'マイナンバー',
-  bankAccount: '銀行口座番号',
-  email: 'E-mail',
-  phoneJp: '電話番号',
+  creditCard: () => getMessage('piiCreditCard'),
+  myNumber: () => getMessage('piiMyNumber'),
+  bankAccount: () => getMessage('piiBankAccount'),
+  email: () => getMessage('piiEmail'),
+  phoneJp: () => getMessage('piiPhoneJp'),
 };
 
 let resolvePromise = null;
@@ -182,21 +184,23 @@ function handleAction(confirmed) {
  */
 function buildMaskStatusText(maskedItems, maskedCount) {
   if (!Array.isArray(maskedItems) || maskedItems.length === 0) {
-    return `${maskedCount}件の個人情報をマスクしました`;
+    return getMessage('maskStatusCount', { count: maskedCount });
   }
 
   // 種別ごとに件数を集計
   const typeCounts = {};
   for (const item of maskedItems) {
-    const label = PII_TYPE_LABELS[item.type] || item.type;
+    const labelFunction = PII_TYPE_LABELS[item.type];
+    const label = labelFunction ? labelFunction() : item.type;
     typeCounts[label] = (typeCounts[label] || 0) + 1;
   }
 
+  const itemsLabel = getMessage('items');
   const details = Object.entries(typeCounts)
-    .map(([label, count]) => `${label}${count}件`)
-    .join('、');
+    .map(([label, count]) => `${label}${getMessage('itemsCount', { count })}`)
+    .join(getMessage('items'));
 
-  return `${details}をマスクしました`;
+  return getMessage('maskStatusDetails', { details });
 }
 
 /**
@@ -262,14 +266,14 @@ function buildMaskNavigation(container) {
     const prevBtn = document.createElement('button');
     prevBtn.id = 'maskNavPrev';
     prevBtn.textContent = '▲';
-    prevBtn.title = '前のマスク箇所';
+    prevBtn.title = getMessage('previousMaskedItem');
     prevBtn.style.cssText = 'padding:2px 8px;font-size:11px;cursor:pointer;background:#f5f5f5;border:1px solid #ccc;border-radius:3px;';
     prevBtn.addEventListener('click', jumpToPrevMasked);
 
     const nextBtn = document.createElement('button');
     nextBtn.id = 'maskNavNext';
     nextBtn.textContent = '▼';
-    nextBtn.title = '次のマスク箇所';
+    nextBtn.title = getMessage('nextMaskedItem');
     nextBtn.style.cssText = 'padding:2px 8px;font-size:11px;cursor:pointer;background:#f5f5f5;border:1px solid #ccc;border-radius:3px;';
     nextBtn.addEventListener('click', jumpToNextMasked);
 

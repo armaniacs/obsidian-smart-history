@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.3.3] - 2026-02-07
+### Added
+- **i18n Support**: Added internationalization support with English and Japanese translations.
+  - Implemented `i18n.js` for message retrieval and UI translation.
+  - Added `_locales` directory with `en` and `ja` message files.
+
+### Changed
+- **UI Label Fix**: Corrected "Obsidian API Key" label to "OpenAI API Key" in AI settings.
+- **UI Refactoring**: Updated `popup.html`, `popup.js`, and `main.js` to use localized strings instead of hardcoded text.
+
+### Fixed
+- **Test Updates**: Updated tests to support i18n and fix failing tests involved in the refactor.
+
 ## [2.3.2] - 2026-02-07
 ### Fixed
 - テスト分離问题を修正: sourceManager.test.jsとublockParser-cache.test.jsのテスト間で状態が共有される問題を解決
