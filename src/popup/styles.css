@@ -46,6 +46,11 @@ h2 {
   background: #e0e0e0;
 }
 
+.icon-btn:focus {
+  outline: 2px solid #4CAF50;
+  outline-offset: 2px;
+}
+
 /* =============================================================================
    Current Page Display
    ============================================================================= */
@@ -96,6 +101,11 @@ h2 {
   background: #45a049;
 }
 
+.primary-btn:focus {
+  outline: 2px solid #4CAF50;
+  outline-offset: 2px;
+}
+
 .primary-btn:disabled {
   background: #cccccc;
   cursor: not-allowed;
@@ -117,6 +127,11 @@ h2 {
   background: #5a6268;
 }
 
+.secondary-btn:focus {
+  outline: 2px solid #6c757d;
+  outline-offset: 2px;
+}
+
 .alert-btn {
   width: 100%;
   padding: 10px;
@@ -132,6 +147,11 @@ h2 {
 
 .alert-btn:hover {
   background: #c9302c;
+}
+
+.alert-btn:focus {
+  outline: 2px solid #d9534f;
+  outline-offset: 2px;
 }
 
 .alert-btn:disabled {
@@ -152,6 +172,11 @@ button:not(.icon-btn):not(.primary-btn):not(.secondary-btn):not(.alert-btn) {
 
 button:not(.icon-btn):not(.primary-btn):not(.secondary-btn):hover {
   background: #602a8c;
+}
+
+button:not(.icon-btn):not(.primary-btn):not(.secondary-btn):focus {
+  outline: 2px solid #7b3cad;
+  outline-offset: 2px;
 }
 
 /* =============================================================================
@@ -219,6 +244,17 @@ select {
   resize: vertical;
 }
 
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="url"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #4CAF50;
+  outline-offset: 2px;
+  border-color: #4CAF50;
+}
+
 .help-text {
   font-size: 11px;
   color: #666;
@@ -243,6 +279,11 @@ select {
 
 .radio-group input[type="radio"] {
   margin-right: 8px;
+}
+
+.radio-group input[type="radio"]:focus {
+  outline: 2px solid #4CAF50;
+  outline-offset: 2px;
 }
 
 .radio-group label {
@@ -277,6 +318,12 @@ select {
 }
 
 .tab-btn:hover {
+  background: #f5f5f5;
+}
+
+.tab-btn:focus {
+  outline: 2px solid #7b3cad;
+  outline-offset: -2px;
   background: #f5f5f5;
 }
 
@@ -351,6 +398,11 @@ select {
   cursor: pointer;
 }
 
+.btn-cancel:focus {
+  outline: 2px solid #999;
+  outline-offset: 2px;
+}
+
 .btn-confirm {
   padding: 8px 16px;
   background: #4CAF50;
@@ -359,6 +411,11 @@ select {
   border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
+}
+
+.btn-confirm:focus {
+  outline: 2px solid #4CAF50;
+  outline-offset: 2px;
 }
 
 .preview-textarea {
@@ -486,6 +543,16 @@ select {
 .source-item .reload-btn:disabled {
   background-color: #90CAF9;
   cursor: wait;
+}
+
+.source-item .delete-btn:focus {
+  outline: 2px solid #d32f2f;
+  outline-offset: 2px;
+}
+
+.source-item .reload-btn:focus {
+  outline: 2px solid #1976D2;
+  outline-offset: 2px;
 }
 
 .no-sources {

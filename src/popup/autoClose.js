@@ -1,6 +1,7 @@
 // Auto-close functionality after successful recording
 
 import { getScreenState } from './screenState.js';
+import { getMessage } from './i18n.js';
 
 /**
  * 【定数定義群】: タイマー関連の各種設定値 🟢
@@ -100,37 +101,30 @@ export function clearAutoCloseTimer() {
 }
 
 /**
- * 【機能概要】: カウントダウン表示を開始
- * 【実装方針】: 1000ms間隔でカウントダウンを更新（3...2...1...自動閉じる）
- * 【設計上の考慮】:
- *   - カウント終了時にインターバルIDをnullに戻す
- *   - 表示内容を明確に定義し、ユーザー体験を向上
- * 【テスト対応】: テストケース「カウントダウン表示が正しく更新される」
- * 🟢 要件定義（tdd-testcases.md TC-002、カウントダウン表示）
- * @param {HTMLElement} statusDiv ステータス表示用のDOM要素
+ * Show countdown display
+ * @param {HTMLElement} statusDiv Status display DOM element
  */
 export function showCountdown(statusDiv) {
-  // 【変数初期化】: カウントダウン値を開始値に設定 🟢
+  // Initialize countdown value to start value
   let count = COUNTDOWN_START_VALUE;
 
-  // 【初期表示】: 最初のカウントダウン値を表示 🟢
-  statusDiv.textContent = `${count}...`;
+  // Show initial countdown value
+  statusDiv.textContent = getMessage('countdownNumber', { count });
 
-  // 【カウントダウン開始】: 1000ms間隔でカウントダウンを更新 🟢
+  // Start countdown update at 1000ms intervals
   countdownIntervalId = setInterval(() => {
     count--;
 
     if (count > 0) {
-      // 【結果構造】: まだカウント中なら数字を表示 🟢
-      statusDiv.textContent = `${count}...`;
+      // Still counting down, show number
+      statusDiv.textContent = getMessage('countdownNumber', { count });
     } else {
-      // 【結果構造】: カウントダウン終了時のメッセージ 🟢
-      statusDiv.textContent = '自動閉じる';
+      // Countdown complete message
+      statusDiv.textContent = getMessage('autoClosing');
 
-      // 【インターバル終了】: 不要なインターバルを解放 🟢
-      // 【メモリ管理】: setIntervalをクリアし、メモリリークを防止
+      // End interval to prevent memory leaks
       clearInterval(countdownIntervalId);
-      countdownIntervalId = null; // 【状態リセット】: インターバルIDを初期値に戻す
+      countdownIntervalId = null; // Reset interval ID to initial value
     }
   }, COUNTDOWN_UPDATE_INTERVAL_MS);
 }

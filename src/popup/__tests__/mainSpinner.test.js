@@ -7,6 +7,17 @@
 
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { jest } from '@jest/globals';
+
+// Mock i18n before importing spinner.js
+jest.mock('../i18n.js', () => ({
+  getMessage: jest.fn((key, substitutions) => {
+    if (key === 'processing') return '処理中...';
+    if (key === 'countdownNumber' && substitutions?.count !== undefined) return `${substitutions.count}...`;
+    if (key === 'autoClosing') return '自動閉じる';
+    return key;
+  })
+}));
+
 import { showSpinner, hideSpinner } from '../spinner.js';
 
 describe('ローディングスピナー制御', () => {
@@ -31,6 +42,9 @@ describe('ローディングスピナー制御', () => {
         <span class="spinner-text"></span>
       </div>
     `;
+
+    // Clear all mocks before each test
+    jest.clearAllMocks();
 
     // 【モックキャプチャ】: console.warnの出力をキャプチャするモックを設定
     jest.spyOn(console, 'warn').mockImplementation(() => {});

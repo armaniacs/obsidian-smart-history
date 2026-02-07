@@ -472,5 +472,11 @@
     },
     "piiPhoneJp": {
         "message": "Phone Number"
+    },
+    "countdownNumber": {
+        "message": "{count}..."
+    },
+    "autoClosing": {
+        "message": "Auto-closing..."
     }
 }

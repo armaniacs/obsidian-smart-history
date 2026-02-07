@@ -1,28 +1,31 @@
 /**
- * ローディングスピナー制御関数
+ * Loading Spinner Control Functions
  *
- * UF-403 ローディングスピナー追加機能
+ * UF-403 Loading Spinner Feature
  */
 
+import { getMessage } from './i18n.js';
+
 /**
- * ローディングスピナーを表示する
- * @param {string} text - スピナーの横に表示するテキスト（省略可能、デフォルト: '処理中...'）
- * 🟢 要件定義に基づき実装（loading-spinner-requirements.md 186-196行目）
+ * Show loading spinner
+ * @param {string} text - Text to display next to spinner (optional, default: 'Processing...')
+ * 🟢 Implemented based on requirements (loading-spinner-requirements.md 186-196 lines)
  */
-export function showSpinner(text = '処理中...') {
+export function showSpinner(text) {
   const spinner = document.getElementById('loadingSpinner');
   if (!spinner) {
     console.warn('loadingSpinner element not found');
     return;
   }
   const spinnerText = spinner.querySelector('.spinner-text');
-  spinnerText.textContent = text;
+  // Use provided text or default to "Processing..." from i18n
+  spinnerText.textContent = text || getMessage('processing');
   spinner.style.display = 'flex';
 }
 
 /**
- * ローディングスピナーを非表示にする
- * 🟢 要件定義に基づき実装（loading-spinner-requirements.md 201-204行目）
+ * Hide loading spinner
+ * 🟢 Implemented based on requirements (loading-spinner-requirements.md 201-204 lines)
  */
 export function hideSpinner() {
   const spinner = document.getElementById('loadingSpinner');

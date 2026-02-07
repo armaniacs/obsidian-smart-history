@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Security
+- **キーボードアクセシビリティの強化**: 全てのフォーカス可能要素に視覚的なフォーカスインジケーターを追加
+  - icon-btn, primary-btn, secondary-btn, alert-btn, input, select, textarea等に:focusスタイルを追加
+  - WCAG準拠の視覚的フィードバックを実現
+- **モーダルのアクセシビリティ向上**: 確認モーダルにスクリーンリーダー対応のARIA属性を追加
+  - `role="dialog"` と `aria-modal="true"` を追加
+  - `aria-labelledby` でタイトル要素と関連付け
+
+### i18n
+- **ハードコード文字列のi18n化**: 日本語固定テキストを国際化システムに置換
+  - `spinner.js` のデフォルト引数 `showSpinner(text = '処理中...')` を `getMessage('processing')` に置換
+  - `autoClose.js` のカウントダウンメッセージを `getMessage('countdownNumber', { count })` に置換
+  - `autoClose.js` の自動閉じるメッセージを `getMessage('autoClosing')` に置換
+- **翻訳ファイルの追加**: 新しいi18nキーの翻訳を追加
+  - `countdownNumber`: "{count}..." (en/ja)
+  - `autoClosing`: "Auto-closing..." / "自動閉じる..."
+
+### Tests
+- **i18nモックの追加**: テスト環境でi18nメッセージのモックを追加
+  - `mainSpinner.test.js` に `getMessage('processing')` のモック設定
+  - `autoClose.test.js` に `getMessage('countdownNumber')` と `getMessage('autoClosing')` のモック設定
+
 ## [2.4.0-rc2] - 2026-02-08
 
 ### Security
