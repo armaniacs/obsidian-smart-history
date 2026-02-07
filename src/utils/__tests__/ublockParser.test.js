@@ -251,6 +251,48 @@ describe('ublockParser', () => {
     });
   });
 
+
+
+  describe('parseUblockFilterLine - hosts形式拡張', () => {
+    test('IPv6アドレスを含むhosts形式の行をパースできる', () => {
+      // 【テスト目的】: IPv6対応の確認
+      // 【テストデータ準備】: IPv6アドレス
+      const input = '::1 localhost';
+      const result = parseUblockFilterLine(input);
+
+      // 【結果検証】: IGNOREタイプが返ることを確認（localhostなので）
+      expect(result).not.toBeNull();
+      expect(result.type).toBe('ignore');
+
+      // ブロックルールのIPv6テスト
+      const inputBlock = '::1 example.com';
+      const resultBlock = parseUblockFilterLine(inputBlock);
+      expect(resultBlock).not.toBeNull();
+      expect(resultBlock.type).toBe('block');
+      expect(resultBlock.domain).toBe('example.com');
+    });
+
+    test('ブロードキャストアドレスを含むhosts形式の行をパースできる', () => {
+      // 【テスト目的】: ブロードキャストアドレス対応の確認
+      const input = '255.255.255.255 broadcasthost';
+      const result = parseUblockFilterLine(input);
+
+      // 【結果検証】: IGNOREタイプが返ることを確認
+      expect(result).not.toBeNull();
+      expect(result.type).toBe('ignore');
+    });
+
+    test('localhostはIGNOREタイプとして扱われる', () => {
+      // 【テスト目的】: localhostのIGNORE扱い確認
+      const input = '127.0.0.1 localhost';
+      const result = parseUblockFilterLine(input);
+
+      // 【結果検証】: IGNOREタイプが返ることを確認
+      expect(result).not.toBeNull();
+      expect(result.type).toBe('ignore');
+    });
+  });
+
   describe('parseUblockFilterList', () => {
     test('複数行の一括パース（正常系）', () => {
       // 【テスト目的】: 複数行パースとルール分類機能の確認
@@ -409,6 +451,38 @@ describe('ublockParser', () => {
 
       // 【結果検証】: ルール行としてfalseが返されることを確認
       expect(result).toBe(false); // 【確認内容】: !で始まらない行がfalseを返すこと 🟢
+    });
+
+    test('#で始まる行はコメント行と判定される（hosts形式）', () => {
+      // 【テスト目的】: hosts形式のコメント行対応の確認
+      // 【テスト内容】: #プレフィックスで始まる行を正しくコメント行として判定できることを確認
+      // 【期待される動作】: "# Comment"を入力するとtrueが返される
+      // 🟢 信頼性レベル: hosts形式対応
+
+      // 【テストデータ準備】: hosts形式のコメント行を用意
+      const input = '# This is a hosts comment';
+
+      // 【実際の処理実行】: isCommentLine関数を呼び出し
+      const result = isCommentLine(input);
+
+      // 【結果検証】: コメント行としてtrueが返されることを確認
+      expect(result).toBe(true); // 【確認内容】: #で始まる行がtrueを返すこと 🟢
+    });
+
+    test('空白を含む#で始まる行はコメント行と判定される', () => {
+      // 【テスト目的】: インデント付きコメント行の確認
+      // 【テスト内容】: 先頭に空白があり、その後に#が続く行をコメント行として判定できることを確認
+      // 【期待される動作】: "  # Comment"を入力するとtrueが返される
+      // 🟢 信頼性レベル: インデント対応
+
+      // 【テストデータ準備】: インデント付きコメント行を用意
+      const input = '  # Indented comment';
+
+      // 【実際の処理実行】: isCommentLine関数を呼び出し
+      const result = isCommentLine(input);
+
+      // 【結果検証】: コメント行としてtrueが返されることを確認
+      expect(result).toBe(true); // 【確認内容】: インデント付き#行がtrueを返すこと 🟢
     });
   });
 

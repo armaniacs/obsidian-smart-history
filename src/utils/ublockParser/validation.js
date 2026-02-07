@@ -72,8 +72,10 @@ export function isCommentLine(line) {
   if (!isValidString(line)) {
     return false;
   }
-  // 【パターンマッチング】: `!` で始まる行をコメント行と判定
-  return PATTERNS.COMMENT_PREFIX.test(line);
+  // 【パターンマッチング】: `!` または `#` で始まる行をコメント行と判定
+  // インデントがあってもコメントとして認識するためにtrimする
+  const trimmedLine = line.trim();
+  return PATTERNS.COMMENT_PREFIX.test(trimmedLine) || PATTERNS.HOSTS_COMMENT_PREFIX.test(trimmedLine);
 }
 
 /**

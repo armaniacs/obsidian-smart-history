@@ -16,28 +16,27 @@ jest.mock('../../utils/logger.js', () => ({
 describe('fetchFromUrl - Error Handling', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    global.fetch = jest.fn();
+    global.chrome = {
+      runtime: {
+        sendMessage: jest.fn()
+      }
+    };
   });
 
   test('HTTPエラーを適切に処理', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: false,
-      status: 404,
-      statusText: 'Not Found',
-      headers: { get: () => 'text/plain' },
-      text: () => Promise.resolve('')
+    global.chrome.runtime.sendMessage.mockResolvedValueOnce({
+      success: false,
+      error: 'HTTP 404: Not Found'
     });
 
     await expect(fetchFromUrl('https://example.com/filters.txt')).rejects.toThrow('HTTP 404');
   });
 
   test('空のレスポンスを検出', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: { get: () => 'text/plain' },
-      text: () => Promise.resolve('  ')
+    global.chrome.runtime.sendMessage.mockResolvedValueOnce({
+      success: true,
+      data: '  ',
+      contentType: 'text/plain'
     });
 
     await expect(fetchFromUrl('https://example.com/empty.txt')).rejects.toThrow('取得されたテキストが空です');
@@ -64,12 +63,10 @@ describe('fetchFromUrl - Error Handling', () => {
   });
 
   test('有効なURLとContent-Type for text/plain', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: { get: () => 'text/plain' },
-      text: () => Promise.resolve('example.com')
+    global.chrome.runtime.sendMessage.mockResolvedValueOnce({
+      success: true,
+      data: 'example.com',
+      contentType: 'text/plain'
     });
 
     const result = await fetchFromUrl('https://example.com/filters.txt');
@@ -77,12 +74,10 @@ describe('fetchFromUrl - Error Handling', () => {
   });
 
   test('有効なURLとContent-Type for text/html', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: { get: () => 'text/html' },
-      text: () => Promise.resolve('example.com')
+    global.chrome.runtime.sendMessage.mockResolvedValueOnce({
+      success: true,
+      data: 'example.com',
+      contentType: 'text/html'
     });
 
     const result = await fetchFromUrl('https://example.com/filters.html');
@@ -90,12 +85,10 @@ describe('fetchFromUrl - Error Handling', () => {
   });
 
   test('有効なURLとContent-Type for application/octet-stream', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: { get: () => 'application/octet-stream' },
-      text: () => Promise.resolve('example.com')
+    global.chrome.runtime.sendMessage.mockResolvedValueOnce({
+      success: true,
+      data: 'example.com',
+      contentType: 'application/octet-stream'
     });
 
     const result = await fetchFromUrl('https://example.com/filters.dat');
@@ -105,12 +98,10 @@ describe('fetchFromUrl - Error Handling', () => {
   test('非テキストContent-Typeで警告ログを出力', async () => {
     const { addLog, LogType } = require('../../utils/logger.js');
 
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: { get: () => 'application/json' },
-      text: () => Promise.resolve('{"domain":"example.com"}')
+    global.chrome.runtime.sendMessage.mockResolvedValueOnce({
+      success: true,
+      data: '{"domain":"example.com"}',
+      contentType: 'application/json'
     });
 
     const result = await fetchFromUrl('https://example.com/filters.json');
@@ -123,12 +114,10 @@ describe('fetchFromUrl - Error Handling', () => {
   });
 
   test('Content-Typeがnullの場合でも警告を出さない', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: { get: () => null },
-      text: () => Promise.resolve('example.com')
+    global.chrome.runtime.sendMessage.mockResolvedValueOnce({
+      success: true,
+      data: 'example.com',
+      contentType: null
     });
 
     const result = await fetchFromUrl('https://example.com/filters.txt');
@@ -136,35 +125,28 @@ describe('fetchFromUrl - Error Handling', () => {
   });
 
   test('HTTP 500エラーを適切に処理', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      statusText: 'Internal Server Error',
-      headers: { get: () => 'text/plain' },
-      text: () => Promise.resolve('')
+    global.chrome.runtime.sendMessage.mockResolvedValueOnce({
+      success: false,
+      error: 'HTTP 500: Internal Server Error'
     });
 
     await expect(fetchFromUrl('https://example.com/filters.txt')).rejects.toThrow('HTTP 500');
   });
 
   test('HTTP 403エラーを適切に処理', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: false,
-      status: 403,
-      statusText: 'Forbidden',
-      headers: { get: () => 'text/plain' },
-      text: () => Promise.resolve('')
+    global.chrome.runtime.sendMessage.mockResolvedValueOnce({
+      success: false,
+      error: 'HTTP 403: Forbidden'
     });
 
     await expect(fetchFromUrl('https://example.com/filters.txt')).rejects.toThrow('HTTP 403');
   });
 
   test('ネットワークエラーを適切に処理', async () => {
-    const networkError = new TypeError('Failed to fetch');
-    networkError.name = 'TypeError';
-    networkError.message = 'Failed to fetch';
-
-    global.fetch.mockRejectedValueOnce(networkError);
+    global.chrome.runtime.sendMessage.mockResolvedValueOnce({
+      success: false,
+      error: 'Failed to fetch'
+    });
 
     await expect(fetchFromUrl('https://example.com/filters.txt')).rejects.toThrow(
       'ネットワークエラーが発生しました。インターネット接続を確認してください。'

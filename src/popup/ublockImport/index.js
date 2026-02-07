@@ -276,10 +276,30 @@ async function handleReloadSource(index) {
 }
 
 /**
- * uBlock設定の保存DOMハンドラ
+ * uBlock設定の保存メインハンドラ
+ * UIの状態を確認し、必要に応じて実際の保存処理を呼び出す
  */
-async function saveUblockSettingsDOM() {
-  const text = document.getElementById('uBlockFilterInput').value;
+async function handleSaveUblockSettings() {
+  const checkbox = document.getElementById('ublockFormatEnabled');
+  const ublockEnabled = checkbox ? checkbox.checked : false;
+
+  // 1. uBlock形式が無効な場合
+  if (!ublockEnabled) {
+    await saveSettings({ [StorageKeys.UBLOCK_FORMAT_ENABLED]: false });
+    return;
+  }
+
+  // 2. uBlock形式が有効だが入力が空の場合
+  const textarea = document.getElementById('uBlockFilterInput');
+  const text = textarea ? textarea.value.trim() : '';
+
+  if (!text) {
+    // 入力が空でも「有効化フラグ」だけは保存する（既存のソースは維持される）
+    await saveSettings({ [StorageKeys.UBLOCK_FORMAT_ENABLED]: true });
+    return;
+  }
+
+  // 3. 入力がある場合、新規ソースとして保存/更新
   try {
     const { sources, action, ruleCount } = await saveUblockSettings(text, currentSourceUrl);
 
@@ -294,8 +314,10 @@ async function saveUblockSettingsDOM() {
     currentSourceUrl = null;
   } catch (error) {
     // エラーメッセージは saveUblockSettings 内で表示済み
+    throw error;
   }
 }
+
 
 // ============================================================================
 // ドラッグ&ドロップ機能
@@ -395,10 +417,10 @@ export {
   hidePreview,
   clearInput,
   loadAndDisplaySources,
-  deleteSource,
   reloadSource,
-  saveUblockSettings
+  saveUblockSettings,
+  handleSaveUblockSettings
 };
 
 // DOM保存用ハンドラーをグローバルに公開
-window.saveUblockSettingsDOM = saveUblockSettingsDOM;
+window.handleSaveUblockSettings = handleSaveUblockSettings;

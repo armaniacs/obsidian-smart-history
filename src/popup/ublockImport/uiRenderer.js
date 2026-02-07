@@ -157,9 +157,13 @@ export function updatePreviewUI(result) {
 
     const errorDetailsElement = document.getElementById('uBlockErrorDetails');
     if (Array.isArray(result.errorDetails)) {
-      const errorTexts = result.errorDetails.map(e =>
-        typeof e === 'string' ? e : `${e.lineNumber}: ${e.message}`
-      );
+      const errorTexts = result.errorDetails.map(e => {
+        if (typeof e === 'string') return e;
+        // エラーオブジェクトの場合、行番号、メッセージ、実際の行内容を表示
+        const lineInfo = `${e.lineNumber}: ${e.message}`;
+        const lineContent = e.line ? `\n  → ${e.line}` : '';
+        return lineInfo + lineContent;
+      });
       errorDetailsElement.textContent = errorTexts.join('\n');
     } else {
       errorDetailsElement.textContent = result.errorDetails;

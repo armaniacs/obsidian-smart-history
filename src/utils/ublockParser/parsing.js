@@ -96,10 +96,32 @@ function parseHostsLine(rawLine, hostsPart) {
   // 複数のスペースで区切られている場合は最初のドメインのみ使用
   domain = domain.split(/\s+/)[0];
 
-  // ドメインが空または localhost の場合はスキップ
-  if (!domain || domain === 'localhost' || domain === 'local' ||
-      domain === 'localhost.localdomain' || domain === 'broadcasthost') {
+  // ドメインが空の場合はスキップ（nullを返す＝エラー扱いではなく、無視すべき行として扱うための準備）
+  if (!domain) {
     return null;
+  }
+
+  // 無視すべきドメイン（localhostなど）はIGNOREタイプとして返す 🟢
+  // これらはエラーではなく、意図的に除外すべきエントリ
+  const IGNORED_DOMAINS = [
+    'localhost',
+    'local',
+    'localhost.localdomain',
+    'broadcasthost',
+    'ip6-localhost',
+    'ip6-loopback',
+    'ip6-localnet',
+    'ip6-mcastprefix',
+    'ip6-allnodes',
+    'ip6-allrouters',
+    'ip6-allhosts'
+  ];
+
+  if (IGNORED_DOMAINS.includes(domain)) {
+    return {
+      type: RULE_TYPES.IGNORE,
+      originalLine: rawLine
+    };
   }
 
   // ドメイン検証

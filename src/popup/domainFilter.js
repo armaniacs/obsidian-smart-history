@@ -5,7 +5,7 @@
 
 import { StorageKeys, saveSettings, getSettings } from '../utils/storage.js';
 import { extractDomain, parseDomainList, validateDomainList } from '../utils/domainUtils.js';
-import { init as initUblockImport, saveUblockSettings } from './ublockImport.js';
+import { init as initUblockImport, handleSaveUblockSettings } from './ublockImport.js';
 import { addLog, LogType } from '../utils/logger.js';
 import { getCurrentTab, isRecordable } from './tabUtils.js';
 import { showStatus } from './settingsUiHelper.js';
@@ -221,13 +221,9 @@ export async function handleSaveDomainSettings() {
         // シンプル形式の保存
         await saveSimpleFormatSettings();
 
-        // uBlock形式の保存 (有効な場合のみパースして保存されるが、有効化フラグだけは更新する)
-        const ublockEnabled = ublockFormatEnabledCheckbox.checked;
-        if (ublockEnabled) {
-            await saveUblockSettings();
-        } else {
-            await saveSettings({ [StorageKeys.UBLOCK_FORMAT_ENABLED]: false });
-        }
+        // uBlock形式の保存
+        await handleSaveUblockSettings();
+
     } catch (error) {
         addLog(LogType.ERROR, 'Error saving domain settings', { error: error.message });
         showStatus('domainStatus', `${getMessage('saveError')}: ${error.message}`, 'error');

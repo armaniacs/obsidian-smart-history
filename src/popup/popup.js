@@ -145,8 +145,38 @@ saveBtn.addEventListener('click', async () => {
 });
 
 // Initialize (ES6 modules are deferred, so DOM is already ready)
-initNavigation();
-initDomainFilter();
-initPrivacySettings();
-load();
+console.log('[Popup] Starting initialization...');
 
+try {
+    console.log('[Popup] Calling initNavigation...');
+    initNavigation();
+    console.log('[Popup] initNavigation complete');
+} catch (error) {
+    console.error('[Popup] Error in initNavigation:', error);
+}
+
+try {
+    console.log('[Popup] Calling initDomainFilter...');
+    initDomainFilter();
+    console.log('[Popup] initDomainFilter complete');
+} catch (error) {
+    console.error('[Popup] Error in initDomainFilter:', error);
+}
+
+try {
+    console.log('[Popup] Calling initPrivacySettings...');
+    initPrivacySettings();
+    console.log('[Popup] initPrivacySettings complete');
+} catch (error) {
+    console.error('[Popup] Error in initPrivacySettings:', error);
+}
+
+try {
+    console.log('[Popup] Calling load...');
+    load();
+    console.log('[Popup] load complete');
+} catch (error) {
+    console.error('[Popup] Error in load:', error);
+}
+
+console.log('[Popup] Initialization sequence complete');

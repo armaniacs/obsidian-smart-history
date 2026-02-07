@@ -65,6 +65,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return result;
     }
 
+    // Fetch URL Content (CORS Bypass for Popup)
+    if (message.type === 'FETCH_URL') {
+      try {
+        const response = await fetch(message.payload.url, {
+          method: 'GET',
+          cache: 'no-cache'
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const contentType = response.headers.get('content-type');
+        const text = await response.text();
+
+        return { success: true, data: text, contentType };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    }
+
     // Manual Record Processing & Preview
     if (message.type === 'MANUAL_RECORD' || message.type === 'PREVIEW_RECORD') {
       return await recordingLogic.record({

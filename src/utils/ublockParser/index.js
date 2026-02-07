@@ -158,6 +158,8 @@ export function parseUblockFilterListWithErrors(text) {
           blockRules.push(rule);
         } else if (rule.type === RULE_TYPES.EXCEPTION) {
           exceptionRules.push(rule);
+        } else if (rule.type === RULE_TYPES.IGNORE) {
+          // 【無視ルール】: 意図的に無視されたルールは何もしない 🟢
         }
       } else {
         // 【無効なルールをエラーとして収集】🟢
@@ -264,6 +266,8 @@ export function parseUblockFilterList(text) {
         blockRules.push(rule);
       } else if (rule.type === RULE_TYPES.EXCEPTION) {
         exceptionRules.push(rule);
+      } else if (rule.type === RULE_TYPES.IGNORE) {
+        // 【無視ルール】: 意図的に無視されたルールは何もしない 🟢
       }
     }
   }

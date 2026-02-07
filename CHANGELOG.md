@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.4.0-rc2] - 2026-02-08
+
 ### Security
 - **URL検証の強化 (`fetch.js` 新規作成)**: SSRF攻撃防止のためのURL検証機能を追加
   - プロトコル検証（http://、https://のみ許可）
@@ -180,7 +182,7 @@ All notable changes to this project will be documented in this file.
   - `domainFilter.test.js`: 5テスト (import verification, function existence check, toggleFormatUI)
   - `ublockImport.test.js`: 46テスト (import verification, URL validation, URL import, source management, etc.)
 
-## [2.4.0] - 2026-02-07
+## [2.4.0-rc1] - 2026-02-07
 ### Added
 - **i18n Support**: Added internationalization support with English and Japanese translations.
   - Implemented `i18n.js` for message retrieval and UI translation.

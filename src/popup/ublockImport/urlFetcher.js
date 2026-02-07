@@ -19,18 +19,20 @@ export async function fetchFromUrl(url) {
   }
 
   try {
-    const response = await fetch(url, {
-      method: 'GET',
-      mode: 'cors',
-      cache: 'no-cache'
+    const response = await chrome.runtime.sendMessage({
+      type: 'FETCH_URL',
+      payload: { url }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    if (!response) {
+      throw new Error('バックグラウンドスクリプトからの応答がありません');
     }
 
-    const contentType = response.headers.get('content-type');
-    const text = await response.text();
+    if (!response.success) {
+      throw new Error(response.error);
+    }
+
+    const { data: text, contentType } = response;
 
     // 取得後にテキストが有効かチェック
     if (!text || text.trim().length === 0) {
@@ -44,7 +46,7 @@ export async function fetchFromUrl(url) {
 
     return text;
   } catch (error) {
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+    if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
       throw new Error('ネットワークエラーが発生しました。インターネット接続を確認してください。');
     }
     throw new Error(`URL読み込みエラー: ${error.message}`);

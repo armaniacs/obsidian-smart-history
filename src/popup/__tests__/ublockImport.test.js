@@ -69,8 +69,12 @@ describe('ublockImport.js - UI Component Tests', () => {
     // Mock FileReader
     global.FileReader = jest.fn();
 
-    // Mock fetch
-    global.fetch = jest.fn();
+    // Mock chrome.runtime.sendMessage
+    global.chrome = {
+      runtime: {
+        sendMessage: jest.fn()
+      }
+    };
 
     // Mock URL.createObjectURL and revokeObjectURL
     global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
@@ -133,14 +137,10 @@ describe('ublockImport.js - UI Component Tests', () => {
   describe('UI-005: Import from URL', () => {
     test('fetchFromUrl should successfully fetch from valid URL', async () => {
       const mockText = '||example.com^\n@@||trusted.com^';
-      global.fetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        statusText: 'OK',
-        headers: {
-          get: jest.fn(() => 'text/plain')
-        },
-        text: async () => mockText
+      global.chrome.runtime.sendMessage.mockResolvedValue({
+        success: true,
+        data: mockText,
+        contentType: 'text/plain'
       });
 
       const { fetchFromUrl } = await import('../ublockImport.js');
@@ -157,10 +157,9 @@ describe('ublockImport.js - UI Component Tests', () => {
     });
 
     test('fetchFromUrl should throw error for HTTP errors', async () => {
-      global.fetch.mockResolvedValue({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found'
+      global.chrome.runtime.sendMessage.mockResolvedValue({
+        success: false,
+        error: 'HTTP 404: Not Found'
       });
 
       const { fetchFromUrl } = await import('../ublockImport.js');
@@ -241,12 +240,10 @@ describe('ublockImport.js - UI Component Tests', () => {
         ]
       }));
 
-      global.fetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        statusText: 'OK',
-        headers: { get: jest.fn(() => 'text/plain') },
-        text: async () => '||example.com^\n||newsite.com^\n@@||trusted.com^'
+      global.chrome.runtime.sendMessage.mockResolvedValue({
+        success: true,
+        data: '||example.com^\n||newsite.com^\n@@||trusted.com^',
+        contentType: 'text/plain'
       });
     });
 
@@ -305,7 +302,7 @@ describe('ublockImport.js - UI Component Tests', () => {
         }
       }));
 
-      mockShowStatus.mockImplementation(() => {});
+      mockShowStatus.mockImplementation(() => { });
     });
 
     test('saveUblockSettings should save valid filter text', async () => {

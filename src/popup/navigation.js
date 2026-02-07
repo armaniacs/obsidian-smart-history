@@ -39,6 +39,8 @@ export function showMainScreen() {
  * 🟡 設定上の妥当な推測: カウントダウン完了前の画面遷移に対してタイマーを停止することは合理的
  */
 export function showSettingsScreen() {
+  console.log('[Navigation] showSettingsScreen called');
+
   // 【タイマークリア】: 設定画面への遷移時に自動クローズタイマーを解放 🟢
   // 【設計方針】: DOM操作前にタイマーをクリアし、確実に自動クローズを無効化
   // 【依存関係】:
@@ -51,8 +53,14 @@ export function showSettingsScreen() {
   // 【DOM操作】: 画面表示の切り替え 🟢
   const mainScreen = document.getElementById('mainScreen');
   const settingsScreen = document.getElementById('settingsScreen');
+
+  console.log('[Navigation] Main screen element:', !!mainScreen);
+  console.log('[Navigation] Settings screen element:', !!settingsScreen);
+
   if (mainScreen) mainScreen.style.display = 'none';
   if (settingsScreen) settingsScreen.style.display = 'block';
+
+  console.log('[Navigation] Screen transition complete');
 
   // 【画面状態更新】: 設定画面に切り替わったことを記録 🟢
   setScreenState(SCREEN_STATES.SETTINGS);
@@ -67,19 +75,30 @@ export function showSettingsScreen() {
  * 🟢 要求定義（tdd-requirements.md 32-33行目、初期画面がメイン画面）
  */
 export function init() {
+  console.log('[Navigation] Initializing navigation...');
+
   // 【DOM要素キャプチャ】: イベント設定用に要素を取得 🟢
   // 【設計方針】: 毎回のDOMクエリを避けるために先に取得
   const menuBtn = document.getElementById('menuBtn');
   const backBtn = document.getElementById('backBtn');
 
+  console.log('[Navigation] Menu button found:', !!menuBtn);
+  console.log('[Navigation] Back button found:', !!backBtn);
+
   // 【イベントリスナー設定】: ボタンクリック時の画面遷移を設定 🟢
   if (menuBtn) {
     menuBtn.addEventListener('click', showSettingsScreen);
+    console.log('[Navigation] Event listener attached to menu button');
+  } else {
+    console.error('[Navigation] Menu button not found! Cannot attach event listener.');
   }
+
   if (backBtn) {
     backBtn.addEventListener('click', showMainScreen);
+    console.log('[Navigation] Event listener attached to back button');
   }
 
   // 【初期表示】: デフォルト画面を表示 🟢
   showMainScreen();
+  console.log('[Navigation] Initialization complete');
 }
