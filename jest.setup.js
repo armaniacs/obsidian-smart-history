@@ -35,24 +35,60 @@ global.vi = global.jest;
 // DOMの操作（appendChild, remove, classList等）が正しく動作するようになる。
 
 // Chrome Extensions APIのモック（jsdomが提供しないもののみ）
+// インメモリストレージ
+const localStorage = {};
+const syncStorage = {};
+
 global.chrome = {
   storage: {
     local: {
       get: jest.fn((keys, callback) => {
-        if (callback) callback({});
-        return Promise.resolve({});
+        // keysが配列の場合、それらのキーの値を返す
+        // keysがnullや未指定の場合、全ての値を返す
+        let result = {};
+        if (keys === null || keys === undefined) {
+          result = { ...localStorage };
+        } else if (Array.isArray(keys)) {
+          keys.forEach(key => {
+            if (key in localStorage) {
+              result[key] = localStorage[key];
+            }
+          });
+        } else if (typeof keys === 'string') {
+          if (keys in localStorage) {
+            result[keys] = localStorage[keys];
+          }
+        }
+        if (callback) callback(result);
+        return Promise.resolve(result);
       }),
       set: jest.fn((items, callback) => {
+        Object.assign(localStorage, items);
         if (callback) callback();
         return Promise.resolve();
       })
     },
     sync: {
       get: jest.fn((keys, callback) => {
-        if (callback) callback({});
-        return Promise.resolve({});
+        let result = {};
+        if (keys === null || keys === undefined) {
+          result = { ...syncStorage };
+        } else if (Array.isArray(keys)) {
+          keys.forEach(key => {
+            if (key in syncStorage) {
+              result[key] = syncStorage[key];
+            }
+          });
+        } else if (typeof keys === 'string') {
+          if (keys in syncStorage) {
+            result[keys] = syncStorage[keys];
+          }
+        }
+        if (callback) callback(result);
+        return Promise.resolve(result);
       }),
       set: jest.fn((items, callback) => {
+        Object.assign(syncStorage, items);
         if (callback) callback();
         return Promise.resolve();
       })
@@ -257,6 +293,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   // Chrome APIの状態をリセット
   global.chrome.runtime.lastError = null;
+  // ストレージのクリア
+  Object.keys(localStorage).forEach(key => delete localStorage[key]);
+  Object.keys(syncStorage).forEach(key => delete syncStorage[key]);
 });
 
 // テスト終了後のクリーンアップ

@@ -1,0 +1,45 @@
+import { getSettings, StorageKeys, saveSettings } from '../storage.js';
+import * as migration from '../migration.js';
+
+jest.mock('../migration.js', () => ({
+  migrateUblockSettings: jest.fn(() => Promise.resolve(false))
+}));
+
+describe('getSettings key refinement', () => {
+  test('StorageKeysのみを取得する', async () => {
+    // 不相応なデータをセット
+    await chrome.storage.local.set({ extra_key: 'should_not', another_junk: 123 });
+
+    const settings = await getSettings();
+
+    expect(settings).not.toHaveProperty('extra_key');
+    expect(settings).not.toHaveProperty('another_junk');
+    Object.values(StorageKeys).forEach(key => {
+      expect(settings).toHaveProperty(key);
+    });
+  });
+
+  test('空ストレージの場合はデフォルト値のみを返す', async () => {
+    const settings = await getSettings();
+
+    // デフォルト値が含まれることを確認
+    expect(settings).toHaveProperty(StorageKeys.OBSIDIAN_PROTOCOL);
+    expect(settings).toHaveProperty(StorageKeys.OBSIDIAN_PORT);
+    expect(settings).not.toHaveProperty('extra_key');
+  });
+
+  test('保存した値が正しく取得できる', async () => {
+    // 設定を保存
+    await chrome.storage.local.set({
+      [StorageKeys.OBSIDIAN_API_KEY]: 'my-api-key',
+      [StorageKeys.OBSIDIAN_PORT]: '8000'
+    });
+
+    // getSettingsを呼ぶ
+    const settings = await getSettings();
+
+    expect(settings[StorageKeys.OBSIDIAN_API_KEY]).toBe('my-api-key');
+    expect(settings[StorageKeys.OBSIDIAN_PORT]).toBe('8000');
+    expect(settings).not.toHaveProperty('junk');
+  });
+});

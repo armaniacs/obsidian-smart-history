@@ -3,6 +3,7 @@
  * Wrapper for chrome.storage.local to manage settings.
  */
 
+import { addLog, LogType } from './logger.js';
 import { migrateUblockSettings } from './migration.js';
 
 export const StorageKeys = {
@@ -37,16 +38,20 @@ export const StorageKeys = {
 };
 
 const DEFAULT_SETTINGS = {
+    [StorageKeys.OBSIDIAN_API_KEY]: '', // APIキー（ユーザーが設定）
     [StorageKeys.OBSIDIAN_PROTOCOL]: 'http', // Default HTTP for Local REST API
     [StorageKeys.OBSIDIAN_PORT]: '27123',
     [StorageKeys.MIN_VISIT_DURATION]: 5, // seconds
     [StorageKeys.MIN_SCROLL_DEPTH]: 50, // percentage
+    [StorageKeys.GEMINI_API_KEY]: '', // APIキー（ユーザーが設定）
     [StorageKeys.GEMINI_MODEL]: 'gemini-1.5-flash',
     [StorageKeys.OBSIDIAN_DAILY_PATH]: '092.Daily', // Default folder path
     [StorageKeys.AI_PROVIDER]: 'openai',
     [StorageKeys.OPENAI_BASE_URL]: 'https://api.groq.com/openai/v1',
+    [StorageKeys.OPENAI_API_KEY]: '', // APIキー（ユーザーが設定）
     [StorageKeys.OPENAI_MODEL]: 'openai/gpt-oss-20b',
     [StorageKeys.OPENAI_2_BASE_URL]: 'http://127.0.0.1:11434/v1',
+    [StorageKeys.OPENAI_2_API_KEY]: '', // APIキー（ユーザーが設定）
     [StorageKeys.OPENAI_2_MODEL]: 'llama3',
     // Domain filter defaults
     [StorageKeys.DOMAIN_WHITELIST]: [],
@@ -83,11 +88,15 @@ const DEFAULT_SETTINGS = {
 };
 
 export async function getSettings() {
-    let settings = await chrome.storage.local.get(null);
+    // StorageKeysで定義されているキーのみを取得
+    const keysToGet = Object.values(StorageKeys);
+    let settings = await chrome.storage.local.get(keysToGet);
     const migrated = await migrateUblockSettings();
     if (migrated) {
-        // Re-fetch settings after migration
-        settings = await chrome.storage.local.get(null);
+        // マイグレーション後は同じキーで再取得
+        const afterMigration = await chrome.storage.local.get(keysToGet);
+        settings = { ...settings, ...afterMigration }; // マイグレーション後の値をマージ
+        addLog(LogType.DEBUG, 'Settings migration completed', { migrated, keysUpdated: Object.keys(afterMigration) });
     }
     return { ...DEFAULT_SETTINGS, ...settings };
 }

@@ -34,12 +34,14 @@ const MUTEX_TIMEOUT_MS = 30000; // 30秒
  * Mutexクラス - 排他制御用
  * Obsidian APIへの競合回避を実装
  * Problem #6: キューサイズ制限とタイムアウトを追加
+ * Task 5: キューをMapに変更してO(1)操作を実現
  */
-class Mutex {
+export class Mutex {
   constructor() {
     this.locked = false;
-    this.queue = [];
+    this.queue = new Map(); // 配列からMapに変更して効率化
     this.lockedAt = null;
+    this.nextTaskId = 0; // タスクIDカウンタ（Mapキーとして使用）
   }
 
   /**
@@ -51,9 +53,9 @@ class Mutex {
     const now = Date.now();
 
     // Problem #6: キューサイズ制限
-    if (this.queue.length >= MAX_QUEUE_SIZE) {
+    if (this.queue.size >= MAX_QUEUE_SIZE) {
       addLog(LogType.ERROR, 'Mutex: Queue is full, rejecting request', {
-        queueLength: this.queue.length,
+        queueLength: this.queue.size,
         maxSize: MAX_QUEUE_SIZE
       });
       throw new Error(`Mutex queue is full (max ${MAX_QUEUE_SIZE}). Too many concurrent requests.`);
@@ -62,22 +64,20 @@ class Mutex {
     if (this.locked) {
       addLog(LogType.DEBUG, 'Mutex: Waiting for lock', {
         lockedAt: (now - this.lockedAt) + 'ms ago',
-        queueLength: this.queue.length
+        queueLength: this.queue.size
       });
 
       // Problem #6: タイムアウト付きのPromise作成
       return new Promise((resolve, reject) => {
+        const taskId = this.nextTaskId++;
         const timeoutId = setTimeout(() => {
-          // タイムアウト時にキューから削除してreject
-          const index = this.queue.findIndex(t => t.resolve === resolve);
-          if (index !== -1) {
-            this.queue.splice(index, 1);
-          }
+          // Mapからエントリを削除してreject（O(1)操作）
+          this.queue.delete(taskId);
           reject(new Error(`Mutex acquisition timeout after ${MUTEX_TIMEOUT_MS}ms`));
         }, MUTEX_TIMEOUT_MS);
 
-        // キュータスクの登録
-        this.queue.push({
+        // キュータスクの登録（Mapを使用）
+        this.queue.set(taskId, {
           resolve: () => {
             clearTimeout(timeoutId);
             resolve();
@@ -104,9 +104,12 @@ class Mutex {
       return;
     }
 
-    if (this.queue.length > 0) {
-      // キューの先頭のタスクを取得
-      const task = this.queue.shift();
+    if (this.queue.size > 0) {
+      // Mapの最初のエントリを取得（O(1)操作）
+      const [taskId, task] = this.queue.entries().next().value;
+
+      // Mapからエントリを削除（O(1)操作）
+      this.queue.delete(taskId);
 
       // タイムアウトをキャンセルしてresolveを呼ぶ
       if (task && task.timeoutId) {
@@ -119,7 +122,8 @@ class Mutex {
       if (task && task.resolve) {
         task.resolve();
       }
-      addLog(LogType.DEBUG, 'Mutex: Lock transferred to waiting task', { remainingQueue: this.queue.length });
+
+      addLog(LogType.DEBUG, 'Mutex: Lock transferred to waiting task', { remainingQueue: this.queue.size });
     } else {
       this.locked = false;
       this.lockedAt = null;
@@ -307,6 +311,13 @@ export class ObsidianClient {
         }
         addLog(LogType.ERROR, `Failed to connect to Obsidian at ${targetUrl}. Cause: ${errorMessage}`);
         return new Error('Error: Failed to connect to Obsidian. Please check your settings and connection.');
+    }
+
+    /**
+     * グローバルMutexへのアクセス（テスト用）
+     */
+    get _globalWriteMutex() {
+        return globalWriteMutex;
     }
 
     async testConnection() {
