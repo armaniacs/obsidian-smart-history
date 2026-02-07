@@ -4,8 +4,29 @@ import { NoteSectionEditor } from './noteSectionEditor.js';
 import { addLog, LogType } from '../utils/logger.js';
 
 /**
+ * Problem #2: HTTPヘッダーの固定部分を定数化
+ * 毎回のConfig生成で同じオブジェクトを作成するのを防ぐ
+ */
+const BASE_HEADERS = {
+  'Content-Type': 'text/markdown',
+  'Accept': 'application/json'
+};
+
+/**
+ * Problem #1: Fetchタイムアウト設定
+ */
+const FETCH_TIMEOUT_MS = 15000; // 15秒
+
+/**
+ * Problem #6: Mutexキューサイズ制限とタイムアウト設定
+ */
+const MAX_QUEUE_SIZE = 50;
+const MUTEX_TIMEOUT_MS = 30000; // 30秒
+
+/**
  * Mutexクラス - 排他制御用
  * Obsidian APIへの競合回避を実装
+ * Problem #6: キューサイズ制限とタイムアウトを追加
  */
 class Mutex {
   constructor() {
@@ -17,17 +38,47 @@ class Mutex {
   /**
    * ロックを取得する
    * ロックが解放されるまで待機
+   * @throws {Error} キューがMAX_QUEUE_SIZEを超える場合
    */
   async acquire() {
     const now = Date.now();
 
+    // Problem #6: キューサイズ制限
+    if (this.queue.length >= MAX_QUEUE_SIZE) {
+      addLog(LogType.ERROR, 'Mutex: Queue is full, rejecting request', {
+        queueLength: this.queue.length,
+        maxSize: MAX_QUEUE_SIZE
+      });
+      throw new Error(`Mutex queue is full (max ${MAX_QUEUE_SIZE}). Too many concurrent requests.`);
+    }
+
     if (this.locked) {
       addLog(LogType.DEBUG, 'Mutex: Waiting for lock', {
-        lockedAt: this.lockedAt - now + 'ms ago',
+        lockedAt: (now - this.lockedAt) + 'ms ago',
         queueLength: this.queue.length
       });
-      return new Promise(resolve => {
-        this.queue.push(resolve);
+
+      // Problem #6: タイムアウト付きのPromise作成
+      return new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          // タイムアウト時にキューから削除してreject
+          const index = this.queue.findIndex(t => t.resolve === resolve);
+          if (index !== -1) {
+            this.queue.splice(index, 1);
+          }
+          reject(new Error(`Mutex acquisition timeout after ${MUTEX_TIMEOUT_MS}ms`));
+        }, MUTEX_TIMEOUT_MS);
+
+        // キュータスクの登録
+        this.queue.push({
+          resolve: () => {
+            clearTimeout(timeoutId);
+            resolve();
+          },
+          reject,
+          timestamp: now,
+          timeoutId
+        });
       });
     }
 
@@ -47,10 +98,20 @@ class Mutex {
     }
 
     if (this.queue.length > 0) {
-      // キューの先頭のタスクを実行
-      const resolve = this.queue.shift();
-      this.lockedAt = Date.now(); // 新しい所有者のためにタイムスタンプ更新
-      resolve();
+      // キューの先頭のタスクを取得
+      const task = this.queue.shift();
+
+      // タイムアウトをキャンセルしてresolveを呼ぶ
+      if (task && task.timeoutId) {
+        clearTimeout(task.timeoutId);
+      }
+
+      // 次のタスクのためにロック状態を維持（ロックの転送）
+      this.lockedAt = Date.now();
+
+      if (task && task.resolve) {
+        task.resolve();
+      }
       addLog(LogType.DEBUG, 'Mutex: Lock transferred to waiting task', { remainingQueue: this.queue.length });
     } else {
       this.locked = false;
@@ -83,7 +144,38 @@ class Mutex {
  */
 const globalWriteMutex = new Mutex();
 
+/**
+ * Problem #1: タイムアウト付きfetchのラッパー関数
+ * @param {string} url - リクエストURL
+ * @param {object} options - fetchオプション
+ * @returns {Promise<Response>} fetchレスポンス
+ * @throws {Error} タイムアウト時にエラーをスロー
+ */
+async function _fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+    addLog(LogType.ERROR, `Obsidian request timed out after ${FETCH_TIMEOUT_MS}ms`, { url });
+  }, FETCH_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Error: Request timed out. Please check your Obsidian connection.');
+    }
+    throw error;
+  }
+}
+
 export class ObsidianClient {
+    /**
+     * 設定オブジェクトを取得する
+     * Problem #2: BASE_HEADERS定数を使用してオブジェクト作成を最適化
+     */
     async _getConfig() {
         const settings = await getSettings();
         const protocol = settings[StorageKeys.OBSIDIAN_PROTOCOL] || 'http';
@@ -98,9 +190,8 @@ export class ObsidianClient {
         return {
             baseUrl: `${protocol}://127.0.0.1:${port}`,
             headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'text/markdown',
-                'Accept': 'application/json'
+                ...BASE_HEADERS,
+                'Authorization': `Bearer ${apiKey}`
             },
             settings
         };
@@ -137,7 +228,7 @@ export class ObsidianClient {
     }
 
     async _fetchExistingContent(url, headers) {
-        const response = await fetch(url, {
+        const response = await _fetchWithTimeout(url, {
             method: 'GET',
             headers
         });
@@ -154,7 +245,7 @@ export class ObsidianClient {
     }
 
     async _writeContent(url, headers, content) {
-        const response = await fetch(url, {
+        const response = await _fetchWithTimeout(url, {
             method: 'PUT',
             headers,
             body: content
@@ -180,7 +271,7 @@ export class ObsidianClient {
     async testConnection() {
         try {
             const { baseUrl, headers } = await this._getConfig();
-            const response = await fetch(`${baseUrl}/`, {
+            const response = await _fetchWithTimeout(`${baseUrl}/`, {
                 method: 'GET',
                 headers
             });
