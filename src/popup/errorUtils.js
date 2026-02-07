@@ -102,7 +102,7 @@ export function getErrorType(error) {
  * @param {string} message - エラーメッセージ
  * @returns {string} ユーザー向けエラーメッセージ
  */
-function sanitizeErrorMessage(message) {
+export function sanitizeErrorMessage(message) {
   if (!message) return '';
 
   // 内部実装の詳細を含むキーワードを削除
@@ -116,7 +116,10 @@ function sanitizeErrorMessage(message) {
     '.ts:',
     '0x',
     '堆疊',
-    'スタック'
+    'スタック',
+    'address:',
+    'Address:',
+    'Segfault'
   ];
 
   let sanitized = message;

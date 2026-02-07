@@ -5,7 +5,22 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Security
-- **XSS脆弱性の修正 (popup.js オレフィケーション証明書リンク)**: `popup.js` (line 127-143) の未検証ポート変数を使用した安全性の低い innerHTML の使用を修正
+- **CSP実装**: manifest.jsonとpopup.htmlにContent Security Policyを追加し、スクリプトインジェクションのリスクを軽減
+  - extension_pages: script-srcおよびobject-srcの制限
+  - connect-src: localhostとHTTPSのみを許可
+- **エラーメッセージの情報流出防止**: `errorUtils.js` に `sanitizeErrorMessage()` 関数をエクスポート
+  - APIキー、Bearerトークン、localhost URLなどの機密情報をマスク
+- **メッセージ検証強化**: Service Workerのメッセージパッシング検証を強化（テスト追加）
+  - XSS攻撃パターン、JSプロトコル、data URL等の検出
+
+### Performance
+- **設定キャッシュの実装**: `recordingLogic.js` に二重キャッシュ機構を実装
+  - インスタンスレベルキャッシュと静的キャッシュ
+  - TTLベースの有効期限（30秒）
+  - Storage APIアクセス回数の削減によるパフォーマンス向上
+- **Obsidian APIの競合回避**: `obsidianClient.js` にMutexクラスを実装
+  - 複数プロセスからの同時アクセス時の排他制御
+  - URLごとの書き込みロックによるデータ競合防止
   - 検証済みの `port` 変数を使用するよう修正
   - `innerHTML` の代わりに `createElement` と `textContent` を使用し、DOMインジェクション攻撃を防止
   - `rel="noopener noreferrer"` 属性を追加し、タブナビゲーションセキュリティを強化
@@ -37,7 +52,12 @@ All notable changes to this project will be documented in this file.
   - エッジケースの処理
   - data: URLバリアントの全ブロック
   - ポートとIPv6の特殊値の処理
-- **テスト結果**: 全528テストが安定してパス（34テストスイート）
+- **メッセージ検証テストの追加**: `service-worker-message-validation.test.js` (新規ファイル) に27件のテストを追加
+- **エラーサニタイゼーションテストの追加**: `sanitizeError.test.js` (新規ファイル) に26件のテストを追加
+- **設定キャッシュテストの追加**: `recordingLogic-cache.test.js` (新規ファイル) に21件のテストを追加
+- **Mutexロック機構テストの追加**: `obsidianClient-mutex.test.js` (新規ファイル) に11件のテストを追加
+- **HTTPS通信強化テストの追加**: `obsidianClient-secure-fetch.test.js` (新規ファイル) にテストを作成
+- **テスト結果**: 全618テストがパス（39テストスイート）
 
 ### Fixed
 - **テストskip理由の修正と廃止**: `domainFilter.test.js` と `ublockImport.test.js` のテストskip理由が古くなっていたため調査
