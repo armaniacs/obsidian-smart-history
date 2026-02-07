@@ -113,3 +113,7 @@ export async function setSavedUrls(urlSet) {
     await chrome.storage.local.set({ savedUrls: Array.from(urlSet) });
 }
 
+// URL set size limit constants
+export const MAX_URL_SET_SIZE = 10000;
+export const URL_WARNING_THRESHOLD = 8000;
+
