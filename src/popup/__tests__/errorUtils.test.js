@@ -13,7 +13,8 @@ import {
   getUserErrorMessage,
   showError,
   showSuccess,
-  handleError
+  handleError,
+  escapeHtml
 } from '../errorUtils.js';
 
 // テスト用のi18nモック文字列
@@ -295,5 +296,80 @@ describe('handleError', () => {
     const handlers = {};
 
     expect(() => handleError(error, handlers)).not.toThrow();
+  });
+});
+describe('escapeHtml - XSS対策テスト（問題点3）', () => {
+  describe('HTMLエンティティのエスケープ', () => {
+    it('アンパーサンドをエスケープする', () => {
+      const result = escapeHtml('&');
+      expect(result).toBe('&amp;');
+      expect(result).not.toBe('&');
+    });
+
+    it('小なり記号をエスケープする', () => {
+      const result = escapeHtml('<');
+      expect(result).toBe('&lt;');
+      expect(result).not.toBe('<');
+    });
+
+    it('大なり記号をエスケープする', () => {
+      const result = escapeHtml('>');
+      expect(result).toBe('&gt;');
+      expect(result).not.toBe('>');
+    });
+
+    it('ダブルクォートをエスケープする', () => {
+      const result = escapeHtml('"');
+      expect(result).toBe('&quot;');
+      expect(result).not.toBe('"');
+    });
+
+    it('シングルクォートをエスケープする', () => {
+      const result = escapeHtml("'");
+      expect(result).toBe('&#x27;');
+      expect(result).not.toBe("'");
+    });
+
+    it('スラッシュをエスケープする', () => {
+      const result = escapeHtml('/');
+      expect(result).toBe('&#x2F;');
+      expect(result).not.toBe('/');
+    });
+  });
+
+  describe('XSS攻撃の防止', () => {
+    it('スクリプトタグインジェクションを防ぐ', () => {
+      const result = escapeHtml('<script>alert("xss")</script>');
+      expect(result).not.toContain('<script>');
+      expect(result).toContain('&lt;script&gt;');
+    });
+
+    it('イベントハンドラーのインジェクションを防ぐ', () => {
+      const result = escapeHtml('<img src=x onerror="alert(1)">');
+      expect(result).not.toContain('onerror="');
+      expect(result).toContain('onerror=&quot;');
+    });
+
+    it('一般的なテキストを保持する', () => {
+      const result = escapeHtml('This is safe text');
+      expect(result).toBe('This is safe text');
+    });
+  });
+
+  describe('エッジケース', () => {
+    it('空文字列は空文字を返す', () => {
+      const result = escapeHtml('');
+      expect(result).toBe('');
+    });
+
+    it('nullは空文字を返す', () => {
+      const result = escapeHtml(null);
+      expect(result).toBe('');
+    });
+
+    it('undefinedは空文字を返す', () => {
+      const result = escapeHtml(undefined);
+      expect(result).toBe('');
+    });
   });
 });

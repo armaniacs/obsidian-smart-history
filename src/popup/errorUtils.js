@@ -4,45 +4,38 @@
  */
 
 /**
- * 翻訳メッセージ取得ヘルパー
- */
-function getMsg(key, substitutions) {
-  return chrome.i18n.getMessage(key, substitutions);
-}
-
-/**
- * エラーメッセージ定数
+ * エラーメッセージ定数（Problem #5: キャッシュ追加でパフォーマンス改善）
  */
 export const ErrorMessages = {
   /**
    * コネクションエラー（Content Scriptとの通信失敗）
    */
-  get CONNECTION_ERROR() { return getMsg('connectionError'); },
+  get CONNECTION_ERROR() { return getMsgWithCache('connectionError'); },
 
   /**
    * ドメインブロックエラー
    */
-  get DOMAIN_BLOCKED() { return getMsg('domainBlockedError'); },
+  get DOMAIN_BLOCKED() { return getMsgWithCache('domainBlockedError'); },
 
   /**
    * 一般エラープレフィックス
    */
-  get ERROR_PREFIX() { return getMsg('errorPrefix'); },
+  get ERROR_PREFIX() { return getMsgWithCache('errorPrefix'); },
 
   /**
    * 成功メッセージ
    */
-  get SUCCESS() { return getMsg('success'); },
+  get SUCCESS() { return getMsgWithCache('success'); },
 
   /**
    * キャンセルメッセージ
    */
-  get CANCELLED() { return getMsg('cancelled'); },
+  get CANCELLED() { return getMsgWithCache('cancelled'); },
 
   /**
    * 不明なエラー
    */
-  get UNKNOWN_ERROR() { return getMsg('unknownError'); }
+  get UNKNOWN_ERROR() { return getMsgWithCache('unknownError'); }
 };
 
 /**
@@ -56,6 +49,90 @@ export const ErrorType = {
   /** 一般エラー */
   GENERAL: 'GENERAL'
 };
+
+/**
+ * HTMLエスケープ用のエンティティマッピング
+ * 問題点3: HTMLエンティティエスケープ関数の追加
+ */
+const HTML_ESCAPE_MAP = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#x27;',
+  '/': '&#x2F;'
+};
+
+/**
+ * HTMLエンティティエスケープ関数
+ * XSS攻撃を防ぐために、HTML文字をエンティティに変換する
+ * @param {string} unsafe - エスケープ対象の文字列
+ * @returns {string} HTML エンティティにエスケープされた安全な文字列
+ * 問題点3: HTMLエンティティエスケープの追加
+ */
+export function escapeHtml(unsafe) {
+  if (typeof unsafe !== 'string') {
+    return '';
+  }
+
+  return unsafe.replace(/[&<>"'/]/g, (match) => HTML_ESCAPE_MAP[match]);
+}
+
+/**
+ * 内部キーワード定数（モジュールスコープでキャッシュ）
+ * Problem #4: 関数呼び出しごとに配列が作成されるのを防ぐためにモジュールレベル定数として定義
+ */
+const INTERNAL_KEYWORDS = [
+  'Internal',
+  'implementation',
+  'function',
+  'module',
+  'at ',
+  '.js:',
+  '.ts:',
+  '0x',
+  '堆疊',
+  'スタック',
+  'address:',
+  'Address:',
+  'Segfault'
+];
+
+/**
+ * 翻訳メッセージキャッシュ（Problem #5用）
+ * ErrorMessages getterで毎回getMsgが呼ばれないようにキャッシュ
+ */
+let messagesCache = null;
+
+/**
+ * 翻訳メッセージ取得ヘルパー（キャッシュあり）
+ */
+function getMsgWithCache(key, substitutions) {
+  // 初回のみメッセージを取得してキャッシュに保存
+  if (!messagesCache) {
+    messagesCache = {
+      connectionError: chrome.i18n.getMessage('connectionError'),
+      domainBlockedError: chrome.i18n.getMessage('domainBlockedError'),
+      errorPrefix: chrome.i18n.getMessage('errorPrefix'),
+      success: chrome.i18n.getMessage('success'),
+      cancelled: chrome.i18n.getMessage('cancelled'),
+      unknownError: chrome.i18n.getMessage('unknownError'),
+      forceRecord: chrome.i18n.getMessage('forceRecord'),
+      recording: chrome.i18n.getMessage('recording')
+    };
+  }
+
+  if (key === 'connectionError') return messagesCache.connectionError;
+  if (key === 'domainBlockedError') return messagesCache.domainBlockedError;
+  if (key === 'errorPrefix') return messagesCache.errorPrefix;
+  if (key === 'success') return messagesCache.success;
+  if (key === 'cancelled') return messagesCache.cancelled;
+  if (key === 'unknownError') return messagesCache.unknownError;
+  if (key === 'forceRecord') return messagesCache.forceRecord;
+  if (key === 'recording') return messagesCache.recording;
+
+  return chrome.i18n.getMessage(key, substitutions);
+}
 
 /**
  * エラーがコネクションエラーかどうかを判定
@@ -101,33 +178,17 @@ export function getErrorType(error) {
  * ユーザーに表示する前に内部実装の詳細やデバッグ情報を削除
  * @param {string} message - エラーメッセージ
  * @returns {string} ユーザー向けエラーメッセージ
+ * Problem #4: INTERNAL_KEYWORDSをモジュールスコープ定数に移動してパフォーマンス改善
  */
 export function sanitizeErrorMessage(message) {
   if (!message) return '';
-
-  // 内部実装の詳細を含むキーワードを削除
-  const internalKeywords = [
-    'Internal',
-    'implementation',
-    'function',
-    'module',
-    'at ',
-    '.js:',
-    '.ts:',
-    '0x',
-    '堆疊',
-    'スタック',
-    'address:',
-    'Address:',
-    'Segfault'
-  ];
 
   let sanitized = message;
 
   // 内部キーワードを含む行を削除
   const lines = sanitized.split('\n');
   sanitized = lines.filter(line => {
-    return !internalKeywords.some(keyword => line.includes(keyword));
+    return !INTERNAL_KEYWORDS.some(keyword => line.includes(keyword));
   }).join(' ');
 
   return sanitized.trim();
@@ -148,7 +209,7 @@ export function getUserErrorMessage(error) {
       return ErrorMessages.DOMAIN_BLOCKED;
     default:
       const message = sanitizeErrorMessage(error?.message || '');
-      const result = message ? sanitizeErrorMessage(message) : ErrorMessages.UNKNOWN_ERROR;
+      const result = message || ErrorMessages.UNKNOWN_ERROR;
       return `${ErrorMessages.ERROR_PREFIX} ${result}`;
   }
 }
@@ -195,14 +256,12 @@ export function showSuccess(statusElement, message = ErrorMessages.SUCCESS) {
  */
 function createForceRecordButton(parentElement, onClick) {
   const forceBtn = document.createElement('button');
-  forceBtn.textContent = getMsg('forceRecord');
-  forceBtn.className = 'secondary-btn';
-  forceBtn.style.marginTop = '10px';
-  forceBtn.style.backgroundColor = '#d9534f';
+  forceBtn.textContent = getMsgWithCache('forceRecord');
+  forceBtn.className = 'alert-btn';
 
   forceBtn.onclick = () => {
     forceBtn.disabled = true;
-    forceBtn.textContent = getMsg('recording');
+    forceBtn.textContent = getMsgWithCache('recording');
     onClick();
   };
 

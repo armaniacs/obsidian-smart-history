@@ -30,8 +30,8 @@ h2 {
 }
 
 .icon-btn {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   background: #f5f5f5;
   border: none;
   border-radius: 4px;
@@ -117,7 +117,29 @@ h2 {
   background: #5a6268;
 }
 
-button:not(.icon-btn):not(.primary-btn):not(.secondary-btn) {
+.alert-btn {
+  width: 100%;
+  padding: 10px;
+  background: #d9534f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.alert-btn:hover {
+  background: #c9302c;
+}
+
+.alert-btn:disabled {
+  background: #e0e0e0;
+  cursor: not-allowed;
+}
+
+button:not(.icon-btn):not(.primary-btn):not(.secondary-btn):not(.alert-btn) {
   width: 100%;
   padding: 10px;
   background: #7b3cad;
@@ -145,11 +167,19 @@ button:not(.icon-btn):not(.primary-btn):not(.secondary-btn):hover {
 }
 
 .success {
-  color: green;
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+  padding: 8px;
 }
 
 .error {
-  color: red;
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  padding: 8px;
 }
 
 .error-text {
@@ -194,6 +224,9 @@ select {
   color: #666;
   margin-top: 5px;
   white-space: pre-line;
+  background-color: #f8f9fa;
+  border-radius: 3px;
+  padding: 4px 8px;
 }
 
 /* =============================================================================

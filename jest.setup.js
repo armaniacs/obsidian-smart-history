@@ -4,6 +4,22 @@
  * jsdom環境を利用したテスト設定
  */
 
+// TextEncoder/TextDecoder polyfill (Node.js < 20 compatibility)
+if (typeof global.TextEncoder === 'undefined') {
+  global.TextEncoder = class TextEncoder {
+    encode(str) {
+      return Buffer.from(str, 'utf-8');
+    }
+  };
+}
+if (typeof global.TextDecoder === 'undefined') {
+  global.TextDecoder = class TextDecoder {
+    decode(buffer) {
+      return Buffer.from(buffer).toString('utf-8');
+    }
+  };
+}
+
 // jestをグローバル変数として定義
 global.jest = global.jest || {};
 
