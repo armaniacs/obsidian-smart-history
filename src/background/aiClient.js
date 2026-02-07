@@ -245,9 +245,13 @@ export class AIClient {
      */
     async listGeminiModels(apiKey) {
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models`, {
-                headers: { 'x-goog-api-key': apiKey }
-            });
+            const response = await fetchWithTimeout(
+                `https://generativelanguage.googleapis.com/v1beta/models`,
+                {
+                    headers: { 'x-goog-api-key': apiKey }
+                },
+                API_TIMEOUT_MS
+            );
             if (!response.ok) return "Unable to fetch models";
             const data = await response.json();
             return data.models ? data.models.map(m => m.name).join(', ') : "No models returned";
