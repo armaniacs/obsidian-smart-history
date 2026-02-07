@@ -53,7 +53,7 @@ describe('RecordingLogic', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('許可されていません');
+      expect(result.error).toBe('DOMAIN_BLOCKED');
     });
 
     it('should skip recording when URL is already saved', async () => {

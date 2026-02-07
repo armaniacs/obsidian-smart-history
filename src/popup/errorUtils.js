@@ -67,12 +67,18 @@ export function isConnectionError(error) {
 }
 
 /**
+ * ドメインブロックエラー判定用の定数コード
+ * background workerとpopup間で共有されるエラー識別子
+ */
+export const DOMAIN_BLOCKED_ERROR_CODE = 'DOMAIN_BLOCKED';
+
+/**
  * エラーがドメインブロックエラーかどうかを判定
  * @param {Error} error - エラーオブジェクト
  * @returns {boolean} ドメインブロックエラーの場合true
  */
 export function isDomainBlockedError(error) {
-  return error?.message === getMsg('domainBlockedError');
+  return error?.message === DOMAIN_BLOCKED_ERROR_CODE;
 }
 
 /**

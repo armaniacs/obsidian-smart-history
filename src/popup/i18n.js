@@ -20,8 +20,7 @@ export function getMessage(key, substitutions = null) {
     });
   }
 
-  // Handle array substitutions or no substitutions
-  return chrome.i18n.getMessage(key, substitutions);
+  return message;
 }
 
 /**
@@ -54,13 +53,14 @@ function translateButtonLabels() {
 
 /**
  * ヘルプテキスト（改行を含む）を翻訳
+ * CSSの white-space: pre-line で改行を表示するため textContent を使用
  */
 function translateHelpText() {
   const helpTexts = document.querySelectorAll('.help-text[data-i18n]');
   helpTexts.forEach(el => {
     const key = el.getAttribute('data-i18n');
     if (key) {
-      el.innerHTML = getMessage(key);
+      el.textContent = getMessage(key);
     }
   });
 }
@@ -76,19 +76,22 @@ export function applyI18n(element = document) {
     if (!key) return;
 
     const substitutions = el.getAttribute('data-i18n-args');
-    const args = substitutions ? JSON.parse(substitutions) : null;
+    let args = null;
+    if (substitutions) {
+      try {
+        args = JSON.parse(substitutions);
+      } catch (e) {
+        // 不正なJSONは無視
+      }
+    }
 
     const translatedText = getMessage(key, args);
 
     if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
       // 入力要素のプレースホルダー
-      if (el.placeholder) {
-        el.placeholder = translatedText;
-      } else {
-        el.placeholder = translatedText;
-      }
-    } else if (el.tagName === 'IMG' || el.tagName === 'INPUT') {
-      // 画像要素のALT属性またはボタンツールチップ
+      el.placeholder = translatedText;
+    } else if (el.tagName === 'IMG') {
+      // 画像要素のツールチップ
       el.title = translatedText;
     } else {
       // 通常のテキスト要素

@@ -276,7 +276,10 @@
         "message": "内容の確認"
     },
     "confirmContentDesc": {
-        "message": "Obsidianに保存する内容を確認・編集できます。<br><span class=\"text-danger\">※ マスキングされた箇所を確認してください。</span>"
+        "message": "Obsidianに保存する内容を確認・編集できます。"
+    },
+    "confirmContentNote": {
+        "message": "※ マスキングされた箇所を確認してください。"
     },
     "cancelPreviewBtn": {
         "message": "キャンセル"
@@ -368,6 +371,9 @@
     "reloadError": {
         "message": "更新エラー"
     },
+    "updateError": {
+        "message": "更新エラー"
+    },
     "saveError": {
         "message": "保存エラー"
     },
@@ -441,7 +447,7 @@
         "message": "{count}件"
     },
     "items": {
-        "message": "件"
+        "message": "、"
     },
     "previousMaskedItem": {
         "message": "前のマスク箇所"

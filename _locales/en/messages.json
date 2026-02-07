@@ -276,7 +276,10 @@
         "message": "Review Content"
     },
     "confirmContentDesc": {
-        "message": "You can review and edit the content to be saved to Obsidian.<br><span class=\"text-danger\">Note: Check masked items.</span>"
+        "message": "You can review and edit the content to be saved to Obsidian."
+    },
+    "confirmContentNote": {
+        "message": "Note: Check masked items."
     },
     "cancelPreviewBtn": {
         "message": "Cancel"
@@ -444,7 +447,7 @@
         "message": "{count} items"
     },
     "items": {
-        "message": "items"
+        "message": ", "
     },
     "previousMaskedItem": {
         "message": "Previous masked item"

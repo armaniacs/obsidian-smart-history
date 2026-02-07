@@ -6,6 +6,7 @@
 import {
   ErrorMessages,
   ErrorType,
+  DOMAIN_BLOCKED_ERROR_CODE,
   isConnectionError,
   isDomainBlockedError,
   getErrorType,
@@ -17,7 +18,7 @@ import {
 
 // テスト用のi18nモック文字列
 const MOCK_CONNECTION_ERROR = 'Please refresh the page and try again';
-const MOCK_DOMAIN_BLOCKED = 'This domain is not allowed to be recorded. Do you want to record it anyway?';
+const MOCK_DOMAIN_BLOCKED_DISPLAY = 'This domain is not allowed to be recorded. Do you want to record it anyway?';
 const MOCK_ERROR_PREFIX = '✗ Error:';
 const MOCK_SUCCESS = '✓ Saved to Obsidian';
 const MOCK_CANCELLED = 'Cancelled';
@@ -25,10 +26,16 @@ const MOCK_CANCELLED = 'Cancelled';
 describe('ErrorMessages', () => {
   test('必要なメッセージが定義されている', () => {
     expect(ErrorMessages.CONNECTION_ERROR).toBe(MOCK_CONNECTION_ERROR);
-    expect(ErrorMessages.DOMAIN_BLOCKED).toBe(MOCK_DOMAIN_BLOCKED);
+    expect(ErrorMessages.DOMAIN_BLOCKED).toBe(MOCK_DOMAIN_BLOCKED_DISPLAY);
     expect(ErrorMessages.ERROR_PREFIX).toBe(MOCK_ERROR_PREFIX);
     expect(ErrorMessages.SUCCESS).toBe(MOCK_SUCCESS);
     expect(ErrorMessages.CANCELLED).toBe(MOCK_CANCELLED);
+  });
+});
+
+describe('DOMAIN_BLOCKED_ERROR_CODE', () => {
+  test('エラーコード定数が定義されている', () => {
+    expect(DOMAIN_BLOCKED_ERROR_CODE).toBe('DOMAIN_BLOCKED');
   });
 });
 
@@ -63,7 +70,7 @@ describe('isConnectionError', () => {
 
 describe('isDomainBlockedError', () => {
   test('ドメインブロックエラーを判定できる', () => {
-    const error = new Error(MOCK_DOMAIN_BLOCKED);
+    const error = new Error(DOMAIN_BLOCKED_ERROR_CODE);
     expect(isDomainBlockedError(error)).toBe(true);
   });
 
@@ -85,7 +92,7 @@ describe('getErrorType', () => {
   });
 
   test('ドメインブロックエラーを正しく判定', () => {
-    const error = new Error(MOCK_DOMAIN_BLOCKED);
+    const error = new Error(DOMAIN_BLOCKED_ERROR_CODE);
     expect(getErrorType(error)).toBe(ErrorType.DOMAIN_BLOCKED);
   });
 
@@ -102,8 +109,8 @@ describe('getUserErrorMessage', () => {
   });
 
   test('ドメインブロックエラーメッセージを取得', () => {
-    const error = new Error(MOCK_DOMAIN_BLOCKED);
-    expect(getUserErrorMessage(error)).toBe(MOCK_DOMAIN_BLOCKED);
+    const error = new Error(DOMAIN_BLOCKED_ERROR_CODE);
+    expect(getUserErrorMessage(error)).toBe(MOCK_DOMAIN_BLOCKED_DISPLAY);
   });
 
   test('一般エラーメッセージを取得', () => {
@@ -168,17 +175,17 @@ describe('showError', () => {
   });
 
   test('ドメインブロックエラーで強制記録ボタンを表示', () => {
-    const error = new Error(MOCK_DOMAIN_BLOCKED);
+    const error = new Error(DOMAIN_BLOCKED_ERROR_CODE);
 
     showError(statusElement, error, mockForceRecordCallback);
 
-    expect(statusElement.textContent).toBe(MOCK_DOMAIN_BLOCKED);
+    expect(statusElement.textContent).toBe(MOCK_DOMAIN_BLOCKED_DISPLAY);
     expect(createElementSpy).toHaveBeenCalledWith('button');
     expect(statusElement.appendChild).toHaveBeenCalled();
   });
 
   test('強制記録ボタンのクリックハンドラーが設定される', () => {
-    const error = new Error(MOCK_DOMAIN_BLOCKED);
+    const error = new Error(DOMAIN_BLOCKED_ERROR_CODE);
 
     showError(statusElement, error, mockForceRecordCallback);
 
@@ -228,7 +235,7 @@ describe('handleError', () => {
   });
 
   test('ドメインブロックエラーハンドラーを呼び出す', () => {
-    const error = new Error(MOCK_DOMAIN_BLOCKED);
+    const error = new Error(DOMAIN_BLOCKED_ERROR_CODE);
     const handlers = {
       onDomainBlocked: jest.fn()
     };

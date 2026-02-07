@@ -231,24 +231,22 @@ describe('main', () => {
       isRecordable.mockReturnValue(true);
       getSettings.mockImplementation(() => Promise.resolve({ [StorageKeys.PII_CONFIRMATION_UI]: true }));
       
-      // Mock chrome API to return domain blocked error
+      // Mock chrome API to return domain blocked error code
       mockChrome.tabs.sendMessage.mockResolvedValue({ content: 'Page content' });
       mockChrome.runtime.sendMessage.mockResolvedValue({
         success: false,
-        error: 'This domain is not allowed to be recorded. Do you want to record it anyway?'
+        error: 'DOMAIN_BLOCKED'
       });
-      
+
       // Mock DOM elements
       const statusDiv = document.getElementById('mainStatus');
-      
+
       await recordCurrentPage();
 
       // Check if force record button is displayed
-      // 【修正】: textContent は子要素のテキストも含むため、最初のテキストノードのみをチェック
-      // or querySelector('button').textContent を使用してボタンを検証
       expect(statusDiv.querySelector('button')).toBeTruthy();
       expect(statusDiv.querySelector('button').textContent).toBe('Force Record');
-      // statusDiv の最初のテキストノードを確認
+      // statusDiv の最初のテキストノードを確認 - i18nで表示用メッセージに変換される
       const expectedText = 'This domain is not allowed to be recorded. Do you want to record it anyway?';
       expect(statusDiv.childNodes[0].textContent).toBe(expectedText);
     });

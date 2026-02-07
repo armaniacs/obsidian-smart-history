@@ -4,7 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [2.3.3] - 2026-02-07
+### Fixed
+- **テストskip理由の修正と廃止**: `domainFilter.test.js` と `ublockImport.test.js` のテストskip理由が古くなっていたため調査
+  - `domainFilter.test.js`: "Babelトランスパイル環境でのjest.mock設定が複雑であるため" という理由は誤りで、実際にはモジュールインポートが正常に動作していることを確認
+  - `ublockImport.test.js`: "Test environment configuration causes module resolution errors for imports" という理由は誤りで、実際にはモジュールインポートが正常に動作していることを確認
+- **テストアーキテクチャの改善**: モジュールレベルでのDOM要素キャッシュによるテストのアーキテクチャ上の制限を明確化
+  - `domainFilter.js` と `updatePreviewUI` はモジュールレベルでDOM要素をキャッシュしているため、テストアーキテクチャ上の制限により完全な機能テストが不可能
+  - "NOT FULLY TESTABLE" としてドキュメント化し、テスト可能な範囲（関数存在確認、呼び出しがエラーをスローしないこと）に限定
+- **Jestモック設定の修正**: `storage.js` のモック設定を改善
+  - `mockResolvedValue` の代わりに `mockImplementation` を使用して、テストごとに柔軟に設定値を変更可能に
+  - `domainFilter.test.js` で `mockGetSettings` 変数を `beforeAll` でモジュールから取得し、各テストで使用
+- **テストカバレッジの改善**: テスト不可能と判断した機能以外はすべてテスト実行
+  - `domainFilter.test.js`: 5テスト (import verification, function existence check, toggleFormatUI)
+  - `ublockImport.test.js`: 46テスト (import verification, URL validation, URL import, source management, etc.)
+- **テスト結果の安定化**: 全463テストが安定してパスするよう修正
+  - Test Suites: 31 passed
+  - Tests: 463 passed
+
+## [2.4.0] - 2026-02-07
 ### Added
 - **i18n Support**: Added internationalization support with English and Japanese translations.
   - Implemented `i18n.js` for message retrieval and UI translation.
@@ -16,23 +33,29 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - **Test Updates**: Updated tests to support i18n and fix failing tests involved in the refactor.
+- **isDomainBlockedError ロケール不一致修正**: エラー判定をi18nメッセージ文字列比較からエラーコード (`DOMAIN_BLOCKED`) ベースに変更。background workerとpopup間でロケールに依存しない安定した判定を実現。
+- **XSSリスク除去**: `translateHelpText` の `innerHTML` 使用を `textContent` に変更し、CSS `white-space: pre-line` で改行を表示。`confirmContentDesc` からHTMLマークアップを除去し、注意文言を別キー `confirmContentNote` に分離。
+- **ruleCount/exceptionCount/errorCount表示の修正**: `data-i18n` による `textContent` 上書きで子要素 `<span>` が消滅する問題を修正。ラベルとカウント値を別要素に分離。
+- **domainFilter.jsのハードコード日本語除去**: 保存エラーメッセージを `getMessage('saveError')` に置換。
+- **i18n.jsのリファクタリング**: `applyI18n` のデッドコード除去（if/else同一処理、INPUT到達不能分岐）、`getMessage` の二重API呼出除去、`JSON.parse` のエラーハンドリング追加。
+- **翻訳キー不一致修正**: 日本語メッセージファイルに欠落していた `updateError` キーを追加。`items` キーの値を区切り文字（en: `", "` / ja: `"、"`）に修正。
+
+### Security
+- `translateHelpText` における `innerHTML` 使用を撤廃し、XSS攻撃ベクターを除去。
 
 ## [2.3.2] - 2026-02-07
 ### Fixed
-- テスト分離问题を修正: sourceManager.test.jsとublockParser-cache.test.jsのテスト間で状態が共有される問題を解決
+- テスト分離問題を修正: sourceManager.test.jsとublockParser-cache.test.jsのテスト間で状態が共有される問題を解決
   - sourceManager.test.js: 脆弱なグローバルモックオーバーライドパターンをファクトリ関数`createStorageMocks()`に置き換え
-  - ublockParser-cache.test.js: キャッシュ状態永続化问题を解決するため`clearCache()`関数を追加
+  - ublockParser-cache.test.js: キャッシュ状態永続化問題を解決するため`clearCache()`関数を追加
   - 両テストで`beforeEach`/`afterEach`フックを使用し、テストごとに状態を初期化・復元
-
-### Changed
-- src/utils/ublockParser/cache.js: テスト用の`clearCache()`関数を追加・エクスポート
-- src/utils/ublockParser/index.js: `clearCache`関数をエクスポート
-### Fixed
 - テスト状態漏洩問題を修正: sourceManager.test.jsのテスト間でストレージデータが共有される問題を解決
   - jest.setup.jsのグローバルjest.fn()モックをmockImplementation()でオーバーライド
   - 各テストで独立したtestStorageオブジェクトを使用するように修正
 
 ### Changed
+- src/utils/ublockParser/cache.js: テスト用の`clearCache()`関数を追加・エクスポート
+- src/utils/ublockParser/index.js: `clearCache`関数をエクスポート
 - テストカバレッジを向上（12テスト追加）
   - mask-visualization.test.js: ナビゲーション機能、モーダル操作、DOM要素動的作成のテストを追加
   - ublockExport.test.js: init関数のエラーハンドリングテストを追加

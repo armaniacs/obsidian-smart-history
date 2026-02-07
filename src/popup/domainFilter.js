@@ -230,7 +230,7 @@ export async function handleSaveDomainSettings() {
         }
     } catch (error) {
         addLog(LogType.ERROR, 'Error saving domain settings', { error: error.message });
-        showStatus('domainStatus',`保存エラー: ${error.message}`, 'error');
+        showStatus('domainStatus', `${getMessage('saveError')}: ${error.message}`, 'error');
     }
 }
 

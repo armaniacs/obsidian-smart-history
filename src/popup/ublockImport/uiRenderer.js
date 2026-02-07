@@ -141,10 +141,19 @@ export function updatePreviewUI(result) {
     exceptionCountEl.textContent = result.exceptionCount;
     errorCountEl.textContent = result.errorCount;
 
-    // 親要素のdata属性を更新して翻訳を適用
-    ruleCountEl.parentElement.setAttribute('data-i18n-args', JSON.stringify({ count: result.blockCount }));
-    exceptionCountEl.parentElement.setAttribute('data-i18n-args', JSON.stringify({ count: result.exceptionCount }));
-    errorCountEl.parentElement.setAttribute('data-i18n-args', JSON.stringify({ count: result.errorCount }));
+    // i18nラベルspanのdata属性を更新して翻訳を再適用
+    const labelPairs = [
+      [ruleCountEl, 'ruleCount', result.blockCount],
+      [exceptionCountEl, 'exceptionCount', result.exceptionCount],
+      [errorCountEl, 'errorCount', result.errorCount],
+    ];
+    labelPairs.forEach(([el, key, count]) => {
+      const labelSpan = el.parentElement?.querySelector(`[data-i18n="${key}"]`);
+      if (labelSpan) {
+        labelSpan.setAttribute('data-i18n-args', JSON.stringify({ count }));
+        labelSpan.textContent = getMessage(key, { count });
+      }
+    });
 
     const errorDetailsElement = document.getElementById('uBlockErrorDetails');
     if (Array.isArray(result.errorDetails)) {

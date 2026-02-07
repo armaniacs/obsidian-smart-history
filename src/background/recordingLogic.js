@@ -20,7 +20,7 @@ export class RecordingLogic {
       const isAllowed = await isDomainAllowed(url);
 
       if (!isAllowed && !force) {
-        return { success: false, error: 'このドメインは記録が許可されていません' };
+        return { success: false, error: 'DOMAIN_BLOCKED' };
       }
 
       if (!isAllowed && force) {

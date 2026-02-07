@@ -237,11 +237,9 @@
         <!-- Preview Section -->
         <div id="uBlockPreview" class="preview-section">
           <h4 data-i18n="loadPreview">Load Preview</h4>
-          <p data-i18n="ruleCount" data-i18n-args='{"count": ""}'>Rules: <span id="uBlockRuleCount">0</span></p>
-          <p data-i18n="exceptionCount" data-i18n-args='{"count": ""}'>Exceptions: <span
-              id="uBlockExceptionCount">0</span></p>
-          <p data-i18n="errorCount" data-i18n-args='{"count": ""}'>Errors: <span id="uBlockErrorCount"
-              class="error">0</span></p>
+          <p><span data-i18n="ruleCount" data-i18n-args='{"count": "0"}'>Rules: 0</span> <span id="uBlockRuleCount"></span></p>
+          <p><span data-i18n="exceptionCount" data-i18n-args='{"count": "0"}'>Exceptions: 0</span> <span id="uBlockExceptionCount"></span></p>
+          <p><span data-i18n="errorCount" data-i18n-args='{"count": "0"}'>Errors: 0</span> <span id="uBlockErrorCount" class="error"></span></p>
           <p id="uBlockErrorDetails" class="error-text text-sm"></p>
         </div>
 
@@ -330,8 +328,10 @@
       </div>
       <div class="modal-body">
         <p class="mt-0 text-xs text-gray" data-i18n="confirmContentDesc">
-          You can review and edit the content to be saved to Obsidian.<br>
-          <span class="text-danger">Note: Check masked items.</span>
+          You can review and edit the content to be saved to Obsidian.
+        </p>
+        <p class="mt-0 text-xs text-danger" data-i18n="confirmContentNote">
+          Note: Check masked items.
         </p>
         <div id="maskNavAnchor"></div>
         <textarea id="previewContent" class="preview-textarea"></textarea>
