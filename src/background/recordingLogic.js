@@ -4,64 +4,41 @@ import { NotificationHelper } from './notificationHelper.js';
 import { addLog, LogType } from '../utils/logger.js';
 import { isDomainAllowed } from '../utils/domainUtils.js';
 import { sanitizeRegex } from '../utils/piiSanitizer.js';
-import { getSettings, StorageKeys, getSavedUrls, setSavedUrls, saveSettings } from '../utils/storage.js';
+import { getSettings, StorageKeys, getSavedUrls, setSavedUrls, saveSettings, MAX_URL_SET_SIZE, URL_WARNING_THRESHOLD } from '../utils/storage.js';
 
 const SETTINGS_CACHE_TTL = 30 * 1000; // 30 seconds
+const URL_CACHE_TTL = 60 * 1000; // 60 seconds (Problem #7用)
 
 export class RecordingLogic {
   // キャッシュ状態永続化（SERVICE-WORKER再起動間で保持）
+  // Problem #3: 2重キャッシュ構造を1段階に簡素化 - staticキャッシュのみ使用
+  // Problem #7: URLキャッシュも追加
   static cacheState = {
     settingsCache: null,
     cacheTimestamp: null,
-    cacheVersion: 0
+    cacheVersion: 0,
+    urlCache: null,
+    urlCacheTimestamp: null
   };
 
   constructor(obsidianClient, aiClient) {
     this.obsidian = obsidianClient;
     this.aiClient = aiClient;
-    // インスタンスレベルのキャッシュ状態
-    this.instanceCacheState = {
-      settingsCache: null,
-      cacheTimestamp: null,
-      cacheVersion: null
-    };
+    // Problem #3: 2重キャッシュ構造を1段階に簡素化 - インスタンスキャッシュを削除
   }
 
   /**
    * 設定キャッシュから取得する
-   * キャッシュが有効であればキャッシュを返し、なければstorageから取得してキャッシュする
+   * Problem #3: 2重キャッシュ構造を1段階に簡素化
    */
   async getSettingsWithCache() {
     const now = Date.now();
-
-    // キャッシュバージョンが不一致の場合、直ちに再取得
-    if (this.instanceCacheState.cacheVersion !== null &&
-        this.instanceCacheState.cacheVersion !== RecordingLogic.cacheState.cacheVersion) {
-      addLog(LogType.DEBUG, 'Settings version mismatch, fetching fresh', {
-        instanceVersion: this.instanceCacheState.cacheVersion,
-        globalVersion: RecordingLogic.cacheState.cacheVersion
-      });
-      // キャッシュをスキップしてstorageから取得へ
-      return this._fetchAndCacheSettings(now);
-    }
-
-    // インスタンスキャッシュを確認
-    if (this.instanceCacheState.settingsCache) {
-      const age = now - this.instanceCacheState.cacheTimestamp;
-      if (age < SETTINGS_CACHE_TTL && this.instanceCacheState.cacheVersion === RecordingLogic.cacheState.cacheVersion) {
-        addLog(LogType.DEBUG, 'Settings cache hit', { age: age + 'ms' });
-        return this.instanceCacheState.settingsCache;
-      }
-    }
 
     // staticキャッシュを確認
     if (RecordingLogic.cacheState.settingsCache) {
       const age = now - RecordingLogic.cacheState.cacheTimestamp;
       if (age < SETTINGS_CACHE_TTL) {
-        addLog(LogType.DEBUG, 'Settings cache hit (static)', { age: age + 'ms' });
-        this.instanceCacheState.settingsCache = RecordingLogic.cacheState.settingsCache;
-        this.instanceCacheState.cacheTimestamp = RecordingLogic.cacheState.cacheTimestamp;
-        this.instanceCacheState.cacheVersion = RecordingLogic.cacheState.cacheVersion;
+        addLog(LogType.DEBUG, 'Settings cache hit', { age: age + 'ms' });
         return RecordingLogic.cacheState.settingsCache;
       }
     }
@@ -72,18 +49,15 @@ export class RecordingLogic {
 
   /**
    * storageから設定を取得しキャッシュに保存
+   * Problem #3: 2重キャッシュ構造を1段階に簡素化
    */
   async _fetchAndCacheSettings(now) {
     const settings = await getSettings();
 
-    // キャッシュに保存
+    // staticキャッシュのみに保存（Problem #3: 簡素化）
     RecordingLogic.cacheState.settingsCache = settings;
     RecordingLogic.cacheState.cacheTimestamp = now;
     RecordingLogic.cacheState.cacheVersion++;
-
-    this.instanceCacheState.settingsCache = settings;
-    this.instanceCacheState.cacheTimestamp = now;
-    this.instanceCacheState.cacheVersion = RecordingLogic.cacheState.cacheVersion;
 
     addLog(LogType.DEBUG, 'Settings cache updated', { cacheVersion: RecordingLogic.cacheState.cacheVersion });
 
@@ -103,10 +77,47 @@ export class RecordingLogic {
 
   /**
    * インスタンスキャッシュを無効化する
+   * Problem #3: 2重キャッシュを1段階に簡素化したためno-op
    */
   invalidateInstanceCache() {
-    this.instanceCacheState.settingsCache = null;
-    this.instanceCacheState.cacheTimestamp = null;
+    // 何もしない - 簡素化により不要になったメソッド
+    addLog(LogType.DEBUG, 'invalidateInstanceCache called (no-op after simplification)');
+  }
+
+  /**
+   * URLキャッシュから保存済みURLを取得する
+   * Problem #7: getSavedUrls() キャッシュ追加
+   */
+  async getSavedUrlsWithCache() {
+    const now = Date.now();
+
+    // URLキャッシュを確認
+    if (RecordingLogic.cacheState.urlCache) {
+      const age = now - RecordingLogic.cacheState.urlCacheTimestamp;
+      if (age < URL_CACHE_TTL) {
+        addLog(LogType.DEBUG, 'URL cache hit', { count: RecordingLogic.cacheState.urlCache.size, age: age + 'ms' });
+        return new Set(RecordingLogic.cacheState.urlCache); // 新しいSetを返して変更の影響を防ぐ
+      }
+    }
+
+    // キャッシュが無効な場合、storageから取得
+    const urlSet = await getSavedUrls();
+    RecordingLogic.cacheState.urlCache = new Set(urlSet);
+    RecordingLogic.cacheState.urlCacheTimestamp = now;
+
+    addLog(LogType.DEBUG, 'URL cache updated', { count: urlSet.size });
+
+    return urlSet;
+  }
+
+  /**
+   * URLキャッシュを無効化する
+   * Problem #7: URLキャッシュ追加に伴う無効化メソッド
+   */
+  static invalidateUrlCache() {
+    addLog(LogType.DEBUG, 'URL cache invalidated');
+    RecordingLogic.cacheState.urlCache = null;
+    RecordingLogic.cacheState.urlCacheTimestamp = null;
   }
 
   async record(data) {
@@ -127,10 +138,31 @@ export class RecordingLogic {
       // 2. Check for duplicates
       // 設定キャッシュを使用
       const settings = await this.getSettingsWithCache();
-      const urlSet = await getSavedUrls();
+      // Problem #7: キャッシュ付きURL取得を使用
+      const urlSet = await this.getSavedUrlsWithCache();
 
       if (!skipDuplicateCheck && urlSet.has(url)) {
         return { success: true, skipped: true };
+      }
+
+      // Problem #4: URLセットサイズ制限チェック
+      if (urlSet.size >= MAX_URL_SET_SIZE) {
+        addLog(LogType.ERROR, 'URL set size limit exceeded', {
+          current: urlSet.size,
+          max: MAX_URL_SET_SIZE,
+          url
+        });
+        NotificationHelper.notifyError(`URL history limit reached. Maximum ${MAX_URL_SET_SIZE} URLs allowed. Please clear your history.`);
+        return { success: false, error: 'URL set size limit exceeded. Please clear your history.' };
+      }
+
+      // Problem #4: 警告閾値チェック
+      if (urlSet.size >= URL_WARNING_THRESHOLD) {
+        addLog(LogType.WARN, 'URL set size approaching limit', {
+          current: urlSet.size,
+          threshold: URL_WARNING_THRESHOLD,
+          remaining: MAX_URL_SET_SIZE - urlSet.size
+        });
       }
 
       // 3. Privacy Pipeline Processing
@@ -162,6 +194,8 @@ export class RecordingLogic {
       if (!urlSet.has(url)) {
         urlSet.add(url);
         await setSavedUrls(urlSet);
+        // Problem #7: URLキャッシュを無効化
+        RecordingLogic.invalidateUrlCache();
       }
 
       // 7. Notification
