@@ -138,16 +138,23 @@ function showTab(tabName) {
         privacyTabBtn.setAttribute('aria-selected', tabName === 'privacy');
     }
 
-    // Panels
-    generalPanel.classList.toggle('active', tabName === 'general');
-    generalPanel.style.display = tabName === 'general' ? 'block' : 'none';
+    // Panels - Panel visibility with aria-hidden for accessibility
+    const isActiveGeneral = tabName === 'general';
+    const isActiveDomain = tabName === 'domain';
+    const isActivePrivacy = tabName === 'privacy';
 
-    domainPanel.classList.toggle('active', tabName === 'domain');
-    domainPanel.style.display = tabName === 'domain' ? 'block' : 'none';
+    generalPanel.classList.toggle('active', isActiveGeneral);
+    generalPanel.style.display = isActiveGeneral ? 'block' : 'none';
+    generalPanel.setAttribute('aria-hidden', !isActiveGeneral);
+
+    domainPanel.classList.toggle('active', isActiveDomain);
+    domainPanel.style.display = isActiveDomain ? 'block' : 'none';
+    domainPanel.setAttribute('aria-hidden', !isActiveDomain);
 
     if (privacyPanel) {
-        privacyPanel.classList.toggle('active', tabName === 'privacy');
-        privacyPanel.style.display = tabName === 'privacy' ? 'block' : 'none';
+        privacyPanel.classList.toggle('active', isActivePrivacy);
+        privacyPanel.style.display = isActivePrivacy ? 'block' : 'none';
+        privacyPanel.setAttribute('aria-hidden', !isActivePrivacy);
     }
 }
 

@@ -492,7 +492,7 @@
         "message": "Access to localhost is not allowed for filter imports"
     },
     "openSettings": {
-        "message": "Open Settings"
+        "message": "Settings"
     },
     "backToMain": {
         "message": "Back to Main"

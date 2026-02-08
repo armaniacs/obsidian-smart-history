@@ -108,6 +108,15 @@ export function applyI18n(element = document) {
     el.placeholder = getMessage(key, args);
   });
 
+  // aria-label属性の翻訳
+  const ariaLabelElements = element.querySelectorAll('[data-i18n-aria-label]');
+  ariaLabelElements.forEach(el => {
+    const key = el.getAttribute('data-i18n-aria-label');
+    if (key) {
+      el.setAttribute('aria-label', getMessage(key));
+    }
+  });
+
   // オプション要素の翻訳
   translateOptions();
 

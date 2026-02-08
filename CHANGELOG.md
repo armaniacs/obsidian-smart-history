@@ -30,7 +30,7 @@ All notable changes to this project will be documented in this file.
   - ESCキーでモーダルを閉じる
   - モーダル前のフォーカス要素を記憶・復帰
 - **アイコンボタンARIAラベル (P0)**: スクリーンリーダー用ラベル追加
-  - メニューボタン: `aria-label="開く"`
+  - メニューボタン: `aria-label="設定"`
   - 戻るボタン: `aria-label="戻る"`
   - モーダル閉じる: `aria-label="閉じる"`
 
@@ -40,8 +40,8 @@ All notable changes to this project will be documented in this file.
   - `errorLocalhostAccess`: localhostアクセスブロック（フィルターインポート）
   - `errorContentScriptNotAvailable`: Content Script不在時エラー
   - `errorNoContentResponse`: コンテンツ応答なしエラー
-- **ARIAラベル用メッセージ追加**: スクリーンリーダー用ボタン ラベル
-  - `openSettings`: "設定を開く" / "Open Settings"
+- **ARIAラベル用メッセージ追加**: スクリーンリーダー用ボタンラベル
+  - `openSettings`: "設定" / "Settings"
   - `backToMain`: "メイン画面に戻る" / "Back to Main"
   - `closeModal`: "閉じる" / "Close Modal"
 - **ハードコード文字列のi18n化**: 日本語固定テキストを国際化システムに置換
@@ -56,6 +56,14 @@ All notable changes to this project will be documented in this file.
 - **i18nモックの追加**: テスト環境でi18nメッセージのモックを追加
   - `mainSpinner.test.js` に `getMessage('processing')` のモック設定
   - `autoClose.test.js` に `getMessage('countdownNumber')` と `getMessage('autoClosing')` のモック設定
+
+### UI/UX
+- **設定ボタンのアイコン化**: メイン画面の設定ボタンをテキスト表示からギアアイコン（⚙）に変更
+  - i18n翻訳によるテキスト置換でボタンからはみ出していた問題を修正
+  - `data-i18n` を `data-i18n-aria-label` に変更し、`textContent` ではなく `aria-label` のみ翻訳
+  - 戻るボタン（←）、モーダル閉じるボタン（×）も同様に修正
+  - `i18n.js` に `data-i18n-aria-label` 属性のサポートを追加
+  - `.icon-btn` の `font-size` を16px→20pxに拡大、`overflow: hidden` を追加
 
 ### Fixed
 - **uBlock設定保存エラーの修正**: ドメインフィルター設定で「保存」ボタン押下時に `saveSettings is not defined` エラーが発生する問題を修正

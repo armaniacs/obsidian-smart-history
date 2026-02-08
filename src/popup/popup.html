@@ -13,11 +13,11 @@
   <div id="mainScreen">
     <div class="header">
       <h2 data-i18n="appTitle">Smart History</h2>
-      <button id="menuBtn" class="icon-btn" aria-label="開く" data-i18n="openSettings">☰</button>
+      <button id="menuBtn" class="icon-btn" aria-label="設定" data-i18n-aria-label="openSettings">⚙</button>
     </div>
 
     <div id="currentPage">
-      <img id="favicon" src="" width="16" height="16" alt="">
+      <img id="favicon" src="" width="16" height="16" alt="" aria-hidden="true">
       <div id="pageInfo">
         <div id="pageTitle">Loading...</div>
         <div id="pageUrl">...</div>
@@ -38,7 +38,7 @@
   <!-- Settings Screen -->
   <div id="settingsScreen">
     <div class="header">
-      <button id="backBtn" class="icon-btn" aria-label="戻る" data-i18n="backToMain" data-i18n="back">←</button>
+      <button id="backBtn" class="icon-btn" aria-label="戻る" data-i18n-aria-label="backToMain">←</button>
       <h2 data-i18n="settings">Settings</h2>
     </div>
 
@@ -50,10 +50,10 @@
     </div>
 
     <!-- General Settings Panel -->
-    <div id="generalPanel" class="tab-panel" role="tabpanel" aria-labelledby="generalTab">
+    <div id="generalPanel" class="tab-panel" role="tabpanel" aria-labelledby="generalTab" aria-hidden="true">
 
       <div class="form-group">
-        <label data-i18n="obsidianApiKey">Obsidian API Key</label>
+        <label for="apiKey" data-i18n="obsidianApiKey">Obsidian API Key</label>
         <input type="password" id="apiKey" data-i18n-input-placeholder="apiKeyPlaceholder">
       </div>
 
@@ -147,7 +147,7 @@
     </div>
 
     <!-- Domain Filter Panel -->
-    <div id="domainPanel" class="tab-panel active" role="tabpanel" aria-labelledby="domainTab">
+    <div id="domainPanel" class="tab-panel active" role="tabpanel" aria-labelledby="domainTab" aria-hidden="false">
       <div class="form-group">
         <label data-i18n="domainFilterMode">Domain Filter Mode</label>
         <div class="radio-group">
@@ -256,7 +256,7 @@
     </div>
 
     <!-- Privacy Settings Panel -->
-    <div id="privacyPanel" class="tab-panel" role="tabpanel" aria-labelledby="privacyTab">
+    <div id="privacyPanel" class="tab-panel" role="tabpanel" aria-labelledby="privacyTab" aria-hidden="true">
 
       <div class="form-group">
         <label data-i18n="privacyMode">Privacy Mode</label>
@@ -325,7 +325,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3 data-i18n="confirmContent">Review Content</h3>
-        <button id="closeModalBtn" class="icon-btn modal-close" aria-label="閉じる" data-i18n="closeModal">×</button>
+        <button id="closeModalBtn" class="icon-btn modal-close" aria-label="閉じる" data-i18n-aria-label="closeModal">×</button>
       </div>
       <div class="modal-body">
         <p class="mt-0 text-xs text-gray" data-i18n="confirmContentDesc">

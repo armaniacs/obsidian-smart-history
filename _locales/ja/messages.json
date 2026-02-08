@@ -492,7 +492,7 @@
         "message": "フィルターインポートでのlocalhostアクセスは許可されていません"
     },
     "openSettings": {
-        "message": "設定を開く"
+        "message": "設定"
     },
     "backToMain": {
         "message": "メイン画面に戻る"

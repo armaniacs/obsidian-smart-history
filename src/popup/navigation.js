@@ -14,9 +14,15 @@ export function showMainScreen() {
   // 【設計方針】: DOM操作の条件チェックで安全に処理
   const mainScreen = document.getElementById('mainScreen');
   const settingsScreen = document.getElementById('settingsScreen');
+  const menuBtn = document.getElementById('menuBtn');
 
   if (mainScreen) mainScreen.style.display = 'block';
   if (settingsScreen) settingsScreen.style.display = 'none';
+
+  // 【アクセシビリティ改善】メニューボタンの aria-expanded 属性を設定
+  if (menuBtn) {
+    menuBtn.setAttribute('aria-expanded', 'false');
+  }
 
   // 【画面状態更新】: メイン画面に切り替わったことを記録
   // 【設計方針】: DOM操作完了後に画面状態を更新して一貫性を保証
@@ -53,12 +59,18 @@ export function showSettingsScreen() {
   // 【DOM操作】: 画面表示の切り替え 🟢
   const mainScreen = document.getElementById('mainScreen');
   const settingsScreen = document.getElementById('settingsScreen');
+  const menuBtn = document.getElementById('menuBtn');
 
   console.log('[Navigation] Main screen element:', !!mainScreen);
   console.log('[Navigation] Settings screen element:', !!settingsScreen);
 
   if (mainScreen) mainScreen.style.display = 'none';
   if (settingsScreen) settingsScreen.style.display = 'block';
+
+  // 【アクセシビリティ改善】メニューボタンの aria-expanded 属性を設定
+  if (menuBtn) {
+    menuBtn.setAttribute('aria-expanded', 'true');
+  }
 
   console.log('[Navigation] Screen transition complete');
 
