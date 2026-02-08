@@ -11,8 +11,7 @@ import { loadAndDisplaySources, deleteSource, reloadSource, saveUblockSettings }
 import { renderSourceList, updatePreviewUI, hidePreview, clearInput, exportSimpleFormat, copyToClipboard, buildUblockFormat } from './uiRenderer.js';
 import { showStatus } from '../settingsUiHelper.js';
 import { LogType, addLog } from '../../utils/logger.js';
-import { StorageKeys } from '../../utils/storage.js';
-import { getSettings } from '../../utils/storage.js';
+import { StorageKeys, getSettings, saveSettings } from '../../utils/storage.js';
 import { getMessage } from '../i18n.js';
 
 // グローバル状態

@@ -57,6 +57,11 @@ All notable changes to this project will be documented in this file.
   - `mainSpinner.test.js` に `getMessage('processing')` のモック設定
   - `autoClose.test.js` に `getMessage('countdownNumber')` と `getMessage('autoClosing')` のモック設定
 
+### Fixed
+- **uBlock設定保存エラーの修正**: ドメインフィルター設定で「保存」ボタン押下時に `saveSettings is not defined` エラーが発生する問題を修正
+  - `ublockImport/index.js` で `saveSettings` のインポートが欠落していたため、uBlock形式の有効/無効切り替え時に保存が失敗していた
+  - `storage.js` からのインポートに `saveSettings` を追加
+
 ## [2.4.0-rc2] - 2026-02-08
 
 ### Security
