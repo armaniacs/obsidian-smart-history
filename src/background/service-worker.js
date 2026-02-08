@@ -1,6 +1,7 @@
 import { ObsidianClient } from './obsidianClient.js';
 import { AIClient } from './aiClient.js';
 import { RecordingLogic } from './recordingLogic.js';
+import { validateUrlForFilterImport } from '../utils/fetch.js';
 
 // Initialize clients
 const obsidian = new ObsidianClient();
@@ -68,6 +69,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Fetch URL Content (CORS Bypass for Popup)
     if (message.type === 'FETCH_URL') {
       try {
+        // SSRF対策: 内部ネットワークブロック
+        validateUrlForFilterImport(message.payload.url);
+
         const response = await fetch(message.payload.url, {
           method: 'GET',
           cache: 'no-cache'

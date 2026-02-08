@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Security
+- **SSRF脆弱性対策 (P0)**: uBlockフィルターインポート機能で内部ネットワークアクセスを防止
+  - `isPrivateIpAddress()` 関数でプライベートIPアドレス検出（10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8, 169.254.0.0/16, IPv6 localhost）
+  - `validateUrlForFilterImport()` でCloud Metadata (169.254.169.254) 等の内部ネットワークURLをブロック
+  - Obsidian API用localhostアクセスは維持（フィルターインポートのみ別途ブロック）
+- **Content Script権限縮小 (P0)**: `manifest.json`でcontent_scriptsのmatchesを`<all_urls>`から`["http://*/*", "https://*/*"]`へ変更
+  - chrome://, file://等のプロトコルへのインジェクションを防止
+  - Content Script不在時の適切なエラーハンドリング追加（HTTP/HTTPSページのみ対応）
 - **キーボードアクセシビリティの強化**: 全てのフォーカス可能要素に視覚的なフォーカスインジケーターを追加
   - icon-btn, primary-btn, secondary-btn, alert-btn, input, select, textarea等に:focusスタイルを追加
   - WCAG準拠の視覚的フィードバックを実現
@@ -12,7 +19,31 @@ All notable changes to this project will be documented in this file.
   - `role="dialog"` と `aria-modal="true"` を追加
   - `aria-labelledby` でタイトル要素と関連付け
 
+### Accessibility
+- **タブキーボードナビゲーション (P0)**: 設定画面のタブ切り替えにキーボード操作対応
+  - 矢印キー（←→）でタブ間移動
+  - Home/Endキーで先頭/末尾タブへジャンプ
+  - Enter/Spaceキーでタブ選択
+  - `aria-selected`属性の動的更新でスクリーンリーダー対応
+- **モーダルフォーカストラップ (P0)**: 確認モーダルにフォーカストラップ実装
+  - Tabキーでモーダル内フォーカスループ
+  - ESCキーでモーダルを閉じる
+  - モーダル前のフォーカス要素を記憶・復帰
+- **アイコンボタンARIAラベル (P0)**: スクリーンリーダー用ラベル追加
+  - メニューボタン: `aria-label="開く"`
+  - 戻るボタン: `aria-label="戻る"`
+  - モーダル閉じる: `aria-label="閉じる"`
+
 ### i18n
+- **P0セキュリティ強化用メッセージ追加**: SSRF対策およびContent Script権限縮小対策のためのエラーメッセージ追加
+  - `errorPrivateNetworkAccess`: プライベートネットワークアクセスブロック
+  - `errorLocalhostAccess`: localhostアクセスブロック（フィルターインポート）
+  - `errorContentScriptNotAvailable`: Content Script不在時エラー
+  - `errorNoContentResponse`: コンテンツ応答なしエラー
+- **ARIAラベル用メッセージ追加**: スクリーンリーダー用ボタン ラベル
+  - `openSettings`: "設定を開く" / "Open Settings"
+  - `backToMain`: "メイン画面に戻る" / "Back to Main"
+  - `closeModal`: "閉じる" / "Close Modal"
 - **ハードコード文字列のi18n化**: 日本語固定テキストを国際化システムに置換
   - `spinner.js` のデフォルト引数 `showSpinner(text = '処理中...')` を `getMessage('processing')` に置換
   - `autoClose.js` のカウントダウンメッセージを `getMessage('countdownNumber', { count })` に置換

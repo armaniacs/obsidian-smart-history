@@ -31,6 +31,7 @@ const PII_TYPE_LABELS = {
 let resolvePromise = null;
 let maskedPositions = [];
 let currentMaskedIndex = -1;
+let previousActiveElement = null;  // モーダル開く前のフォーカス要素
 
 // PERF-007修正: ResizeObserverをモジュールレベルで保持し、メモリリークを防止
 let resizeObserver = null;
@@ -120,6 +121,58 @@ function resetBodyWidth() {
 }
 
 /**
+ * フォーカストラップ実装
+ * @param {HTMLElement} modal - モーダル要素
+ */
+function trapFocus(modal) {
+  // Focusable要素セレクタ
+  const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+  const focusableElements = modal.querySelectorAll(focusableSelector);
+  const firstFocusable = focusableElements[0];
+  const lastFocusable = focusableElements[focusableElements.length - 1];
+
+  if (!firstFocusable || !lastFocusable) return;
+
+  // フォーカストラップイベントリスナー
+  const keydownHandler = (e) => {
+    if (e.key === 'Escape') {
+      handleAction(false);
+      return;
+    }
+    if (e.key !== 'Tab') return;
+
+    if (e.shiftKey) {  // Shift+Tab: 前へ
+      if (document.activeElement === firstFocusable) {
+        e.preventDefault();
+        lastFocusable.focus();
+      }
+    } else {  // Tab: 次へ
+      if (document.activeElement === lastFocusable) {
+        e.preventDefault();
+        firstFocusable.focus();
+      }
+    }
+  };
+
+  // イベントリスナー追加（モーダル限定）
+  if (!modal.trapFocusHandler) {
+    modal.trapFocusHandler = keydownHandler;
+    modal.addEventListener('keydown', keydownHandler);
+  }
+}
+
+/**
+ * フォーカストラップの解放
+ * @param {HTMLElement} modal - モーダル要素
+ */
+function releaseFocusTrap(modal) {
+  if (modal && modal.trapFocusHandler) {
+    modal.removeEventListener('keydown', modal.trapFocusHandler);
+    modal.trapFocusHandler = null;
+  }
+}
+
+/**
  * プレビューモーダルを表示し、マスクされた個人情報を可視化する
  * UF-401: マスク情報の可視化機能 - Refactorフェーズ実装（定数化・JSDoc・関数分割）
  */
@@ -161,12 +214,21 @@ export function showPreview(content, maskedItems = null, maskedCount = 0) {
   const navAnchor = document.getElementById('maskNavAnchor');
   buildMaskNavigation(navAnchor || modalBody);
 
+  // モーダル表示前にフォーカス要素を記憶
+  previousActiveElement = document.activeElement;
+
   // モーダル表示
   modal.style.display = 'flex';
+
+  // フォーカストラップ設定
+  trapFocus(modal);
 
   // マスク箇所がある場合、最初の箇所へ自動ジャンプ
   if (maskedPositions.length > 0) {
     jumpToMaskedPosition(0);
+  } else {
+    // マスク箇所がない場合はtextareaに直接フォーカス
+    previewContent?.focus();
   }
 
   return new Promise((resolve) => {
@@ -203,9 +265,17 @@ function handleAction(confirmed) {
     return;
   }
 
+  // フォーカストラップ解放
+  releaseFocusTrap(modal);
+
   modal.style.display = 'none';
   resetBodyWidth();
   const content = previewContent.value;
+
+  // 元のフォーカス要素に戻る
+  if (previousActiveElement) {
+    previousActiveElement.focus();
+  }
 
   resolvePromise({
     confirmed,

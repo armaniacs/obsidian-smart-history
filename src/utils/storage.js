@@ -3,7 +3,8 @@
  * Wrapper for chrome.storage.local to manage settings.
  */
 
-import { addLog, LogType } from './logger.js';
+// Temporarily disabled to resolve circular dependency
+// import { addLog, LogType } from './logger.js';
 import { migrateUblockSettings } from './migration.js';
 
 export const StorageKeys = {
@@ -96,7 +97,7 @@ export async function getSettings() {
         // マイグレーション後は同じキーで再取得
         const afterMigration = await chrome.storage.local.get(keysToGet);
         settings = { ...settings, ...afterMigration }; // マイグレーション後の値をマージ
-        addLog(LogType.DEBUG, 'Settings migration completed', { migrated, keysUpdated: Object.keys(afterMigration) });
+        // addLog(LogType.DEBUG, 'Settings migration completed', { migrated, keysUpdated: Object.keys(afterMigration) });
     }
     return { ...DEFAULT_SETTINGS, ...settings };
 }

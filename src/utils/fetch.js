@@ -111,3 +111,67 @@ export async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
     throw error;
   }
 }
+
+/**
+ * プライベートIPアドレスかどうか判定
+ * @param {string} hostname - チェックするホスト名
+ * @returns {boolean} プライベートIPの場合true
+ */
+function isPrivateIpAddress(hostname) {
+  // IPv4形式（xxx.xxx.xxx.xxx）
+  const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const [, a, b, c, d] = ipv4Match.map(Number);
+
+    // 10.x.x.x (10.0.0.0/8)
+    if (a === 10) return true;
+
+    // 172.16.x.x - 172.31.x.x (172.16.0.0/12)
+    if (a === 172 && b >= 16 && b <= 31) return true;
+
+    // 192.168.x.x (192.168.0.0/16)
+    if (a === 192 && b === 168) return true;
+
+    // 127.x.x.x (ループバック)
+    if (a === 127) return true;
+
+    // 169.254.x.x (リンクローカル、クラウドメタデータ含む)
+    if (a === 169 && b === 254) return true;
+
+    return false;
+  }
+
+  // IPv6形式のローカルアドレス
+  if (hostname === '::1' || hostname.startsWith('::ffff:127.') || hostname.startsWith('fe80:')) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * uBlockインポート用URLの検証（内部ネットワークブロック）
+ * SSRF対策 - 内部ネットワークアドレスへのアクセスを防止
+ * @param {string} url - 検証するURL
+ * @throws {Error} URLが無効またはプライベートネットワークの場合
+ */
+export function validateUrlForFilterImport(url) {
+  // 既存のバリデーションを使用（プロトコル検証等）
+  // Obsidian API用localhostは許可（フィルターインポートのみ別途ブロック）
+  validateUrl(url, {
+    requireValidProtocol: true,
+    blockLocalhost: false
+  });
+
+  const parsedUrl = new URL(url);
+
+  // プライベートIPチェック
+  if (isPrivateIpAddress(parsedUrl.hostname)) {
+    throw new Error(`Access to private network address is not allowed: ${parsedUrl.hostname}`);
+  }
+
+  // ドメイン名形式のlocalhostチェック（フィルターインポートのみ）
+  if (parsedUrl.hostname === 'localhost' || parsedUrl.hostname.endsWith('.localhost')) {
+    throw new Error(`Access to localhost is not allowed for filter imports`);
+  }
+}

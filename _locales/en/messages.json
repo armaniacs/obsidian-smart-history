@@ -478,5 +478,26 @@
     },
     "autoClosing": {
         "message": "Auto-closing..."
+    },
+    "errorContentScriptNotAvailable": {
+        "message": "Cannot fetch content from this page. Only available on HTTP/HTTPS pages."
+    },
+    "errorNoContentResponse": {
+        "message": "No response from content fetch."
+    },
+    "errorPrivateNetworkAccess": {
+        "message": "Access to private network address is not allowed: {hostname}"
+    },
+    "errorLocalhostAccess": {
+        "message": "Access to localhost is not allowed for filter imports"
+    },
+    "openSettings": {
+        "message": "Open Settings"
+    },
+    "backToMain": {
+        "message": "Back to Main"
+    },
+    "closeModal": {
+        "message": "Close Modal"
     }
 }

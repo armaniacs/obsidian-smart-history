@@ -4,8 +4,6 @@
  * Stores logs in chrome.storage.local with 7-day retention policy.
  */
 
-import { StorageKeys } from './storage.js';
-
 const LOG_STORAGE_KEY = 'sanitization_logs';
 const RETENTION_DAYS = 7;
 const MAX_LOGS = 1000; // Prevent unlimited growth

@@ -478,5 +478,26 @@
     },
     "autoClosing": {
         "message": "自動閉じる..."
+    },
+    "errorContentScriptNotAvailable": {
+        "message": "このページからコンテンツを取得できません。HTTP/HTTPSページでのみ使用可能です。"
+    },
+    "errorNoContentResponse": {
+        "message": "コンテンツ取得レスポンスがありません。"
+    },
+    "errorPrivateNetworkAccess": {
+        "message": "プライベートネットワークへのアクセスは許可されていません: {hostname}"
+    },
+    "errorLocalhostAccess": {
+        "message": "フィルターインポートでのlocalhostアクセスは許可されていません"
+    },
+    "openSettings": {
+        "message": "設定を開く"
+    },
+    "backToMain": {
+        "message": "メイン画面に戻る"
+    },
+    "closeModal": {
+        "message": "閉じる"
     }
 }

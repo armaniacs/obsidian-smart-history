@@ -57,6 +57,15 @@ export async function recordCurrentPage(force = false) {
     showSpinner(getMessage('fetchingContent'));
     const contentResponse = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CONTENT' });
 
+    // Content Script不在時のエラーハンドリング
+    if (chrome.runtime.lastError) {
+      throw new Error(getMessage('errorContentScriptNotAvailable'));
+    }
+
+    if (!contentResponse) {
+      throw new Error(getMessage('errorNoContentResponse'));
+    }
+
     // Background Workerに記録を要求
     let result;
 

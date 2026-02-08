@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; object-src 'none'; frame-ancestors 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https: http: data:; object-src 'none';">
   <title>Obsidian Smart History Settings</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,7 +13,7 @@
   <div id="mainScreen">
     <div class="header">
       <h2 data-i18n="appTitle">Smart History</h2>
-      <button id="menuBtn" class="icon-btn">☰</button>
+      <button id="menuBtn" class="icon-btn" aria-label="開く" data-i18n="openSettings">☰</button>
     </div>
 
     <div id="currentPage">
@@ -38,12 +38,12 @@
   <!-- Settings Screen -->
   <div id="settingsScreen">
     <div class="header">
-      <button id="backBtn" class="icon-btn" data-i18n="back">←</button>
+      <button id="backBtn" class="icon-btn" aria-label="戻る" data-i18n="backToMain" data-i18n="back">←</button>
       <h2 data-i18n="settings">Settings</h2>
     </div>
 
     <!-- Tab Navigation -->
-    <div class="tab-nav" role="tablist">
+    <div id="tabList" class="tab-nav" role="tablist">
       <button id="generalTab" class="tab-btn" role="tab" aria-selected="false" aria-controls="generalPanel" data-i18n="mainTab">General</button>
       <button id="domainTab" class="tab-btn active" role="tab" aria-selected="true" aria-controls="domainPanel" data-i18n="domainTab">Domain Filter</button>
       <button id="privacyTab" class="tab-btn" role="tab" aria-selected="false" aria-controls="privacyPanel" data-i18n="privacyTab">Privacy</button>
@@ -325,7 +325,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3 data-i18n="confirmContent">Review Content</h3>
-        <button id="closeModalBtn" class="icon-btn modal-close" data-i18n="closeModalBtn">×</button>
+        <button id="closeModalBtn" class="icon-btn modal-close" aria-label="閉じる" data-i18n="closeModal">×</button>
       </div>
       <div class="modal-body">
         <p class="mt-0 text-xs text-gray" data-i18n="confirmContentDesc">

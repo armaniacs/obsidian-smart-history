@@ -3,7 +3,7 @@
  * Domain filter settings functionality for the popup UI.
  */
 
-import { StorageKeys, saveSettings, getSettings } from '../utils/storage.js';
+import { StorageKeys, getSettings } from '../utils/storage.js';
 import { extractDomain, parseDomainList, validateDomainList } from '../utils/domainUtils.js';
 import { init as initUblockImport, handleSaveUblockSettings } from './ublockImport.js';
 import { addLog, LogType } from '../utils/logger.js';
@@ -85,6 +85,42 @@ export function init() {
         saveDomainSettingsBtn.addEventListener('click', handleSaveDomainSettings);
     }
 
+    // タブキーボードナビゲーション用イベントリスナー
+    const tabList = document.getElementById('tabList');
+    if (tabList) {
+        const tabs = tabList.querySelectorAll('[role="tab"]');
+
+        function handleTabKeydown(e) {
+            const currentIndex = Array.from(tabs).indexOf(document.activeElement);
+
+            switch(e.key) {
+                case 'ArrowRight':
+                    e.preventDefault();
+                    tabs[(currentIndex + 1) % tabs.length].focus();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    tabs[(currentIndex - 1 + tabs.length) % tabs.length].focus();
+                    break;
+                case 'Home':
+                    e.preventDefault();
+                    tabs[0].focus();
+                    break;
+                case 'End':
+                    e.preventDefault();
+                    tabs[tabs.length - 1].focus();
+                    break;
+                case 'Enter':
+                case ' ':
+                    e.preventDefault();
+                    document.activeElement.click();
+                    break;
+            }
+        }
+
+        tabList.addEventListener('keydown', handleTabKeydown);
+    }
+
     // Load domain settings
     loadDomainSettings();
 }
@@ -92,8 +128,15 @@ export function init() {
 function showTab(tabName) {
     // Buttons
     generalTabBtn.classList.toggle('active', tabName === 'general');
+    generalTabBtn.setAttribute('aria-selected', tabName === 'general');
+
     domainTabBtn.classList.toggle('active', tabName === 'domain');
-    if (privacyTabBtn) privacyTabBtn.classList.toggle('active', tabName === 'privacy');
+    domainTabBtn.setAttribute('aria-selected', tabName === 'domain');
+
+    if (privacyTabBtn) {
+        privacyTabBtn.classList.toggle('active', tabName === 'privacy');
+        privacyTabBtn.setAttribute('aria-selected', tabName === 'privacy');
+    }
 
     // Panels
     generalPanel.classList.toggle('active', tabName === 'general');
@@ -222,10 +265,12 @@ export async function handleSaveDomainSettings() {
         await saveSimpleFormatSettings();
 
         // uBlock形式の保存
-        await handleSaveUblockSettings();
+        if (typeof handleSaveUblockSettings === 'function') {
+            await handleSaveUblockSettings();
+        }
 
     } catch (error) {
-        addLog(LogType.ERROR, 'Error saving domain settings', { error: error.message });
+        addLog(LogType.ERROR, 'Error saving domain settings', { error: error.message, stack: error.stack });
         showStatus('domainStatus', `${getMessage('saveError')}: ${error.message}`, 'error');
     }
 }
@@ -267,8 +312,12 @@ async function saveSimpleFormatSettings() {
     }
 
     // Save settings
-    await saveSettings(newSettings);
-
-    showStatus('domainStatus', getMessage('domainFilterSaved'), 'success');
+    try {
+        await chrome.storage.local.set(newSettings);
+        showStatus('domainStatus', getMessage('domainFilterSaved'), 'success');
+    } catch (error) {
+        addLog(LogType.ERROR, 'Error saving to Chrome Storage', { error: error.message });
+        showStatus('domainStatus', `${getMessage('saveError')}: ${error.message}`, 'error');
+    }
 }
 
